@@ -1,4 +1,4 @@
-# Decisio
+# Decern
 
 Il registro delle decisioni tecniche del tuo team.
 
@@ -52,7 +52,7 @@ npx supabase db push
 ### 4. Set up Stripe
 
 1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Create a product "Decisio Pro" with a monthly price (e.g., €9/month)
+2. Create a product "Decern Pro" with a monthly price (e.g., €9/month)
 3. Copy the Price ID
 4. Set up a webhook endpoint pointing to `/api/stripe/webhook`
 5. Select events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`

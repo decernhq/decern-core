@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Decisio - Technical Decision Records",
+  title: "Decern - Technical Decision Records",
   description: "Il registro delle decisioni tecniche del tuo team",
 };
 

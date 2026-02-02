@@ -1,4 +1,4 @@
-# Struttura database Supabase – Decisio
+# Struttura database Supabase – Decern
 
 Guida per creare e capire lo schema del database su Supabase.
 
@@ -160,4 +160,4 @@ Questo applica le migration nella cartella `supabase/migrations/` nell’ordine 
 | `00003_create_decisions.sql` | Enum `decision_status`, tabella `decisions`, RLS, trigger, indici |
 | `00004_create_subscriptions.sql` | Enum `subscription_status` e `plan_id`, tabella `subscriptions`, trigger su `profiles` |
 
-Se segui l’ordine sopra (A o B), il DB sarà strutturato come previsto da Decisio.
+Se segui l’ordine sopra (A o B), il DB sarà strutturato come previsto da Decern.

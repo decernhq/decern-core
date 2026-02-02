@@ -6,7 +6,7 @@ export default function LandingPage() {
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
       <div className="mx-auto max-w-3xl text-center">
         <h1 className="text-5xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-          Decisio
+          Decern
         </h1>
         <p className="mt-6 text-xl leading-8 text-gray-600">
           Il registro delle decisioni tecniche del tuo team.

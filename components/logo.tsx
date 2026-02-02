@@ -14,7 +14,7 @@ export function Logo({ className, linkToHome = true }: LogoProps) {
         className
       )}
     >
-      Decisio
+      Decern
     </span>
   );
 

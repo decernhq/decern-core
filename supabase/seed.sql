@@ -13,8 +13,8 @@
 insert into public.projects (id, name, description, owner_id)
 values (
   'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
-  'Decisio App',
-  'Il progetto principale per lo sviluppo di Decisio',
+  'Decern App',
+  'Il progetto principale per lo sviluppo di Decern',
   'YOUR_USER_ID'
 );
 
