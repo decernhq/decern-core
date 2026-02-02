@@ -4,8 +4,8 @@ import Stripe from "stripe";
  * Stripe client for server-side operations.
  * Only use in server components, API routes, or server actions.
  */
+// Non impostare apiVersion: usa la versione predefinita del SDK (compatibile con Stripe)
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-12-18.acacia",
   typescript: true,
 });
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDecisionWithProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
+import { CopyDecisionMarkdown } from "@/components/decisions/copy-decision-markdown";
 import { DecisionStatus } from "@/types/decision";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
   }
 
   const project = decision.project as { id: string; name: string } | null;
+  const linkedDecision = decision.linked_decision as { id: string; title: string } | null;
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -65,10 +67,35 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
                 Progetto: {project.name}
               </Link>
             )}
+            {linkedDecision && (
+              <Link
+                href={`/dashboard/decisions/${linkedDecision.id}`}
+                className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
+              >
+                Collegata a: {linkedDecision.title}
+              </Link>
+            )}
           </div>
-          <Link href={`/dashboard/decisions/${id}/edit`}>
-            <Button variant="outline">Modifica</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <CopyDecisionMarkdown
+              decision={{
+                title: decision.title,
+                status: decision.status,
+                context: decision.context ?? "",
+                options: decision.options ?? [],
+                decision: decision.decision ?? "",
+                consequences: decision.consequences ?? "",
+                external_links: decision.external_links ?? [],
+                tags: decision.tags ?? [],
+                created_at: decision.created_at,
+                updated_at: decision.updated_at,
+                project: project ? { name: project.name } : null,
+              }}
+            />
+            <Link href={`/dashboard/decisions/${id}/edit`}>
+              <Button variant="outline">Modifica</Button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -117,6 +144,27 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             <p className="mt-2 whitespace-pre-wrap text-gray-600">
               {decision.consequences}
             </p>
+          </div>
+        )}
+
+        {/* External links */}
+        {(decision.external_links?.length ?? 0) > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Link esterni</h2>
+            <ul className="mt-3 space-y-2">
+              {(decision.external_links ?? []).map((link: { url: string; label?: string }, index: number) => (
+                <li key={index}>
+                  <a
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-brand-600 hover:underline"
+                  >
+                    {link.label || link.url}
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

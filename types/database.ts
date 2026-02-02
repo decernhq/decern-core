@@ -77,6 +77,8 @@ export interface Database {
           decision: string;
           consequences: string;
           tags: string[];
+          external_links: { url: string; label?: string }[];
+          linked_decision_id: string | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -91,6 +93,8 @@ export interface Database {
           decision?: string;
           consequences?: string;
           tags?: string[];
+          external_links?: { url: string; label?: string }[];
+          linked_decision_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -105,6 +109,8 @@ export interface Database {
           decision?: string;
           consequences?: string;
           tags?: string[];
+          external_links?: { url: string; label?: string }[];
+          linked_decision_id?: string | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;

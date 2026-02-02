@@ -1,8 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import type { InsertDecision, UpdateDecision, DbDecision } from "@/types/database";
 
+/** Decision with author (profile) for list display */
+export type DecisionWithAuthor = DbDecision & {
+  author: { full_name: string | null; email: string } | null;
+};
+
 /**
- * Get all decisions for the current user (across all projects)
+ * Get all decisions for the current user (across all projects), with author info
  */
 export async function getDecisions(): Promise<DbDecision[]> {
   const supabase = await createClient();
@@ -18,6 +23,28 @@ export async function getDecisions(): Promise<DbDecision[]> {
   }
 
   return data || [];
+}
+
+/**
+ * Get all decisions with author (full_name, email) for list/table display
+ */
+export async function getDecisionsWithAuthors(): Promise<DecisionWithAuthor[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("decisions")
+    .select(`
+      *,
+      author:profiles!decisions_created_by_fkey(full_name, email)
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching decisions with authors:", error);
+    return [];
+  }
+
+  return (data || []) as DecisionWithAuthor[];
 }
 
 /**
@@ -63,11 +90,12 @@ export async function getDecisionById(id: string): Promise<DbDecision | null> {
 }
 
 /**
- * Get decision with project info
+ * Get decision with project info.
+ * Linked decision (if any) is fetched separately to avoid self-relation query issues.
  */
 export async function getDecisionWithProject(id: string) {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from("decisions")
     .select(`
@@ -82,7 +110,20 @@ export async function getDecisionWithProject(id: string) {
     return null;
   }
 
-  return data;
+  if (!data) return null;
+
+  // Fetch linked decision title separately (avoids self-relation join that can cause 404)
+  let linkedDecision: { id: string; title: string } | null = null;
+  if (data.linked_decision_id) {
+    const { data: linked } = await supabase
+      .from("decisions")
+      .select("id, title")
+      .eq("id", data.linked_decision_id)
+      .single();
+    if (linked) linkedDecision = linked;
+  }
+
+  return { ...data, linked_decision: linkedDecision };
 }
 
 /**
@@ -222,4 +263,24 @@ export async function getDashboardStats() {
     superseded: decisions.filter((d) => d.status === "superseded").length,
     rejected: decisions.filter((d) => d.status === "rejected").length,
   };
+}
+
+/**
+ * Get all distinct tags used in the user's decisions (for autocomplete/suggestions)
+ */
+export async function getSuggestedTags(): Promise<string[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("decisions")
+    .select("tags");
+
+  if (error) {
+    console.error("Error fetching tags:", error);
+    return [];
+  }
+
+  const allTags = (data || []).flatMap((row) => row.tags ?? []);
+  const unique = Array.from(new Set(allTags.map((t) => t.toLowerCase().trim()).filter(Boolean)));
+  return unique.sort();
 }

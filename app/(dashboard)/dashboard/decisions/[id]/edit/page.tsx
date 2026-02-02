@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getDecisionById } from "@/lib/queries/decisions";
+import { getDecisionById, getDecisions, getSuggestedTags } from "@/lib/queries/decisions";
 import { getProjects } from "@/lib/queries/projects";
 import { DecisionForm } from "@/components/decisions/decision-form";
 import { updateDecisionAction, deleteDecisionAction } from "../../actions";
@@ -12,10 +12,15 @@ interface EditDecisionPageProps {
 
 export default async function EditDecisionPage({ params }: EditDecisionPageProps) {
   const { id } = await params;
-  const [decision, projects] = await Promise.all([
+  const [decision, projects, allDecisions, suggestedTags] = await Promise.all([
     getDecisionById(id),
     getProjects(),
+    getDecisions(),
+    getSuggestedTags(),
   ]);
+  const otherDecisions = allDecisions
+    .filter((d) => d.id !== id)
+    .map((d) => ({ id: d.id, title: d.title, project_id: d.project_id }));
 
   if (!decision) {
     notFound();
@@ -39,6 +44,8 @@ export default async function EditDecisionPage({ params }: EditDecisionPageProps
         <DecisionForm
           decision={decision}
           projects={projects}
+          otherDecisions={otherDecisions}
+          suggestedTags={suggestedTags}
           action={updateDecisionAction}
           submitLabel="Salva modifiche"
         />

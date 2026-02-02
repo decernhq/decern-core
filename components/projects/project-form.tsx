@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -14,10 +14,20 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) {
-  const [state, formAction, isPending] = useActionState(action, {});
+  const [state, setState] = useState<ActionState>({});
+  const [isPending, startTransition] = useTransition();
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    startTransition(async () => {
+      const result = await action(state, formData);
+      setState(result);
+    });
+  };
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {project && <input type="hidden" name="id" value={project.id} />}
 
       <Input
@@ -46,11 +56,11 @@ export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) 
         />
       </div>
 
-      {state.error && (
+      {state?.error && (
         <FormMessage message={{ type: "error", text: state.error }} />
       )}
 
-      {state.success && (
+      {state?.success && (
         <FormMessage
           message={{ type: "success", text: "Progetto salvato con successo!" }}
         />

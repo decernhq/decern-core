@@ -22,6 +22,10 @@ export interface Decision {
   consequences: string;
   /** Tags for categorization and filtering */
   tags: string[];
+  /** External references (RFCs, docs, etc.) */
+  externalLinks: { url: string; label?: string }[];
+  /** Optional link to a previous/related decision */
+  linkedDecisionId?: string | null;
   createdAt: string;
   updatedAt: string;
 }

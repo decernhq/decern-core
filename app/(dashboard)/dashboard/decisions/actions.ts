@@ -4,6 +4,25 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
+function parseExternalLinks(raw: string | null | undefined): { url: string; label?: string }[] {
+  if (!raw?.trim()) return [];
+  return raw
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const sep = " | ";
+      const idx = line.indexOf(sep);
+      if (idx !== -1) {
+        const label = line.slice(0, idx).trim();
+        const url = line.slice(idx + sep.length).trim();
+        return url ? { url, label: label || undefined } : null;
+      }
+      return line.startsWith("http") ? { url: line } : null;
+    })
+    .filter((l): l is { url: string; label?: string } => l !== null);
+}
+
 export type ActionState = {
   error?: string;
   success?: boolean;
@@ -31,6 +50,8 @@ export async function createDecisionAction(
   const decision = formData.get("decision") as string;
   const consequences = formData.get("consequences") as string;
   const tagsRaw = formData.get("tags") as string;
+  const externalLinksRaw = formData.get("external_links") as string;
+  const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!projectId) {
     return { error: "Seleziona un progetto" };
@@ -56,6 +77,10 @@ export async function createDecisionAction(
         .filter((t) => t.length > 0)
     : [];
 
+  // Parse external links (one per line: "label | url" or just "url")
+  const external_links = parseExternalLinks(externalLinksRaw);
+  const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
+
   const { error } = await supabase.from("decisions").insert({
     project_id: projectId,
     title: title.trim(),
@@ -65,6 +90,8 @@ export async function createDecisionAction(
     decision: decision?.trim() || "",
     consequences: consequences?.trim() || "",
     tags,
+    external_links,
+    linked_decision_id,
     created_by: user.id,
   });
 
@@ -92,6 +119,8 @@ export async function updateDecisionAction(
   const decision = formData.get("decision") as string;
   const consequences = formData.get("consequences") as string;
   const tagsRaw = formData.get("tags") as string;
+  const externalLinksRaw = formData.get("external_links") as string;
+  const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!id) {
     return { error: "ID decisione mancante" };
@@ -115,6 +144,9 @@ export async function updateDecisionAction(
         .filter((t) => t.length > 0)
     : [];
 
+  const external_links = parseExternalLinks(externalLinksRaw);
+  const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
+
   const { error } = await supabase
     .from("decisions")
     .update({
@@ -125,6 +157,8 @@ export async function updateDecisionAction(
       decision: decision?.trim() || "",
       consequences: consequences?.trim() || "",
       tags,
+      external_links,
+      linked_decision_id,
     })
     .eq("id", id);
 
@@ -135,6 +169,36 @@ export async function updateDecisionAction(
 
   revalidatePath("/dashboard/decisions");
   revalidatePath(`/dashboard/decisions/${id}`);
+  return { success: true };
+}
+
+const VALID_STATUSES = ["proposed", "approved", "superseded", "rejected"] as const;
+
+export async function updateDecisionStatusAction(
+  decisionId: string,
+  status: string
+): Promise<ActionState> {
+  const supabase = await createClient();
+
+  if (!decisionId) {
+    return { error: "ID decisione mancante" };
+  }
+  if (!VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
+    return { error: "Stato non valido" };
+  }
+
+  const { error } = await supabase
+    .from("decisions")
+    .update({ status })
+    .eq("id", decisionId);
+
+  if (error) {
+    console.error("Error updating decision status:", error);
+    return { error: "Errore nell'aggiornamento dello stato" };
+  }
+
+  revalidatePath("/dashboard/decisions");
+  revalidatePath(`/dashboard/decisions/${decisionId}`);
   return { success: true };
 }
 
@@ -161,3 +225,4 @@ export async function deleteDecisionAction(id: string): Promise<ActionState> {
   }
   redirect("/dashboard/decisions");
 }
+
