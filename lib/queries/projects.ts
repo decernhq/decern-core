@@ -1,15 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import type { InsertProject, UpdateProject, Project } from "@/types/database";
+import { getOrCreateDefaultWorkspace } from "./workspaces";
+import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 
 /**
- * Get all projects for the current user
+ * Get all projects for the current user in the selected workspace
  */
 export async function getProjects(): Promise<Project[]> {
+  const workspaceId = await getSelectedWorkspaceId();
+  if (!workspaceId) return [];
+
   const supabase = await createClient();
-  
   const { data, error } = await supabase
     .from("projects")
     .select("*")
+    .eq("workspace_id", workspaceId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -41,27 +46,31 @@ export async function getProjectById(id: string): Promise<Project | null> {
 }
 
 /**
- * Create a new project
+ * Create a new project in the selected workspace (or default if none selected)
  */
 export async function createProject(
-  project: Omit<InsertProject, "owner_id">
+  project: Omit<InsertProject, "owner_id" | "workspace_id">
 ): Promise<Project | null> {
   const supabase = await createClient();
-  
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     console.error("User not authenticated");
     return null;
   }
+
+  let workspaceId = await getSelectedWorkspaceId();
+  if (!workspaceId) {
+    const w = await getOrCreateDefaultWorkspace();
+    workspaceId = w?.id ?? null;
+  }
+  if (!workspaceId) return null;
 
   const { data, error } = await supabase
     .from("projects")
     .insert({
       ...project,
       owner_id: user.id,
+      workspace_id: workspaceId,
     })
     .select()
     .single();

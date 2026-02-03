@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getInvitationByToken } from "@/lib/queries/project-members";
+import { getWorkspaceInvitationByToken } from "@/lib/queries/workspaces";
 import { Button } from "@/components/ui/button";
 
 interface PublicInvitePageProps {
@@ -9,13 +9,13 @@ interface PublicInvitePageProps {
 }
 
 /**
- * Pagina pubblica per il link invito. Se l'utente non è loggato mostra
+ * Pagina pubblica per il link invito al workspace. Se l'utente non è loggato mostra
  * "Completa registrazione con [email]"; se è loggato reindirizza alla pagina
  * dashboard per accettare l'invito.
  */
 export default async function PublicInvitePage(props: PublicInvitePageProps) {
   const { token } = await props.params;
-  const invite = await getInvitationByToken(token);
+  const invite = await getWorkspaceInvitationByToken(token);
 
   if (!invite) {
     notFound();
@@ -34,17 +34,17 @@ export default async function PublicInvitePage(props: PublicInvitePageProps) {
   return (
     <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-lg items-center justify-center px-4">
       <div className="w-full rounded-xl border border-gray-200 bg-white p-8 text-center">
-        <h1 className="text-xl font-semibold text-gray-900">Invito al progetto</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Invito al workspace</h1>
         <p className="mt-3 text-gray-600">
-          Sei stato invitato a unirti al progetto{" "}
-          <strong>{invite.project_name}</strong>.
+          Sei stato invitato a unirti al workspace{" "}
+          <strong>{invite.workspace_name}</strong>.
         </p>
         <p className="mt-2 text-sm text-gray-500">
           L&apos;invito è stato inviato a <strong>{invite.email}</strong>.
         </p>
         <p className="mt-6 text-sm text-gray-600">
-          Completa la registrazione con questa email per unirti al progetto.
-          Dopo la registrazione vedrai il progetto nella tua lista.
+          Completa la registrazione con questa email per unirti al workspace.
+          Dopo la registrazione vedrai tutti i progetti del workspace nella tua lista.
         </p>
         <Link href={signupUrl}>
           <Button className="mt-4">Completa registrazione</Button>

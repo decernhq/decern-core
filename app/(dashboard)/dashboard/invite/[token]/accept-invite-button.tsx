@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { acceptInvitationAction } from "@/app/(dashboard)/dashboard/projects/actions";
+import { acceptWorkspaceInvitationAction } from "@/app/(dashboard)/dashboard/settings/actions";
 import { Button } from "@/components/ui/button";
 
 export function AcceptInviteButton({ token }: { token: string }) {
@@ -11,12 +11,12 @@ export function AcceptInviteButton({ token }: { token: string }) {
   async function handleAccept() {
     setError(null);
     setLoading(true);
-    const result = await acceptInvitationAction(token);
+    const result = await acceptWorkspaceInvitationAction(token);
     setLoading(false);
     if (result?.error) {
       setError(result?.error);
     }
-    // On success, acceptInvitationAction redirects
+    // On success, acceptWorkspaceInvitationAction redirects
   }
 
   return (

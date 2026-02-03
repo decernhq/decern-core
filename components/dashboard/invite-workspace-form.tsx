@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { inviteUserToProjectAction } from "@/app/(dashboard)/dashboard/projects/actions";
+import { inviteUserToWorkspaceAction } from "@/app/(dashboard)/dashboard/settings/actions";
 
-export function InviteProjectForm({ projectId }: { projectId: string }) {
+export function InviteWorkspaceForm({ workspaceId }: { workspaceId: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,10 +18,10 @@ export function InviteProjectForm({ projectId }: { projectId: string }) {
     setError(null);
     setInviteLink(null);
     setLoading(true);
-    const result = await inviteUserToProjectAction(projectId, email);
+    const result = await inviteUserToWorkspaceAction(workspaceId, email);
     setLoading(false);
     if (result?.error) {
-      setError(result?.error);
+      setError(result.error);
       return;
     }
     if (result?.inviteLink) {
@@ -57,7 +57,7 @@ export function InviteProjectForm({ projectId }: { projectId: string }) {
           <p className="font-medium text-green-800">Invito creato</p>
           <p className="mt-1 text-green-700">
             Condividi questo link con la persona invitata (valido 7 giorni).
-            Se non ha ancora un account, aprendo il link andrà alla registrazione con questa email; dopo la conferma vedrà il progetto in lista.
+            Se non ha ancora un account, aprendo il link andrà alla registrazione con questa email; dopo la conferma vedrà tutti i progetti del workspace.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 truncate rounded bg-white px-2 py-1 text-xs text-gray-800">

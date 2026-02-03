@@ -4,6 +4,7 @@ import { getEffectivePlanId } from "@/lib/billing";
 import { UpgradeButton } from "./upgrade-button";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { ProfileNameForm } from "./profile-name-form";
+import { ProfileRoleForm } from "./profile-role-form";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -14,7 +15,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name")
+    .select("full_name, role")
     .eq("id", user?.id ?? "")
     .single();
 
@@ -43,6 +44,9 @@ export default async function SettingsPage() {
         <div className="mt-4 space-y-4">
           <div>
             <ProfileNameForm initialFullName={profile?.full_name ?? null} />
+          </div>
+          <div>
+            <ProfileRoleForm initialRole={profile?.role ?? null} />
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Email</p>

@@ -14,6 +14,7 @@ export interface Plan {
   limits: {
     projects: number;
     decisionsPerProject: number;
+    workspaces: number; // -1 = illimitati
   };
 }
 
@@ -32,6 +33,7 @@ export const PLANS: Record<PlanId, Plan> = {
     limits: {
       projects: 1,
       decisionsPerProject: 10,
+      workspaces: 1,
     },
   },
   pro: {
@@ -49,6 +51,7 @@ export const PLANS: Record<PlanId, Plan> = {
     limits: {
       projects: -1, // unlimited
       decisionsPerProject: -1, // unlimited
+      workspaces: -1, // unlimited
     },
   },
 };

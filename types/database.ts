@@ -20,6 +20,7 @@ export interface Database {
           email: string;
           full_name: string | null;
           avatar_url: string | null;
+          role: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -28,6 +29,7 @@ export interface Database {
           email: string;
           full_name?: string | null;
           avatar_url?: string | null;
+          role?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -36,23 +38,22 @@ export interface Database {
           email?: string;
           full_name?: string | null;
           avatar_url?: string | null;
+          role?: string | null;
           created_at?: string;
           updated_at?: string;
         };
       };
-      projects: {
+      workspaces: {
         Row: {
           id: string;
           name: string;
-          description: string | null;
           owner_id: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          name: string;
-          description?: string | null;
+          name?: string;
           owner_id: string;
           created_at?: string;
           updated_at?: string;
@@ -60,36 +61,35 @@ export interface Database {
         Update: {
           id?: string;
           name?: string;
-          description?: string | null;
           owner_id?: string;
           created_at?: string;
           updated_at?: string;
         };
       };
-      project_members: {
+      workspace_members: {
         Row: {
           id: string;
-          project_id: string;
+          workspace_id: string;
           user_id: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          project_id: string;
+          workspace_id: string;
           user_id: string;
           created_at?: string;
         };
         Update: {
           id?: string;
-          project_id?: string;
+          workspace_id?: string;
           user_id?: string;
           created_at?: string;
         };
       };
-      project_invitations: {
+      workspace_invitations: {
         Row: {
           id: string;
-          project_id: string;
+          workspace_id: string;
           email: string;
           invited_by: string;
           token: string;
@@ -99,7 +99,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          project_id: string;
+          workspace_id: string;
           email: string;
           invited_by: string;
           token: string;
@@ -109,13 +109,42 @@ export interface Database {
         };
         Update: {
           id?: string;
-          project_id?: string;
+          workspace_id?: string;
           email?: string;
           invited_by?: string;
           token?: string;
           expires_at?: string;
           status?: "pending" | "accepted" | "expired" | "revoked";
           created_at?: string;
+        };
+      };
+      projects: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          owner_id: string;
+          workspace_id: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          owner_id: string;
+          workspace_id: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          owner_id?: string;
+          workspace_id?: string;
+          created_at?: string;
+          updated_at?: string;
         };
       };
       decisions: {
@@ -177,15 +206,18 @@ export interface Database {
 
 // Convenience types
 export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
+export type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
+export type WorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Row"];
+export type WorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Row"];
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
-export type ProjectMember = Database["public"]["Tables"]["project_members"]["Row"];
-export type ProjectInvitation = Database["public"]["Tables"]["project_invitations"]["Row"];
 export type DbDecision = Database["public"]["Tables"]["decisions"]["Row"];
 
+export type InsertWorkspace = Database["public"]["Tables"]["workspaces"]["Insert"];
+export type UpdateWorkspace = Database["public"]["Tables"]["workspaces"]["Update"];
+export type InsertWorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Insert"];
+export type InsertWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Insert"];
+export type UpdateWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Update"];
 export type InsertProject = Database["public"]["Tables"]["projects"]["Insert"];
 export type UpdateProject = Database["public"]["Tables"]["projects"]["Update"];
-export type InsertProjectMember = Database["public"]["Tables"]["project_members"]["Insert"];
-export type InsertProjectInvitation = Database["public"]["Tables"]["project_invitations"]["Insert"];
-export type UpdateProjectInvitation = Database["public"]["Tables"]["project_invitations"]["Update"];
 export type InsertDecision = Database["public"]["Tables"]["decisions"]["Insert"];
 export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"];

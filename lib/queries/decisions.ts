@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { InsertDecision, UpdateDecision, DbDecision } from "@/types/database";
+import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 
 /** Decision with author (profile) for list display */
 export type DecisionWithAuthor = DbDecision & {
@@ -7,14 +8,31 @@ export type DecisionWithAuthor = DbDecision & {
 };
 
 /**
- * Get all decisions for the current user (across all projects), with author info
+ * Get project IDs in the selected workspace
+ */
+async function getProjectIdsInSelectedWorkspace(): Promise<string[]> {
+  const workspaceId = await getSelectedWorkspaceId();
+  if (!workspaceId) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("workspace_id", workspaceId);
+  return (data ?? []).map((p) => p.id);
+}
+
+/**
+ * Get all decisions for the current user in the selected workspace
  */
 export async function getDecisions(): Promise<DbDecision[]> {
+  const projectIds = await getProjectIdsInSelectedWorkspace();
+  if (projectIds.length === 0) return [];
+
   const supabase = await createClient();
-  
   const { data, error } = await supabase
     .from("decisions")
     .select("*")
+    .in("project_id", projectIds)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -26,17 +44,20 @@ export async function getDecisions(): Promise<DbDecision[]> {
 }
 
 /**
- * Get all decisions with author (full_name, email) for list/table display
+ * Get all decisions with author (full_name, email) for list/table display (selected workspace)
  */
 export async function getDecisionsWithAuthors(): Promise<DecisionWithAuthor[]> {
-  const supabase = await createClient();
+  const projectIds = await getProjectIdsInSelectedWorkspace();
+  if (projectIds.length === 0) return [];
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("decisions")
     .select(`
       *,
       author:profiles!decisions_created_by_fkey(full_name, email)
     `)
+    .in("project_id", projectIds)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -253,14 +274,25 @@ export async function getDecisionsByStatus(
 }
 
 /**
- * Get user's dashboard stats
+ * Get user's dashboard stats for the selected workspace
  */
 export async function getDashboardStats() {
+  const projectIds = await getProjectIdsInSelectedWorkspace();
+  if (projectIds.length === 0) {
+    return {
+      totalProjects: 0,
+      totalDecisions: 0,
+      proposed: 0,
+      approved: 0,
+      superseded: 0,
+      rejected: 0,
+    };
+  }
+
   const supabase = await createClient();
-  
   const [projectsResult, decisionsResult] = await Promise.all([
-    supabase.from("projects").select("id", { count: "exact" }),
-    supabase.from("decisions").select("status"),
+    supabase.from("projects").select("id", { count: "exact" }).in("id", projectIds),
+    supabase.from("decisions").select("status").in("project_id", projectIds),
   ]);
 
   const decisions = decisionsResult.data || [];
@@ -276,14 +308,17 @@ export async function getDashboardStats() {
 }
 
 /**
- * Get all distinct tags used in the user's decisions (for autocomplete/suggestions)
+ * Get all distinct tags used in the user's decisions in the selected workspace (for autocomplete/suggestions)
  */
 export async function getSuggestedTags(): Promise<string[]> {
-  const supabase = await createClient();
+  const projectIds = await getProjectIdsInSelectedWorkspace();
+  if (projectIds.length === 0) return [];
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("decisions")
-    .select("tags");
+    .select("tags")
+    .in("project_id", projectIds);
 
   if (error) {
     console.error("Error fetching tags:", error);

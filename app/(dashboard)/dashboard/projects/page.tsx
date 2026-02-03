@@ -7,7 +7,7 @@ export default async function ProjectsPage() {
   const projects = await getProjects();
   const projectIds = projects.map((p) => p.id);
   const decisionCounts = await getDecisionCountsByProjectIds(projectIds);
-  console.log(projects);
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">

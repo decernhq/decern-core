@@ -8,6 +8,7 @@ import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage, type Message } from "@/components/ui/form-message";
+import { USER_ROLES } from "@/lib/constants/roles";
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -19,6 +20,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState(emailParam ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<Message | undefined>();
 
@@ -52,7 +54,10 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: redirectUrl,
-        data: { full_name: fullName.trim() || undefined },
+        data: {
+          full_name: fullName.trim() || undefined,
+          role: role.trim() || undefined,
+        },
       },
     });
 
@@ -87,6 +92,25 @@ export default function SignupPage() {
             onChange={(e) => setFullName(e.target.value)}
             autoComplete="name"
           />
+
+          <div className="w-full">
+            <label htmlFor="role" className="mb-1.5 block text-sm font-medium text-gray-700">
+              Ruolo
+            </label>
+            <select
+              id="role"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            >
+              <option value="">Seleziona ruolo (facoltativo)</option>
+              {USER_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
+          </div>
 
           <Input
             id="email"

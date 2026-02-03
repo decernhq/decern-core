@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getInvitationByToken } from "@/lib/queries/project-members";
+import { getWorkspaceInvitationByToken } from "@/lib/queries/workspaces";
 import { Button } from "@/components/ui/button";
 import { AcceptInviteButton } from "./accept-invite-button";
 
@@ -16,7 +16,7 @@ export default async function InvitePage(props: InvitePageProps) {
   const { data } = await supabase.auth.getUser();
   const user = data?.user;
 
-  const invite = await getInvitationByToken(inviteToken);
+  const invite = await getWorkspaceInvitationByToken(inviteToken);
   if (!invite) {
     notFound();
   }
@@ -54,9 +54,9 @@ export default async function InvitePage(props: InvitePageProps) {
   return (
     <div className="mx-auto max-w-lg">
       <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
-        <h1 className="text-xl font-semibold text-gray-900">Invito al progetto</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Invito al workspace</h1>
         <p className="mt-3 text-gray-600">
-          Sei stato invitato a unirti al progetto <strong>{invite.project_name}</strong>.
+          Sei stato invitato a unirti al workspace <strong>{invite.workspace_name}</strong>.
         </p>
         <p className="mt-1 text-sm text-gray-500">
           L&apos;invito è stato inviato a <strong>{invite.email}</strong>.
