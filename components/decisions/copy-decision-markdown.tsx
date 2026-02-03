@@ -122,9 +122,8 @@ export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
     <Button
       type="button"
       variant="outline"
-      size="sm"
       onClick={handleCopy}
-      className="gap-2"
+      className="h-10 gap-2"
     >
       {copied ? (
         <>

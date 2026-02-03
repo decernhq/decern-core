@@ -10,7 +10,7 @@ export function Logo({ className, linkToHome = true }: LogoProps) {
   const content = (
     <span
       className={cn(
-        "text-2xl font-bold tracking-tight text-brand-600",
+        "text-xl font-semibold tracking-tight text-brand-600 sm:text-2xl",
         className
       )}
     >

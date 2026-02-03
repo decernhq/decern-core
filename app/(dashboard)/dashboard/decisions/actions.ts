@@ -100,8 +100,16 @@ export async function createDecisionAction(
     return { error: "Errore nella creazione della decisione" };
   }
 
+  if (linked_decision_id) {
+    await supabase
+      .from("decisions")
+      .update({ status: "superseded" })
+      .eq("id", linked_decision_id);
+  }
+
   revalidatePath("/dashboard/decisions");
   revalidatePath(`/dashboard/projects/${projectId}`);
+  if (linked_decision_id) revalidatePath(`/dashboard/decisions/${linked_decision_id}`);
   redirect("/dashboard/decisions");
 }
 
@@ -165,6 +173,14 @@ export async function updateDecisionAction(
   if (error) {
     console.error("Error updating decision:", error);
     return { error: "Errore nell'aggiornamento della decisione" };
+  }
+
+  if (linked_decision_id) {
+    await supabase
+      .from("decisions")
+      .update({ status: "superseded" })
+      .eq("id", linked_decision_id);
+    revalidatePath(`/dashboard/decisions/${linked_decision_id}`);
   }
 
   revalidatePath("/dashboard/decisions");

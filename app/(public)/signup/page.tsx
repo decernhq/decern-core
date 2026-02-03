@@ -13,6 +13,7 @@ export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -44,6 +45,7 @@ export default function SignupPage() {
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/dashboard`,
+        data: { full_name: fullName.trim() || undefined },
       },
     });
 
@@ -69,6 +71,16 @@ export default function SignupPage() {
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
+          <Input
+            id="fullName"
+            type="text"
+            label="Nome utente"
+            placeholder="Mario Rossi"
+            value={fullName}
+            onChange={(e) => setFullName(e.target.value)}
+            autoComplete="name"
+          />
+
           <Input
             id="email"
             type="email"

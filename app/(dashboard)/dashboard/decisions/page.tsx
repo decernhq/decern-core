@@ -22,7 +22,7 @@ export default async function DecisionsPage() {
             Tutte le decisioni tecniche documentate
           </p>
         </div>
-        {hasProjects ? (
+        {/* {hasProjects ? (
           <Link href="/dashboard/decisions/new">
             <Button>+ Nuova decisione</Button>
           </Link>
@@ -30,7 +30,7 @@ export default async function DecisionsPage() {
           <Link href="/dashboard/projects/new">
             <Button>+ Crea progetto</Button>
           </Link>
-        )}
+        )} */}
       </div>
 
       {!hasProjects && (

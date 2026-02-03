@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
       <div className="mx-auto max-w-3xl text-center">
@@ -14,14 +18,22 @@ export default function LandingPage() {
           Documenta, condividi e traccia le scelte architetturali che contano.
         </p>
         <div className="mt-10 flex items-center justify-center gap-4">
-          <Link href="/signup">
-            <Button size="lg">Sign up</Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="outline" size="lg">
-              Log in
-            </Button>
-          </Link>
+          {user ? (
+            <Link href="/dashboard">
+              <Button size="lg">Entra</Button>
+            </Link>
+          ) : (
+            <>
+              <Link href="/signup">
+                <Button size="lg">Sign up</Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="outline" size="lg">
+                  Log in
+                </Button>
+              </Link>
+            </>
+          )}
         </div>
       </div>
 

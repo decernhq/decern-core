@@ -115,6 +115,32 @@ export async function deleteProject(id: string): Promise<boolean> {
 }
 
 /**
+ * Get decision counts for multiple projects (for list/cards). Returns map of project_id -> count.
+ */
+export async function getDecisionCountsByProjectIds(
+  projectIds: string[]
+): Promise<Record<string, number>> {
+  if (projectIds.length === 0) return {};
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("decisions")
+    .select("project_id")
+    .in("project_id", projectIds);
+
+  if (error) {
+    console.error("Error fetching decision counts:", error);
+    return {};
+  }
+
+  const counts: Record<string, number> = {};
+  for (const id of projectIds) counts[id] = 0;
+  for (const row of data || []) {
+    counts[row.project_id] = (counts[row.project_id] ?? 0) + 1;
+  }
+  return counts;
+}
+
+/**
  * Get project statistics
  */
 export async function getProjectStats(projectId: string) {

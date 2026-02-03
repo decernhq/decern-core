@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { PLANS } from "@/types/billing";
+import { getEffectivePlanId } from "@/lib/billing";
 import { UpgradeButton } from "./upgrade-button";
 import { ManageSubscriptionButton } from "./manage-subscription-button";
+import { ProfileNameForm } from "./profile-name-form";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -10,14 +12,23 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name")
+    .eq("id", user?.id ?? "")
+    .single();
+
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", user?.id)
     .single();
 
-  const currentPlan = PLANS[subscription?.plan_id as keyof typeof PLANS] || PLANS.free;
-  const isPro = subscription?.plan_id === "pro";
+  const effectivePlanId = getEffectivePlanId(subscription?.plan_id);
+  const currentPlan = PLANS[effectivePlanId] || PLANS.free;
+  const isPro = effectivePlanId === "pro";
+  const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
+  const isOverridden = planOverride === "pro" || planOverride === "free";
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -29,7 +40,10 @@ export default async function SettingsPage() {
       {/* Account section */}
       <div className="mt-8 rounded-xl border border-gray-200 bg-white p-6">
         <h2 className="text-lg font-semibold text-gray-900">Account</h2>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-4">
+          <div>
+            <ProfileNameForm initialFullName={profile?.full_name ?? null} />
+          </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Email</p>
             <p className="mt-1 text-gray-900">{user?.email}</p>
@@ -65,7 +79,13 @@ export default async function SettingsPage() {
             </span>
           </div>
 
-          {subscription?.current_period_end && (
+          {isOverridden && (
+            <p className="mt-2 text-xs text-amber-700">
+              Piano in override da variabile d&apos;ambiente (PLAN_OVERRIDE={planOverride}).
+            </p>
+          )}
+
+          {subscription?.current_period_end && !isOverridden && (
             <p className="mt-3 text-sm text-gray-500">
               Rinnovo:{" "}
               {new Date(subscription.current_period_end).toLocaleDateString(

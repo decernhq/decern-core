@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition, useRef, useEffect } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -25,17 +26,31 @@ const DEFAULT_SUGGESTED_TAGS = [
 /** Minimal decision for "linked decision" picker (popup) */
 export type LinkedDecisionOption = { id: string; title: string; project_id: string };
 
+/** Dati generati da AI per precompilare il form */
+export type PrefillFromAi = {
+  title?: string;
+  context?: string;
+  options?: string[];
+  decision?: string;
+  consequences?: string;
+  tags?: string[];
+};
+
 interface DecisionFormProps {
   /** Modifica: decisione esistente */
   decision?: DbDecision;
   /** Duplica: apre il form di creazione con i campi precompilati da questa decisione */
   duplicateFrom?: DbDecision;
+  /** Precompila i campi con l’output della generazione AI (nuova decisione) */
+  prefillFromAi?: PrefillFromAi | null;
   projects: Project[];
   /** Decisioni disponibili per "Decisione collegata", filtrate per progetto nel popup (escludere la corrente in edit) */
   otherDecisions?: LinkedDecisionOption[];
   defaultProjectId?: string;
   /** Tag già usati nelle decisioni (per autocomplete) */
   suggestedTags?: string[];
+  /** Se fornito, in creazione si controlla se il titolo esiste già e si mostra un warning */
+  existingDecisionsForDuplicateCheck?: { id: string; title: string }[];
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   submitLabel: string;
 }
@@ -49,8 +64,12 @@ const statusOptions = [
 
 type ExternalLink = { url: string; label?: string };
 
-/** Dati iniziali per il form: edit (decision) o creazione da duplicato (duplicateFrom con titolo " (copia)") */
-function getInitialData(decision?: DbDecision | null, duplicateFrom?: DbDecision | null): DbDecision | null {
+/** Dati iniziali per il form: edit, duplicato o prefill da AI */
+function getInitialData(
+  decision?: DbDecision | null,
+  duplicateFrom?: DbDecision | null,
+  prefillFromAi?: PrefillFromAi | null
+): Partial<DbDecision> | null {
   if (decision) return decision;
   if (duplicateFrom) {
     return {
@@ -58,24 +77,44 @@ function getInitialData(decision?: DbDecision | null, duplicateFrom?: DbDecision
       title: ((duplicateFrom.title ?? "").trim() || "Copia decisione") + " (copia)",
     };
   }
+  if (prefillFromAi && Object.keys(prefillFromAi).length > 0) {
+    return {
+      status: "proposed",
+      title: prefillFromAi.title ?? "",
+      context: prefillFromAi.context ?? "",
+      options: prefillFromAi.options ?? [],
+      decision: prefillFromAi.decision ?? "",
+      consequences: prefillFromAi.consequences ?? "",
+      tags: prefillFromAi.tags ?? [],
+    };
+  }
   return null;
+}
+
+function normalizeTitle(t: string): string {
+  return t.trim().toLowerCase();
 }
 
 export function DecisionForm({
   decision,
   duplicateFrom,
+  prefillFromAi,
   projects,
   otherDecisions = [],
   defaultProjectId,
   suggestedTags = [],
+  existingDecisionsForDuplicateCheck = [],
   action,
   submitLabel,
 }: DecisionFormProps) {
-  const initialData = getInitialData(decision, duplicateFrom);
+  const initialData = getInitialData(decision, duplicateFrom, prefillFromAi);
   const isEditMode = !!decision;
+  const checkDuplicate = !isEditMode && existingDecisionsForDuplicateCheck.length > 0;
 
   const [state, setState] = useState<ActionState>({});
   const [isPending, startTransition] = useTransition();
+  const [titleValue, setTitleValue] = useState(initialData?.title ?? "");
+  const [duplicateWarning, setDuplicateWarning] = useState<{ id: string; title: string } | null>(null);
   const [externalLinks, setExternalLinks] = useState<ExternalLink[]>(
     initialData?.external_links?.length
       ? initialData.external_links.map((l) => ({ url: l.url, label: l.label }))
@@ -112,6 +151,19 @@ export function DecisionForm({
         t.includes(tagInput.trim().toLowerCase()) && !tags.includes(t)
       )
     : allSuggestedTags.filter((t) => !tags.includes(t));
+
+  useEffect(() => {
+    if (!checkDuplicate) return;
+    const normalized = normalizeTitle(titleValue);
+    if (!normalized) {
+      setDuplicateWarning(null);
+      return;
+    }
+    const match = existingDecisionsForDuplicateCheck.find(
+      (d) => normalizeTitle(d.title) === normalized
+    );
+    setDuplicateWarning(match ?? null);
+  }, [titleValue, checkDuplicate, existingDecisionsForDuplicateCheck]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -202,6 +254,39 @@ export function DecisionForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {isEditMode && decision && <input type="hidden" name="id" value={decision.id} />}
 
+      {duplicateWarning && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900"
+        >
+          <svg
+            className="h-5 w-5 shrink-0 text-amber-600"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Possibile decisione già esistente</p>
+            <p className="mt-0.5 text-sm text-amber-800">
+              Esiste già una decisione con lo stesso titolo.{" "}
+              <Link
+                href={`/dashboard/decisions/${duplicateWarning.id}`}
+                className="font-medium underline hover:no-underline"
+              >
+                Apri la decisione esistente
+              </Link>
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Project selector (only for new decisions, including duplicate) */}
       {!isEditMode && (
         <div>
@@ -234,7 +319,9 @@ export function DecisionForm({
         name="title"
         label="Titolo *"
         placeholder="Es. Adottare Next.js come framework frontend"
-        defaultValue={initialData?.title}
+        value={checkDuplicate ? titleValue : undefined}
+        defaultValue={checkDuplicate ? undefined : initialData?.title}
+        onChange={checkDuplicate ? (e) => setTitleValue(e.target.value) : undefined}
         required
       />
 
@@ -471,10 +558,10 @@ export function DecisionForm({
         </div>
       </div>
 
-      {/* Decisione collegata (in fondo): popup ricerca decisioni del progetto */}
+      {/* Sostituisce (supersede): decisione che questa sostituisce */}
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Decisione collegata
+          Sostituisce (supersede) la decisione
         </label>
         <input
           type="hidden"
@@ -508,17 +595,17 @@ export function DecisionForm({
             disabled={!currentProjectId}
             className="w-full justify-center sm:w-auto"
           >
-            Cerca decisione del progetto
+            Seleziona decisione da sostituire
           </Button>
         )}
         {!currentProjectId && !decision && (
           <p className="mt-1 text-xs text-gray-500">
-            Seleziona prima un progetto per cercare una decisione collegata.
+            Seleziona prima un progetto per cercare la decisione che questa sostituirà.
           </p>
         )}
         {currentProjectId && (
           <p className="mt-1 text-xs text-gray-500">
-            Link opzionale a una decisione precedente o correlata (solo decisioni dello stesso progetto).
+            Opzionale: indica quale decisione questa sostituisce (supersede). La decisione selezionata verrà marcata come &quot;Superata&quot;.
           </p>
         )}
       </div>
@@ -537,7 +624,7 @@ export function DecisionForm({
           >
             <div className="border-b border-gray-200 p-4">
               <h2 id="linked-modal-title" className="text-lg font-semibold text-gray-900">
-                Cerca decisione del progetto
+                Seleziona la decisione che questa sostituisce
               </h2>
               {currentProjectId && (
                 <p className="mt-0.5 text-sm text-gray-500">
@@ -579,6 +666,9 @@ export function DecisionForm({
                 </ul>
               )}
             </div>
+            <p className="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+              La decisione scelta verrà marcata come &quot;Superata&quot;.
+            </p>
             <div className="border-t border-gray-200 p-3">
               <Button
                 type="button"

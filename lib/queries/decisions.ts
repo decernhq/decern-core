@@ -112,7 +112,7 @@ export async function getDecisionWithProject(id: string) {
 
   if (!data) return null;
 
-  // Fetch linked decision title separately (avoids self-relation join that can cause 404)
+  // Decisione che questa sostituisce (supersede)
   let linkedDecision: { id: string; title: string } | null = null;
   if (data.linked_decision_id) {
     const { data: linked } = await supabase
@@ -123,7 +123,17 @@ export async function getDecisionWithProject(id: string) {
     if (linked) linkedDecision = linked;
   }
 
-  return { ...data, linked_decision: linkedDecision };
+  // Decisioni che sostituiscono questa (hanno linked_decision_id = questa)
+  const { data: supersededByList } = await supabase
+    .from("decisions")
+    .select("id, title")
+    .eq("linked_decision_id", id);
+
+  return {
+    ...data,
+    linked_decision: linkedDecision,
+    superseded_by: (supersededByList ?? []) as { id: string; title: string }[],
+  };
 }
 
 /**

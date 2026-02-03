@@ -93,10 +93,10 @@ export default function PricingPage() {
       <p className="mt-12 text-center text-sm text-gray-500">
         Hai domande? Contattaci a{" "}
         <a
-          href="mailto:support@decisio.app"
+          href="mailto:support@decern.app"
           className="text-brand-600 hover:text-brand-500"
         >
-          support@decisio.app
+          support@decern.app
         </a>
       </p>
     </main>

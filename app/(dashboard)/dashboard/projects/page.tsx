@@ -1,11 +1,13 @@
 import Link from "next/link";
-import { getProjects } from "@/lib/queries/projects";
+import { getProjects, getDecisionCountsByProjectIds } from "@/lib/queries/projects";
 import { ProjectCard } from "@/components/projects/project-card";
 import { Button } from "@/components/ui/button";
 
 export default async function ProjectsPage() {
   const projects = await getProjects();
-
+  const projectIds = projects.map((p) => p.id);
+  const decisionCounts = await getDecisionCountsByProjectIds(projectIds);
+  console.log(projects);
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
@@ -23,7 +25,11 @@ export default async function ProjectsPage() {
       {projects.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
-            <ProjectCard key={project.id} project={project} />
+            <ProjectCard
+              key={project.id}
+              project={project}
+              decisionCount={decisionCounts[project.id] ?? 0}
+            />
           ))}
         </div>
       ) : (

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,8 @@ import { FormMessage, type Message } from "@/components/ui/form-message";
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next");
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
@@ -34,7 +36,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(next && next.startsWith("/dashboard") ? next : "/dashboard");
     router.refresh();
   };
 

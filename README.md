@@ -102,7 +102,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ## Project Structure
 
 ```
-decisio/
+decern/
 ├── app/
 │   ├── (public)/              # Public pages
 │   │   ├── page.tsx           # Landing page

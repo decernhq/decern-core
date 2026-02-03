@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getProjects } from "@/lib/queries/projects";
 import { getDecisions, getDecisionById, getSuggestedTags } from "@/lib/queries/decisions";
-import { DecisionForm } from "@/components/decisions/decision-form";
+import { NewDecisionFlow } from "@/components/decisions/new-decision-flow";
 import { createDecisionAction } from "../actions";
 
 interface NewDecisionPageProps {
@@ -22,8 +22,11 @@ export default async function NewDecisionPage({ searchParams }: NewDecisionPageP
     title: d.title,
     project_id: d.project_id,
   }));
+  const existingDecisionsForDuplicateCheck = decisions.map((d) => ({
+    id: d.id,
+    title: d.title,
+  }));
 
-  // If no projects, redirect to create one
   if (projects.length === 0) {
     redirect("/dashboard/projects/new");
   }
@@ -43,19 +46,19 @@ export default async function NewDecisionPage({ searchParams }: NewDecisionPageP
         <p className="mt-1 text-sm text-gray-600">
           {duplicateFrom
             ? "Campi precompilati dalla decisione selezionata. Modifica e salva per creare la nuova decisione."
-            : "Documenta una nuova decisione tecnica."}
+            : "Genera la decisione con l’AI incollando il testo oppure inseriscila manualmente."}
         </p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <DecisionForm
+        <NewDecisionFlow
           projects={projects}
-          duplicateFrom={duplicateFrom ?? undefined}
           otherDecisions={otherDecisions}
-          defaultProjectId={projectId}
           suggestedTags={suggestedTags}
-          action={createDecisionAction}
-          submitLabel="Crea decisione"
+          existingDecisionsForDuplicateCheck={existingDecisionsForDuplicateCheck}
+          defaultProjectId={projectId ?? (projects.length === 1 ? projects[0].id : undefined)}
+          duplicateFrom={duplicateFrom}
+          createDecisionAction={createDecisionAction}
         />
       </div>
     </div>

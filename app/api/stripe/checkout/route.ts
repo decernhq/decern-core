@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { stripe, getOrCreateStripeCustomer, createCheckoutSession } from "@/lib/stripe";
+import { getOrCreateStripeCustomer, createCheckoutSession } from "@/lib/stripe";
 import { PLANS } from "@/types/billing";
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Get authenticated user
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -16,29 +15,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
     }
 
-    const { planId } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    const planId = body.planId ?? "pro";
 
-    // Validate plan
     const plan = PLANS[planId as keyof typeof PLANS];
-    if (!plan || !plan.priceId) {
+    if (!plan) {
       return NextResponse.json({ error: "Piano non valido" }, { status: 400 });
     }
 
-    // Get or create subscription record
+    if (!plan.priceId) {
+      return NextResponse.json({ error: "Piano non valido" }, { status: 400 });
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const { data: subscription } = await supabase
       .from("subscriptions")
       .select("stripe_customer_id")
       .eq("user_id", user.id)
       .single();
 
-    // Get or create Stripe customer
     const customerId = await getOrCreateStripeCustomer(
       user.id,
       user.email!,
       subscription?.stripe_customer_id
     );
 
-    // Update subscription with customer ID if needed
     if (!subscription?.stripe_customer_id) {
       await supabase
         .from("subscriptions")
@@ -46,8 +47,6 @@ export async function POST(request: NextRequest) {
         .eq("user_id", user.id);
     }
 
-    // Create checkout session
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
     const session = await createCheckoutSession({
       customerId,
       priceId: plan.priceId,

@@ -2,9 +2,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getProjectById } from "@/lib/queries/projects";
 import { getDecisionsByProject } from "@/lib/queries/decisions";
+import { getProjectMembersWithProfiles, getProjectInvitationsPending } from "@/lib/queries/project-members";
+import { getProfileById } from "@/lib/queries/profiles";
+import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { DecisionStatus } from "@/types/decision";
 import { cn } from "@/lib/utils";
+import { ProjectMembersSection } from "@/components/projects/project-members-section";
 
 const statusColors: Record<DecisionStatus, string> = {
   proposed: "bg-yellow-100 text-yellow-800",
@@ -26,13 +30,21 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
-  const project = await getProjectById(id);
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const [project, decisions, members, invitations] = await Promise.all([
+    getProjectById(id),
+    getDecisionsByProject(id),
+    getProjectMembersWithProfiles(id),
+    getProjectInvitationsPending(id),
+  ]);
 
   if (!project) {
     notFound();
   }
 
-  const decisions = await getDecisionsByProject(id);
+  const ownerProfile = await getProfileById(project.owner_id);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -60,6 +72,18 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
         </div>
       </div>
+
+      {user && (
+        <div className="mb-6">
+          <ProjectMembersSection
+            projectId={id}
+            currentUserId={user.id}
+            ownerProfile={ownerProfile}
+            members={members}
+            invitations={invitations}
+          />
+        </div>
+      )}
 
       {/* Project stats */}
       <div className="mb-6 grid gap-4 sm:grid-cols-4">

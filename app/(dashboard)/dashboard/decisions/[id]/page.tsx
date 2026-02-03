@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDecisionWithProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
 import { CopyDecisionMarkdown } from "@/components/decisions/copy-decision-markdown";
+import { DecisionDetailStatusSelect } from "@/components/decisions/decision-detail-status-select";
 import { DecisionStatus } from "@/types/decision";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
 
   const project = decision.project as { id: string; name: string } | null;
   const linkedDecision = decision.linked_decision as { id: string; title: string } | null;
+  const supersededBy = (decision as { superseded_by?: { id: string; title: string }[] }).superseded_by ?? [];
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -44,58 +46,78 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
         >
           ← Torna alle decisioni
         </Link>
-        <div className="mt-2 flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">
-                {decision.title}
-              </h1>
-              <span
-                className={cn(
-                  "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                  statusColors[decision.status]
-                )}
-              >
-                {statusLabels[decision.status]}
-              </span>
-            </div>
-            {project && (
-              <Link
-                href={`/dashboard/projects/${project.id}`}
-                className="mt-1 text-sm text-gray-500 hover:text-brand-600"
-              >
-                Progetto: {project.name}
-              </Link>
-            )}
-            {linkedDecision && (
-              <Link
-                href={`/dashboard/decisions/${linkedDecision.id}`}
-                className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
-              >
-                Collegata a: {linkedDecision.title}
-              </Link>
-            )}
+        <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
+          <DecisionDetailStatusSelect
+            decisionId={id}
+            currentStatus={decision.status as DecisionStatus}
+          />
+          <CopyDecisionMarkdown
+            decision={{
+              title: decision.title,
+              status: decision.status,
+              context: decision.context ?? "",
+              options: decision.options ?? [],
+              decision: decision.decision ?? "",
+              consequences: decision.consequences ?? "",
+              external_links: decision.external_links ?? [],
+              tags: decision.tags ?? [],
+              created_at: decision.created_at,
+              updated_at: decision.updated_at,
+              project: project ? { name: project.name } : null,
+            }}
+          />
+          <Link href={`/dashboard/decisions/${id}/edit`}>
+            <Button variant="outline">Modifica</Button>
+          </Link>
+        </div>
+        <div className="mt-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {decision.title}
+            </h1>
+            <span
+              className={cn(
+                "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+                statusColors[decision.status as DecisionStatus]
+              )}
+            >
+              {statusLabels[decision.status as DecisionStatus]}
+            </span>
           </div>
-          <div className="flex items-center gap-2">
-            <CopyDecisionMarkdown
-              decision={{
-                title: decision.title,
-                status: decision.status,
-                context: decision.context ?? "",
-                options: decision.options ?? [],
-                decision: decision.decision ?? "",
-                consequences: decision.consequences ?? "",
-                external_links: decision.external_links ?? [],
-                tags: decision.tags ?? [],
-                created_at: decision.created_at,
-                updated_at: decision.updated_at,
-                project: project ? { name: project.name } : null,
-              }}
-            />
-            <Link href={`/dashboard/decisions/${id}/edit`}>
-              <Button variant="outline">Modifica</Button>
+          {project && (
+            <Link
+              href={`/dashboard/projects/${project.id}`}
+              className="mt-1 text-sm text-gray-500 hover:text-brand-600"
+            >
+              Progetto: {project.name}
             </Link>
-          </div>
+          )}
+          {linkedDecision && (
+            <Link
+              href={`/dashboard/decisions/${linkedDecision.id}`}
+              className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
+            >
+              Sostituisce: {linkedDecision.title}
+            </Link>
+          )}
+          {supersededBy.length > 0 && (
+            <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+              <p className="text-sm font-medium text-red-800">Sostituita da:</p>
+              <div className="mt-1 flex flex-wrap gap-x-1 gap-y-0.5 text-sm text-red-700">
+                {supersededBy.map((d, i) => (
+                  <span key={d.id}>
+                    {i > 0 && ", "}
+                    <Link
+                      href={`/dashboard/decisions/${d.id}`}
+                      className="font-medium underline hover:no-underline"
+                    >
+                      {d.title}
+                    </Link>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -117,7 +139,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
               Opzioni considerate
             </h2>
             <ul className="mt-3 space-y-2">
-              {decision.options.map((option, index) => (
+              {decision.options.map((option: string, index: number) => (
                 <li key={index} className="flex items-start gap-2">
                   <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-gray-400" />
                   <span className="text-gray-600">{option}</span>
@@ -174,7 +196,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             <div>
               {decision.tags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
-                  {decision.tags.map((tag) => (
+                  {decision.tags.map((tag: string) => (
                     <span
                       key={tag}
                       className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-600"
