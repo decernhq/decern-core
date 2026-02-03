@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-// Use service role client for webhook (bypasses RLS)
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseAdmin(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) throw new Error("Missing Supabase env for webhook");
+  return createClient(url, key);
+}
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -84,7 +85,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // Get subscription details from Stripe
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("subscriptions")
     .update({
       stripe_subscription_id: subscriptionId,
@@ -112,7 +113,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 
   const status = statusMap[subscription.status] || "active";
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("subscriptions")
     .update({
       status,
@@ -129,7 +130,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
 
   // Downgrade to free plan
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("subscriptions")
     .update({
       stripe_subscription_id: null,
@@ -145,7 +146,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
 
-  await supabaseAdmin
+  await getSupabaseAdmin()
     .from("subscriptions")
     .update({
       status: "past_due",

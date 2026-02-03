@@ -10,7 +10,7 @@ export default async function PublicLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-app-bg">
       <Navbar user={user} />
       {children}
     </div>

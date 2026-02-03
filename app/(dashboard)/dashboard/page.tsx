@@ -59,7 +59,7 @@ export default async function DashboardPage() {
         <p className="mt-2 text-gray-600">
           Ciao, <span className="font-medium">{displayName}</span>!
         </p>
-        <p className="mt-1 text-gray-500 text-sm">
+        <p className="mt-1 text-sm text-gray-500">
           Inizia a documentare le decisioni tecniche del tuo team.
         </p>
 

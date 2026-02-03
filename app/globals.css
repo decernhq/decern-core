@@ -2,11 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theming: variabili definite una sola volta. Light = default, .dark = tema scuro. */
+:root {
+  --app-bg: #f9fafb;
+  --app-card: #ffffff;
+  --app-text: #111827;
+  --app-text-muted: #6b7280;
+  --app-border: #e5e7eb;
+  --app-input-bg: #ffffff;
+  --app-hover: #f3f4f6;
+  --app-active: #e0f2fe;
+  --app-active-text: #0369a1;
+}
+
+.dark {
+  --app-bg: #111827;
+  --app-card: #1f2937;
+  --app-text: #f9fafb;
+  --app-text-muted: #9ca3af;
+  --app-border: #374151;
+  --app-border-subtle: rgba(55, 65, 81, 0.5);
+  --app-input-bg: #374151;
+  --app-hover: #374151;
+  --app-active: rgba(3, 105, 161, 0.35);
+  --app-active-text: #7dd3fc;
+  /* Chip/badge: sfondi più solidi e testo leggibile */
+  --app-chip: #4b5563;
+  --app-chip-text: #e5e7eb;
+  --app-chip-brand: rgba(3, 105, 161, 0.5);
+  --app-chip-brand-text: #7dd3fc;
+}
+
 @layer base {
   html {
     @apply h-full;
   }
   body {
-    @apply h-full bg-gray-50 text-gray-900 antialiased;
+    @apply h-full antialiased;
+    background-color: var(--app-bg);
+    color: var(--app-text);
   }
 }
+
+/* Theming ad alto livello: in dark mode le classi Tailwind comuni usano le variabili.
+   Così non serve aggiungere dark: in ogni sezione. */
+.dark .bg-white { background-color: var(--app-card) !important; }
+.dark .bg-gray-50 { background-color: var(--app-bg) !important; }
+/* Barra filtri e blocchi con sfondo grigio semi-trasparente: in dark usano card per essere visibili */
+.dark .bg-gray-50\/80 { background-color: var(--app-card) !important; }
+.dark .bg-gray-50\/50 { background-color: var(--app-hover) !important; }
+.dark .bg-gray-100 { background-color: var(--app-hover) !important; }
+.dark .text-gray-900 { color: var(--app-text) !important; }
+.dark .text-gray-800 { color: var(--app-text) !important; }
+.dark .text-gray-700 { color: var(--app-text) !important; }
+.dark .text-gray-600 { color: var(--app-text-muted) !important; }
+.dark .text-gray-500 { color: var(--app-text-muted) !important; }
+.dark .border-gray-200,
+.dark .border-gray-100 { border-color: var(--app-border) !important; }
+.dark .border-gray-300 { border-color: var(--app-border) !important; }
+.dark .bg-brand-50 { background-color: var(--app-active) !important; }
+.dark .text-brand-700,
+.dark .text-brand-600 { color: var(--app-active-text) !important; }
+.dark .hover\:bg-gray-100:hover { background-color: var(--app-hover) !important; }
+.dark .hover\:bg-gray-50:hover { background-color: var(--app-hover) !important; }
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="password"],
+.dark select {
+  background-color: var(--app-input-bg) !important;
+  border-color: var(--app-border) !important;
+  color: var(--app-text) !important;
+}
+.dark input::placeholder { color: var(--app-text-muted); }
+
+/* Card colorate (stats, alert): in dark usano versioni più scure */
+.dark .bg-yellow-50 { background-color: rgba(202, 138, 4, 0.15) !important; }
+.dark .bg-green-50 { background-color: rgba(22, 163, 74, 0.15) !important; }
+.dark .bg-red-50 { background-color: rgba(220, 38, 38, 0.15) !important; }
+.dark .text-yellow-800,
+.dark .text-yellow-900 { color: #fde047 !important; }
+.dark .text-green-800,
+.dark .text-green-900 { color: #86efac !important; }
+.dark .text-red-800,
+.dark .text-red-900 { color: #fca5a5 !important; }
+.dark .text-yellow-600 { color: #fde047 !important; }
+.dark .text-green-600 { color: #86efac !important; }
+.dark .text-red-600 { color: #fca5a5 !important; }
+.dark .border-yellow-200,
+.dark .border-green-200,
+.dark .border-red-200 { border-color: var(--app-border) !important; }
+
+/* Chip e badge (Proprietario, In uso, Attivo, Membro): in dark sfondo e testo dedicati per leggibilità */
+.dark .bg-gray-200 { background-color: var(--app-chip) !important; }
+.dark .bg-gray-200.text-gray-700 { color: var(--app-chip-text) !important; }
+.dark .bg-brand-100 { background-color: var(--app-chip-brand) !important; }
+.dark .text-brand-800 { color: var(--app-chip-brand-text) !important; }
+.dark .bg-gray-100.text-gray-600,
+.dark .bg-gray-100.text-gray-700 { color: var(--app-chip-text) !important; }
+.dark .rounded.bg-gray-100,
+.dark .rounded-full.bg-gray-100 { background-color: var(--app-chip) !important; }
+.dark .rounded.bg-brand-100,
+.dark .rounded-full.bg-brand-100 { background-color: var(--app-chip-brand) !important; }
+
+/* Tabella decisioni: bordi e linee divisorie più tenui in dark */
+.dark .divide-gray-200 > * + * { border-color: var(--app-border-subtle) !important; }
+.dark thead th { border-color: var(--app-border-subtle) !important; }
+.dark thead { border-bottom: 1px solid var(--app-border-subtle) !important; }

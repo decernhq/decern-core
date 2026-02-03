@@ -27,8 +27,8 @@ export function WorkspaceSwitcher({
   }
 
   return (
-    <div className="border-b border-gray-200 px-3 pb-3">
-      <label className="mb-1.5 block text-xs font-medium text-gray-500">
+    <div className="border-b border-app-border px-3 pb-3">
+      <label className="mb-1.5 block text-xs font-medium text-app-text-muted">
         Workspace
       </label>
       <div className="relative">
@@ -37,7 +37,7 @@ export function WorkspaceSwitcher({
           onChange={(e) => handleChange(e.target.value)}
           disabled={loading}
           className={cn(
-            "w-full appearance-none rounded-lg border border-gray-300 bg-white py-2 pl-3 pr-8 text-sm font-medium text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60"
+            "w-full appearance-none rounded-lg border border-app-border bg-app-input-bg py-2 pl-3 pr-8 text-sm font-medium text-app-text focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60"
           )}
           aria-label="Seleziona workspace"
         >
@@ -47,14 +47,14 @@ export function WorkspaceSwitcher({
             </option>
           ))}
         </select>
-        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-app-text-muted">
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
         </span>
       </div>
       {loading && (
-        <p className="mt-2 text-xs text-brand-600" role="status">
+        <p className="mt-2 text-xs text-app-active-text" role="status">
           Caricando Workspace…
         </p>
       )}

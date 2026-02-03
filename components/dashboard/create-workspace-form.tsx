@@ -39,7 +39,7 @@ export function CreateWorkspaceForm() {
           disabled={loading}
           className="flex-1"
         />
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} className="min-w-[10rem] shrink-0">
           {loading ? "Creazione…" : "Crea workspace"}
         </Button>
       </form>
