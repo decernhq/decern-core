@@ -27,8 +27,8 @@ export function DecisionDetailStatusSelect({
     setError(null);
     setUpdating(true);
     const result = await updateDecisionStatusAction(decisionId, targetStatus);
-    if (result.error) {
-      setError(result.error);
+    if (result?.error) {
+      setError(result?.error);
       setUpdating(false);
       return;
     }

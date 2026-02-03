@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,13 @@ import { Input } from "@/components/ui/input";
 import { FormMessage, type Message } from "@/components/ui/form-message";
 
 export default function SignupPage() {
-  const router = useRouter();
+  const searchParams = useSearchParams();
+  const emailParam = searchParams.get("email");
+  const nextParam = searchParams.get("next");
   const supabase = createClient();
 
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailParam ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,11 +42,16 @@ export default function SignupPage() {
       return;
     }
 
+    const redirectUrl =
+      nextParam && nextParam.startsWith("/")
+        ? `${window.location.origin}${nextParam}`
+        : `${window.location.origin}/dashboard`;
+
     const { error } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/dashboard`,
+        emailRedirectTo: redirectUrl,
         data: { full_name: fullName.trim() || undefined },
       },
     });
@@ -120,7 +127,10 @@ export default function SignupPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           Hai già un account?{" "}
-          <Link href="/login" className="font-medium text-brand-600 hover:text-brand-500">
+          <Link
+            href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"}
+            className="font-medium text-brand-600 hover:text-brand-500"
+          >
             Accedi
           </Link>
         </p>

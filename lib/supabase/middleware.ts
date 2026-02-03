@@ -33,35 +33,29 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: Avoid writing any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   // Protected routes - redirect to login if not authenticated
-  if (
-    !user &&
-    request.nextUrl.pathname.startsWith("/dashboard")
-  ) {
+  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages
+  // Redirect authenticated users away from auth pages (preserve ?next= for invite flow)
   if (
     user &&
-    (request.nextUrl.pathname === "/login" ||
-      request.nextUrl.pathname === "/signup")
+    (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")
   ) {
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+    const nextPath = url.searchParams.get("next");
+    url.pathname = nextPath && nextPath.startsWith("/dashboard") ? nextPath : "/dashboard";
+    url.searchParams.delete("next");
     return NextResponse.redirect(url);
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
   return supabaseResponse;
 }

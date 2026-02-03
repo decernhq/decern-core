@@ -134,7 +134,7 @@ export async function inviteUserToProjectAction(
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-  const inviteLink = `${baseUrl}/dashboard/invite/${token}`;
+  const inviteLink = `${baseUrl}/invite/${token}`;
   revalidatePath(`/dashboard/projects/${projectId}`);
   return { success: true, inviteLink };
 }

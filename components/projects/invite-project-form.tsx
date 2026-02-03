@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { inviteUserToProjectAction } from "@/app/(dashboard)/dashboard/projects/actions";
 
 export function InviteProjectForm({ projectId }: { projectId: string }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,13 +20,14 @@ export function InviteProjectForm({ projectId }: { projectId: string }) {
     setLoading(true);
     const result = await inviteUserToProjectAction(projectId, email);
     setLoading(false);
-    if (result.error) {
-      setError(result.error);
+    if (result?.error) {
+      setError(result?.error);
       return;
     }
-    if (result.inviteLink) {
+    if (result?.inviteLink) {
       setInviteLink(result.inviteLink);
       setEmail("");
+      router.refresh();
     }
   }
 
@@ -53,7 +56,8 @@ export function InviteProjectForm({ projectId }: { projectId: string }) {
         <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm">
           <p className="font-medium text-green-800">Invito creato</p>
           <p className="mt-1 text-green-700">
-            Condividi questo link con la persona invitata (valido 7 giorni):
+            Condividi questo link con la persona invitata (valido 7 giorni).
+            Se non ha ancora un account, aprendo il link andrà alla registrazione con questa email; dopo la conferma vedrà il progetto in lista.
           </p>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 truncate rounded bg-white px-2 py-1 text-xs text-gray-800">

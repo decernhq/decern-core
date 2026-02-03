@@ -13,8 +13,8 @@ export function AcceptInviteButton({ token }: { token: string }) {
     setLoading(true);
     const result = await acceptInvitationAction(token);
     setLoading(false);
-    if (result.error) {
-      setError(result.error);
+    if (result?.error) {
+      setError(result?.error);
     }
     // On success, acceptInvitationAction redirects
   }

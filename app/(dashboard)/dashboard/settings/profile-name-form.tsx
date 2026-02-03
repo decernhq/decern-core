@@ -21,8 +21,8 @@ export function ProfileNameForm({ initialFullName }: Props) {
       const formData = new FormData();
       formData.set("full_name", fullName);
       const result = await updateProfileNameAction({}, formData);
-      if (result.error) {
-        setFeedback({ type: "error", text: result.error });
+      if (result?.error) {
+        setFeedback({ type: "error", text: result?.error });
       } else {
         setFeedback({ type: "success", text: "Nome aggiornato." });
       }

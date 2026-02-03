@@ -257,7 +257,7 @@ export function DecisionsListWithFilters({
     setUpdatingStatusId(decisionId);
     const result = await updateDecisionStatusAction(decisionId, newStatus);
     setUpdatingStatusId(null);
-    if (!result.error) {
+    if (!result?.error) {
       router.refresh();
     }
   };
