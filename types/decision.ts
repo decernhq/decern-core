@@ -1,5 +1,6 @@
 /**
- * Decision status representing the lifecycle of a technical decision.
+ * Decision status: valori ufficiali in inglese (DB, API, tipo).
+ * Per l’UI usare getDecisionStatusLabel() da lib/constants/decision-status per la traduzione in italiano.
  */
 export type DecisionStatus = "proposed" | "approved" | "superseded" | "rejected";
 

@@ -7,31 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { DecisionStatus } from "@/types/decision";
 import type { Project } from "@/types/database";
+import {
+  DECISION_STATUS_OPTIONS,
+  getDecisionStatusLabel,
+  STATUS_COLORS,
+} from "@/lib/constants/decision-status";
 import type { DecisionWithAuthor } from "@/lib/queries/decisions";
 import { cn } from "@/lib/utils";
 import { updateDecisionStatusAction } from "@/app/(dashboard)/dashboard/decisions/actions";
 
-const statusOptions: { value: DecisionStatus | ""; label: string }[] = [
-  { value: "", label: "Tutti gli stati" },
-  { value: "proposed", label: "Proposta" },
-  { value: "approved", label: "Approvata" },
-  { value: "superseded", label: "Superata" },
-  { value: "rejected", label: "Rifiutata" },
-];
-
-const statusColors: Record<DecisionStatus, string> = {
-  proposed: "bg-yellow-100 text-yellow-800",
-  approved: "bg-green-100 text-green-800",
-  superseded: "bg-gray-100 text-gray-800",
-  rejected: "bg-red-100 text-red-800",
-};
-
-const statusLabels: Record<DecisionStatus, string> = {
-  proposed: "Proposta",
-  approved: "Approvata",
-  superseded: "Superata",
-  rejected: "Rifiutata",
-};
+const statusOptions = DECISION_STATUS_OPTIONS;
+const statusColors = STATUS_COLORS;
 
 const PAGE_SIZE = 24;
 const TAGS_VISIBLE = 3;

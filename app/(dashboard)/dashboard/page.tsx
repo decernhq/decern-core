@@ -4,19 +4,7 @@ import { getDashboardStats, getDecisions } from "@/lib/queries/decisions";
 import { getProjects } from "@/lib/queries/projects";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const statusColors: Record<string, string> = {
-  proposed: "bg-yellow-100 text-yellow-800",
-  approved: "bg-green-100 text-green-800",
-  superseded: "bg-gray-100 text-gray-800",
-  rejected: "bg-red-100 text-red-800",
-};
-const statusLabels: Record<string, string> = {
-  proposed: "Proposta",
-  approved: "Approvata",
-  superseded: "Superata",
-  rejected: "Rifiutata",
-};
+import { getDecisionStatusLabel, STATUS_COLORS } from "@/lib/constants/decision-status";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -142,10 +130,10 @@ export default async function DashboardPage() {
                     <span
                       className={cn(
                         "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium",
-                        statusColors[d.status]
+                        STATUS_COLORS[d.status]
                       )}
                     >
-                      {statusLabels[d.status] ?? d.status}
+                      {getDecisionStatusLabel(d.status)}
                     </span>
                   </Link>
                   <p className="mt-0.5 pl-3 text-xs text-gray-500">

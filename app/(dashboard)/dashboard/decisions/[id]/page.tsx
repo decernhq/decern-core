@@ -6,20 +6,7 @@ import { CopyDecisionMarkdown } from "@/components/decisions/copy-decision-markd
 import { DecisionDetailStatusSelect } from "@/components/decisions/decision-detail-status-select";
 import { DecisionStatus } from "@/types/decision";
 import { cn } from "@/lib/utils";
-
-const statusColors: Record<DecisionStatus, string> = {
-  proposed: "bg-yellow-100 text-yellow-800",
-  approved: "bg-green-100 text-green-800",
-  superseded: "bg-gray-100 text-gray-800",
-  rejected: "bg-red-100 text-red-800",
-};
-
-const statusLabels: Record<DecisionStatus, string> = {
-  proposed: "Proposta",
-  approved: "Approvata",
-  superseded: "Superata",
-  rejected: "Rifiutata",
-};
+import { getDecisionStatusLabel, STATUS_COLORS } from "@/lib/constants/decision-status";
 
 interface DecisionPageProps {
   params: Promise<{ id: string }>;
@@ -79,10 +66,10 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             <span
               className={cn(
                 "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                statusColors[decision.status as DecisionStatus]
+                STATUS_COLORS[decision.status as DecisionStatus]
               )}
             >
-              {statusLabels[decision.status as DecisionStatus]}
+              {getDecisionStatusLabel(decision.status)}
             </span>
           </div>
           {project && (

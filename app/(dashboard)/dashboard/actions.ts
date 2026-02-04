@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getWorkspacesForCurrentUser, getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
 import { WORKSPACE_COOKIE_NAME, WORKSPACE_COOKIE_OPTIONS } from "@/lib/workspace-cookie";
 import { checkCanCreateWorkspace } from "@/lib/plan-limits";
+import { generateCiToken, hashCiToken } from "@/lib/ci-token";
 
 /**
  * Crea il workspace di default (se mancante), imposta il cookie e revalida.
@@ -118,6 +119,81 @@ export async function renameWorkspaceAction(
   }
 
   revalidatePath("/dashboard", "layout");
+  revalidatePath("/dashboard/workspace");
+  return { success: true };
+}
+
+export type WorkspaceCiTokenResult =
+  | { error: string }
+  | { success: true; token: string }
+  | { success: true; revoked: true };
+
+/**
+ * Genera un nuovo token CI per il workspace (Decision Gate). Solo il proprietario.
+ * Il token in chiaro viene restituito una sola volta; in DB si salva solo l'hash.
+ */
+export async function generateWorkspaceCiTokenAction(
+  workspaceId: string
+): Promise<WorkspaceCiTokenResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato" };
+
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (!ws || ws.owner_id !== user.id) {
+    return { error: "Solo il proprietario può generare il token CI" };
+  }
+
+  const token = generateCiToken();
+  const hash = hashCiToken(token);
+  const { error } = await supabase
+    .from("workspaces")
+    .update({
+      ci_token_hash: hash,
+      ci_token_created_at: new Date().toISOString(),
+    })
+    .eq("id", workspaceId);
+
+  if (error) {
+    return { error: "Errore durante la generazione del token" };
+  }
+
+  revalidatePath("/dashboard/workspace");
+  return { success: true, token };
+}
+
+/**
+ * Revoca il token CI del workspace. Solo il proprietario.
+ */
+export async function revokeWorkspaceCiTokenAction(
+  workspaceId: string
+): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato" };
+
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (!ws || ws.owner_id !== user.id) {
+    return { error: "Solo il proprietario può revocare il token CI" };
+  }
+
+  const { error } = await supabase
+    .from("workspaces")
+    .update({ ci_token_hash: null, ci_token_created_at: null })
+    .eq("id", workspaceId);
+
+  if (error) {
+    return { error: "Errore durante la revoca del token" };
+  }
+
   revalidatePath("/dashboard/workspace");
   return { success: true };
 }

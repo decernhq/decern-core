@@ -55,7 +55,7 @@
 | Campo | Descrizione |
 |-------|-------------|
 | **Titolo** | Titolo breve della decisione. |
-| **Stato** | `Proposta` → `Approvata` / `Rifiutata` / `Superata`. Modificabile dalla lista e dalla pagina dettaglio. |
+| **Stato** | Valori in inglese in DB/API: `proposed`, `approved`, `superseded`, `rejected`. In UI tradotti in italiano (Proposta, Approvata, Superata, Rifiutata). Modificabile dalla lista e dalla pagina dettaglio. |
 | **Progetto** | Progetto di appartenenza (obbligatorio). |
 | **Contesto** | Contesto e problema che hanno portato alla decisione. |
 | **Opzioni considerate** | Elenco di opzioni valutate. |

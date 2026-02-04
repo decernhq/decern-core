@@ -48,6 +48,8 @@ export interface Database {
           id: string;
           name: string;
           owner_id: string;
+          ci_token_hash: string | null;
+          ci_token_created_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -55,6 +57,8 @@ export interface Database {
           id?: string;
           name?: string;
           owner_id: string;
+          ci_token_hash?: string | null;
+          ci_token_created_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -62,6 +66,8 @@ export interface Database {
           id?: string;
           name?: string;
           owner_id?: string;
+          ci_token_hash?: string | null;
+          ci_token_created_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

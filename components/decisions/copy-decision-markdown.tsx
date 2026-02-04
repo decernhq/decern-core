@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { getDecisionStatusLabel } from "@/lib/constants/decision-status";
 
 type DecisionForMarkdown = {
   title: string;
@@ -16,13 +17,6 @@ type DecisionForMarkdown = {
   created_at: string;
   updated_at: string;
   project?: { name: string } | null;
-};
-
-const statusLabels: Record<string, string> = {
-  proposed: "Proposta",
-  approved: "Approvata",
-  superseded: "Superata",
-  rejected: "Rifiutata",
 };
 
 function slugify(text: string): string {
@@ -40,7 +34,7 @@ function decisionToMarkdown(decision: DecisionForMarkdown): string {
 
   lines.push(`# ${decision.title}`);
   lines.push("");
-  lines.push(`**Stato:** ${statusLabels[decision.status] ?? decision.status}`);
+  lines.push(`**Stato:** ${getDecisionStatusLabel(decision.status)}`);
   if (decision.project?.name) {
     lines.push(`**Progetto:** ${decision.project.name}`);
   }

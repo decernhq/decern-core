@@ -14,6 +14,7 @@ import { PLANS } from "@/types/billing";
 import { WorkspaceMembersSection } from "@/components/dashboard/workspace-members-section";
 import { WorkspaceList } from "@/components/dashboard/workspace-list";
 import { CreateWorkspaceForm } from "@/components/dashboard/create-workspace-form";
+import { WorkspaceCiTokenSection } from "@/components/dashboard/workspace-ci-token-section";
 import Link from "next/link";
 
 export default async function WorkspacePage() {
@@ -55,6 +56,8 @@ export default async function WorkspacePage() {
     getProfileById(workspace.owner_id),
   ]);
 
+  const isOwner = user.id === workspace.owner_id;
+
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-900">Workspace</h1>
@@ -89,6 +92,15 @@ export default async function WorkspacePage() {
             piano Ultra
           </Link>.
         </p>
+      )}
+
+      {isOwner && (
+        <div className="mt-6">
+          <WorkspaceCiTokenSection
+            workspaceId={workspace.id}
+            ciTokenCreatedAt={workspace.ci_token_created_at}
+          />
+        </div>
       )}
 
       <div className="mt-6">

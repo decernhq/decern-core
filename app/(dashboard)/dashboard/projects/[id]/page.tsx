@@ -4,21 +4,8 @@ import { getProjectById } from "@/lib/queries/projects";
 import { getDecisionsByProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
 import { DecisionStatus } from "@/types/decision";
+import { getDecisionStatusLabel, STATUS_COLORS } from "@/lib/constants/decision-status";
 import { cn } from "@/lib/utils";
-
-const statusColors: Record<DecisionStatus, string> = {
-  proposed: "bg-yellow-100 text-yellow-800",
-  approved: "bg-green-100 text-green-800",
-  superseded: "bg-gray-100 text-gray-800",
-  rejected: "bg-red-100 text-red-800",
-};
-
-const statusLabels: Record<DecisionStatus, string> = {
-  proposed: "Proposta",
-  approved: "Approvata",
-  superseded: "Superata",
-  rejected: "Rifiutata",
-};
 
 interface ProjectPageProps {
   params: Promise<{ id: string }>;
@@ -133,10 +120,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     <span
                       className={cn(
                         "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        statusColors[decision.status]
+                        STATUS_COLORS[decision.status]
                       )}
                     >
-                      {statusLabels[decision.status]}
+                      {getDecisionStatusLabel(decision.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4">

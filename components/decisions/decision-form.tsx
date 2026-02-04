@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
 import type { DbDecision, Project } from "@/types/database";
 import type { ActionState } from "@/app/(dashboard)/dashboard/decisions/actions";
+import { DECISION_STATUS_FORM_OPTIONS } from "@/lib/constants/decision-status";
 
 const DEFAULT_SUGGESTED_TAGS = [
   "frontend",
@@ -100,12 +101,7 @@ interface DecisionFormProps {
   submitLabel: string;
 }
 
-const statusOptions = [
-  { value: "proposed", label: "Proposta" },
-  { value: "approved", label: "Approvata" },
-  { value: "superseded", label: "Superata" },
-  { value: "rejected", label: "Rifiutata" },
-];
+const statusOptions = DECISION_STATUS_FORM_OPTIONS;
 
 type ExternalLink = { url: string; label?: string };
 
