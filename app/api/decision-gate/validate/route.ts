@@ -52,28 +52,49 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (wsError) {
       return json({ valid: false, reason: "server_error" }, 500);
     }
-    if (!workspace) {
+    // .maybeSingle() must return one row or null; array = API misuse, fail fast
+    if (Array.isArray(workspace)) {
+      return json({ valid: false, reason: "server_error" }, 500);
+    }
+    if (!workspace?.id) {
       return json({ valid: false, reason: "unauthorized" }, 401);
     }
 
+    // Two explicit queries (decision → project) so workspace ownership is 100% reliable
+    // without depending on Supabase nested select / FK naming (project:projects(...)).
     const { data: decision, error: decError } = await supabase
       .from("decisions")
-      .select("id, status, project:projects(workspace_id)")
+      .select("id, status, project_id")
       .eq("id", validated.id)
       .maybeSingle();
 
     if (decError) {
       return json({ valid: false, reason: "server_error" }, 500);
     }
+    if (Array.isArray(decision)) {
+      return json({ valid: false, reason: "server_error" }, 500);
+    }
     if (!decision) {
       return json({ valid: false, reason: "not_found" }, 404);
     }
+    // Domain invariant: every decision belongs to a project; null = data inconsistency
+    if (decision.project_id == null || decision.project_id === undefined) {
+      return json({ valid: false, reason: "server_error" }, 500);
+    }
 
-    const project = decision.project as { workspace_id?: string } | { workspace_id?: string }[] | null;
-    const workspaceIdFromDecision = Array.isArray(project)
-      ? project[0]?.workspace_id
-      : project?.workspace_id;
-    if (!workspaceIdFromDecision || workspaceIdFromDecision !== workspace.id) {
+    const { data: project, error: projError } = await supabase
+      .from("projects")
+      .select("workspace_id")
+      .eq("id", decision.project_id)
+      .maybeSingle();
+
+    if (projError) {
+      return json({ valid: false, reason: "server_error" }, 500);
+    }
+    if (Array.isArray(project)) {
+      return json({ valid: false, reason: "server_error" }, 500);
+    }
+    if (!project?.workspace_id || project.workspace_id !== workspace.id) {
       return json({ valid: false, reason: "not_found" }, 404);
     }
 

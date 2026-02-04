@@ -92,6 +92,14 @@
 .dark .border-green-200,
 .dark .border-red-200 { border-color: var(--app-border) !important; }
 
+/* Amber (token CI, avvisi): in dark sfondo e testo leggibili */
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.2) !important; }
+.dark .text-amber-900,
+.dark .text-amber-800 { color: #fde047 !important; }
+.dark .text-amber-700 { color: #fde047 !important; }
+.dark .text-amber-600 { color: #fcd34d !important; }
+.dark .border-amber-200 { border-color: rgba(245, 158, 11, 0.5) !important; }
+
 /* Chip e badge (Proprietario, In uso, Attivo, Membro, stato decisione): in dark sfondo e testo dedicati per leggibilità */
 .dark .bg-gray-200 { background-color: var(--app-chip) !important; }
 .dark .bg-gray-200.text-gray-700 { color: var(--app-chip-text) !important; }

@@ -14,13 +14,19 @@ function createRequest(options: { decisionId?: string; auth?: string }): NextReq
 
 const mockWorkspaceMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
+const mockProjectMaybeSingle = vi.fn();
 
 vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
       select: () => ({
         eq: () => ({
-          maybeSingle: table === "workspaces" ? mockWorkspaceMaybeSingle : mockDecisionMaybeSingle,
+          maybeSingle:
+            table === "workspaces"
+              ? mockWorkspaceMaybeSingle
+              : table === "decisions"
+                ? mockDecisionMaybeSingle
+                : mockProjectMaybeSingle,
         }),
       }),
     }),
@@ -110,11 +116,11 @@ describe("GET /api/decision-gate/validate", () => {
   it("5) decision found ma non approved => 422", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
-      data: {
-        id: decisionId,
-        status: "proposed",
-        project: { workspace_id: WORKSPACE_ID },
-      },
+      data: { id: decisionId, status: "proposed", project_id: "proj-1" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
     const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
@@ -128,11 +134,11 @@ describe("GET /api/decision-gate/validate", () => {
   it("6) decision approved => 200", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
-      data: {
-        id: decisionId,
-        status: "approved",
-        project: { workspace_id: WORKSPACE_ID },
-      },
+      data: { id: decisionId, status: "approved", project_id: "proj-1" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
     const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
@@ -146,11 +152,11 @@ describe("GET /api/decision-gate/validate", () => {
   it("decision in altro workspace => 404", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
-      data: {
-        id: decisionId,
-        status: "approved",
-        project: { workspace_id: "other-workspace" },
-      },
+      data: { id: decisionId, status: "approved", project_id: "proj-1" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: "other-workspace" },
       error: null,
     });
     const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
