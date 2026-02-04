@@ -11,6 +11,7 @@ type DecisionForMarkdown = {
   decision: string;
   consequences: string;
   external_links?: { url: string; label?: string }[];
+  pull_request_urls?: string[];
   tags: string[];
   created_at: string;
   updated_at: string;
@@ -79,6 +80,16 @@ function decisionToMarkdown(decision: DecisionForMarkdown): string {
     decision.external_links.forEach((link) => {
       const text = link.label || link.url;
       lines.push(`- [${text}](${link.url})`);
+    });
+    lines.push("");
+  }
+
+  if (decision.pull_request_urls?.length) {
+    lines.push("## Pull Request");
+    lines.push("");
+    decision.pull_request_urls.forEach((url) => {
+      const u = url.trim();
+      if (u) lines.push(`- [Apri Pull Request](${u})`);
     });
     lines.push("");
   }

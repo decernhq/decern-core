@@ -52,6 +52,7 @@ export async function createDecisionAction(
   const consequences = formData.get("consequences") as string;
   const tagsRaw = formData.get("tags") as string;
   const externalLinksRaw = formData.get("external_links") as string;
+  const pullRequestUrlsRaw = formData.get("pull_request_urls") as string | null;
   const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!projectId) {
@@ -89,6 +90,9 @@ export async function createDecisionAction(
 
   // Parse external links (one per line: "label | url" or just "url")
   const external_links = parseExternalLinks(externalLinksRaw);
+  const pull_request_urls = pullRequestUrlsRaw
+    ? pullRequestUrlsRaw.split("\n").map((u) => u.trim()).filter(Boolean)
+    : [];
   const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
 
   const { error } = await supabase.from("decisions").insert({
@@ -101,6 +105,7 @@ export async function createDecisionAction(
     consequences: consequences?.trim() || "",
     tags,
     external_links,
+    pull_request_urls,
     linked_decision_id,
     created_by: user.id,
   });
@@ -138,6 +143,7 @@ export async function updateDecisionAction(
   const consequences = formData.get("consequences") as string;
   const tagsRaw = formData.get("tags") as string;
   const externalLinksRaw = formData.get("external_links") as string;
+  const pullRequestUrlsRaw = formData.get("pull_request_urls") as string | null;
   const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!id) {
@@ -163,6 +169,9 @@ export async function updateDecisionAction(
     : [];
 
   const external_links = parseExternalLinks(externalLinksRaw);
+  const pull_request_urls = pullRequestUrlsRaw
+    ? pullRequestUrlsRaw.split("\n").map((u) => u.trim()).filter(Boolean)
+    : [];
   const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
 
   const { error } = await supabase
@@ -176,6 +185,7 @@ export async function updateDecisionAction(
       consequences: consequences?.trim() || "",
       tags,
       external_links,
+      pull_request_urls,
       linked_decision_id,
     })
     .eq("id", id);

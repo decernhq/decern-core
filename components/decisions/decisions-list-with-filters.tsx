@@ -4,6 +4,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Tooltip } from "@/components/ui/tooltip";
 import { DecisionStatus } from "@/types/decision";
 import type { Project } from "@/types/database";
 import type { DecisionWithAuthor } from "@/lib/queries/decisions";
@@ -661,17 +662,18 @@ export function DecisionsListWithFilters({
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
                         {new Date(decision.created_at).toLocaleDateString("it-IT")}
                       </td>
-                      <td className="px-2 py-2 text-right">
-                        <Link
-                          href={`/dashboard/decisions/new?duplicate=${decision.id}`}
-                          className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                          title="Duplica decisione"
-                          aria-label="Duplica decisione"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                        </Link>
+                      <td className="overflow-visible px-2 py-2 text-right">
+                        <Tooltip label="Duplica decisione">
+                          <Link
+                            href={`/dashboard/decisions/new?duplicate=${decision.id}`}
+                            className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                            aria-label="Duplica decisione"
+                          >
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                          </Link>
+                        </Tooltip>
                       </td>
                     </tr>
                   );

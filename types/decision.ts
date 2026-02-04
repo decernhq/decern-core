@@ -24,6 +24,8 @@ export interface Decision {
   tags: string[];
   /** External references (RFCs, docs, etc.) */
   externalLinks: { url: string; label?: string }[];
+  /** Optional URLs to pull requests for this decision */
+  pullRequestUrls?: string[];
   /** Optional link to a previous/related decision */
   linkedDecisionId?: string | null;
   createdAt: string;

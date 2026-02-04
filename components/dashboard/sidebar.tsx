@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Workspace } from "@/types/database";
+import type { PlanId } from "@/types/billing";
 import { Logo } from "@/components/logo";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
 import { UpgradeButton } from "@/app/(dashboard)/dashboard/settings/upgrade-button";
@@ -62,13 +63,15 @@ const navigation = [
 export function Sidebar({
   workspaces,
   selectedWorkspaceId,
-  isFreePlan = false,
+  planId,
 }: {
   workspaces: Workspace[];
   selectedWorkspaceId: string | null;
-  isFreePlan?: boolean;
+  planId: PlanId;
 }) {
   const pathname = usePathname();
+  const showUpgrade = planId === "free" || planId === "pro";
+  const upgradePlanId = planId === "free" ? "pro" : "ultra";
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-app-border bg-app-card">
@@ -107,9 +110,9 @@ export function Sidebar({
           );
         })}
       </nav>
-      {isFreePlan && (
+      {showUpgrade && (
         <div className="border-t border-app-border p-3">
-          <UpgradeButton className="w-full" size="sm" />
+          <UpgradeButton planId={upgradePlanId} className="w-full" size="sm" />
         </div>
       )}
     </aside>

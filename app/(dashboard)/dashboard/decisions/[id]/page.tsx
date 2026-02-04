@@ -60,6 +60,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
               decision: decision.decision ?? "",
               consequences: decision.consequences ?? "",
               external_links: decision.external_links ?? [],
+              pull_request_urls: decision.pull_request_urls ?? [],
               tags: decision.tags ?? [],
               created_at: decision.created_at,
               updated_at: decision.updated_at,
@@ -166,6 +167,28 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             <p className="mt-2 whitespace-pre-wrap text-gray-600">
               {decision.consequences}
             </p>
+          </div>
+        )}
+
+        {/* Pull Request */}
+        {(decision.pull_request_urls?.length ?? 0) > 0 && (
+          <div className="rounded-xl border border-gray-200 bg-white p-6">
+            <h2 className="text-lg font-semibold text-gray-900">Pull Request</h2>
+            <ul className="mt-3 space-y-2">
+              {(decision.pull_request_urls ?? []).map((url: string, index: number) => (
+                <li key={index}>
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={url}
+                    className="text-brand-600 hover:underline"
+                  >
+                    {url.length > 60 ? `${url.slice(0, 57)}…` : url} →
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

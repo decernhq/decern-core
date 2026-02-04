@@ -21,6 +21,51 @@ const DEFAULT_SUGGESTED_TAGS = [
   "testing",
   "devops",
   "documentation",
+  "auth",
+  "caching",
+  "deployment",
+  "monitoring",
+  "ci-cd",
+  "storage",
+  "queue",
+  "infrastructure",
+  "scalability",
+  "migration",
+  "refactoring",
+  "ui",
+  "ux",
+  "accessibility",
+  "api-design",
+  "rest",
+  "graphql",
+  "logging",
+  "observability",
+  "error-handling",
+  "data-model",
+  "schema",
+  "indexing",
+  "networking",
+  "latency",
+  "cost",
+  "compliance",
+  "privacy",
+  "third-party",
+  "vendor",
+  "design-pattern",
+  "microservices",
+  "monolith",
+  "mobile",
+  "cloud",
+  "serverless",
+  "containers",
+  "kubernetes",
+  "postgresql",
+  "redis",
+  "elasticsearch",
+  "messaging",
+  "event-driven",
+  "versioning",
+  "breaking-change",
 ];
 
 /** Minimal decision for "linked decision" picker (popup) */
@@ -120,6 +165,11 @@ export function DecisionForm({
       ? initialData.external_links.map((l) => ({ url: l.url, label: l.label }))
       : []
   );
+  const [pullRequestUrls, setPullRequestUrls] = useState<string[]>(
+    Array.isArray(initialData?.pull_request_urls)
+      ? initialData.pull_request_urls.filter((u): u is string => typeof u === "string" && u.trim() !== "")
+      : []
+  );
   const [options, setOptions] = useState<string[]>(
     initialData?.options?.length ? [...initialData.options] : []
   );
@@ -204,6 +254,7 @@ export function DecisionForm({
       .map((l) => (l.label?.trim() ? `${l.label.trim()} | ${l.url.trim()}` : l.url.trim()))
       .join("\n");
     formData.set("external_links", serialized);
+    formData.set("pull_request_urls", pullRequestUrls.filter((u) => u.trim()).join("\n"));
     formData.set("options", options.filter((o) => o.trim()).join("\n"));
     formData.set("tags", tags.join(", "));
     startTransition(async () => {
@@ -218,6 +269,14 @@ export function DecisionForm({
   const updateLink = (index: number, field: "url" | "label", value: string) =>
     setExternalLinks((prev) =>
       prev.map((l, i) => (i === index ? { ...l, [field]: value } : l))
+    );
+
+  const addPullRequest = () => setPullRequestUrls((prev) => [...prev, ""]);
+  const removePullRequest = (index: number) =>
+    setPullRequestUrls((prev) => prev.filter((_, i) => i !== index));
+  const updatePullRequestUrl = (index: number, value: string) =>
+    setPullRequestUrls((prev) =>
+      prev.map((u, i) => (i === index ? value : u))
     );
 
   const addOption = () => setOptions((prev) => [...prev, ""]);
@@ -506,6 +565,53 @@ export function DecisionForm({
         </p>
       </div>
 
+      {/* Pull Request (multiple) */}
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-sm font-medium text-gray-700">Pull Request</span>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addPullRequest}
+          >
+            + Aggiungi PR
+          </Button>
+        </div>
+        <div className="space-y-3">
+          {pullRequestUrls.map((url, index) => (
+            <div
+              key={index}
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-200 bg-gray-50/50 p-3"
+            >
+              <input
+                type="url"
+                placeholder="https://github.com/org/repo/pull/123"
+                value={url}
+                onChange={(e) => updatePullRequestUrl(index, e.target.value)}
+                className="min-w-0 flex-1 rounded border border-gray-300 bg-white px-2.5 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/20"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => removePullRequest(index)}
+                className="flex-shrink-0 text-gray-500 hover:text-red-600"
+                aria-label="Rimuovi PR"
+              >
+                Rimuovi
+              </Button>
+            </div>
+          ))}
+          {pullRequestUrls.length === 0 && (
+            <p className="text-sm text-gray-500">
+              Nessuna pull request. Clicca &quot;Aggiungi PR&quot; per collegare una o più PR a questa decisione.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Link esterni */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-sm font-medium text-gray-700">Link esterni</span>

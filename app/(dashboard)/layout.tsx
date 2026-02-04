@@ -35,14 +35,13 @@ export default async function DashboardLayout({
   }
 
   const planId = getEffectivePlanId(subscription?.data?.plan_id);
-  const isFree = planId === "free";
 
   return (
     <div className="flex h-screen bg-app-bg">
       <Sidebar
         workspaces={workspaces}
         selectedWorkspaceId={selectedWorkspaceId}
-        isFreePlan={isFree}
+        planId={planId}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader userEmail={user.email} />
