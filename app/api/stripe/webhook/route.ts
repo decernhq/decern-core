@@ -1,14 +1,28 @@
+/**
+ * Stripe webhook: aggiorna subscriptions via RPC Supabase (anon key + SUPABASE_WEBHOOK_SECRET).
+ * Non usa la service role: il segreto si ottiene una volta da Supabase con
+ *   select secret from app_webhook_secret;
+ * e si imposta in .env come SUPABASE_WEBHOOK_SECRET.
+ *
+ * Test in locale: stripe listen --forward-to localhost:3000/api/stripe/webhook
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
-function getSupabaseAdmin(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) throw new Error("Missing Supabase env for webhook");
-  return createClient(url, key);
+function getSupabaseAnon(): SupabaseClient {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const secret = process.env.SUPABASE_WEBHOOK_SECRET?.trim();
+  const missing: string[] = [];
+  if (!url) missing.push("NEXT_PUBLIC_SUPABASE_URL");
+  if (!key) missing.push("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+  if (!secret) missing.push("SUPABASE_WEBHOOK_SECRET (esegui: select secret from app_webhook_secret in Supabase)");
+  if (missing.length)
+    throw new Error(`Webhook: variabili mancanti in .env: ${missing.join(", ")}`);
+  return createClient(url!, key!);
 }
 
 export async function POST(request: NextRequest) {
@@ -59,8 +73,21 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      default:
-        console.log(`Unhandled event type: ${event.type}`);
+      case "invoice.paid":
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        await handleInvoicePaid(invoice);
+        break;
+      }
+
+      default: {
+        const eventType = event.type as string;
+        if (eventType === "invoice_payment.paid") {
+          await handleInvoicePaid(event.data.object as Stripe.Invoice);
+        } else {
+          console.log(`Unhandled event type: ${eventType}`);
+        }
+      }
     }
 
     return NextResponse.json({ received: true });
@@ -73,85 +100,110 @@ export async function POST(request: NextRequest) {
   }
 }
 
+function planIdFromStripePriceId(priceId: string): "pro" | "ultra" {
+  const proId = process.env.STRIPE_PRO_PRICE_ID?.trim();
+  const ultraId = process.env.STRIPE_ULTRA_PRICE_ID?.trim();
+  if (ultraId && priceId === ultraId) return "ultra";
+  if (proId && priceId === proId) return "pro";
+  return "pro";
+}
+
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const userId = session.metadata?.userId;
   const subscriptionId = session.subscription as string;
 
   if (!userId || !subscriptionId) {
-    console.error("Missing userId or subscriptionId in checkout session");
+    console.error("Webhook checkout.session.completed: missing userId or subscriptionId in session", {
+      metadata: session.metadata,
+      subscription: session.subscription,
+    });
     return;
   }
 
-  // Get subscription details from Stripe
   const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const priceId = subscription.items.data[0]?.price?.id ?? "";
+  const planId = planIdFromStripePriceId(priceId);
+  const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+  const secret = process.env.SUPABASE_WEBHOOK_SECRET!;
+  const customerId = session.customer as string;
 
-  await getSupabaseAdmin()
-    .from("subscriptions")
-    .update({
-      stripe_subscription_id: subscriptionId,
-      plan_id: "pro",
-      status: "active",
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-    })
-    .eq("user_id", userId);
-
-  console.log(`Subscription activated for user: ${userId}`);
+  const { error } = await getSupabaseAnon().rpc("stripe_webhook_checkout_completed", {
+    p_secret: secret,
+    p_user_id: userId,
+    p_stripe_customer_id: customerId,
+    p_stripe_subscription_id: subscriptionId,
+    p_plan_id: planId,
+    p_current_period_end: currentPeriodEnd,
+  });
+  if (error) {
+    console.error("Webhook: stripe_webhook_checkout_completed failed", { userId, error });
+    throw error;
+  }
+  console.log(`Subscription activated for user: ${userId}, plan: ${planId}`);
 }
 
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
-
-  // Map Stripe status to our status
   const statusMap: Record<string, string> = {
     active: "active",
     canceled: "canceled",
     past_due: "past_due",
     trialing: "trialing",
   };
-
   const status = statusMap[subscription.status] || "active";
+  const priceId = subscription.items.data[0]?.price?.id ?? "";
+  const planId = planIdFromStripePriceId(priceId);
+  const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
 
-  await getSupabaseAdmin()
-    .from("subscriptions")
-    .update({
-      status,
-      current_period_end: new Date(
-        subscription.current_period_end * 1000
-      ).toISOString(),
-    })
-    .eq("stripe_customer_id", customerId);
-
-  console.log(`Subscription updated for customer: ${customerId}`);
+  const { error } = await getSupabaseAnon().rpc("stripe_webhook_subscription_updated", {
+    p_secret: process.env.SUPABASE_WEBHOOK_SECRET!,
+    p_stripe_customer_id: customerId,
+    p_plan_id: planId,
+    p_status: status,
+    p_current_period_end: currentPeriodEnd,
+  });
+  if (error) throw error;
+  console.log(`Subscription updated for customer: ${customerId}, plan: ${planId}`);
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const customerId = subscription.customer as string;
-
-  // Downgrade to free plan
-  await getSupabaseAdmin()
-    .from("subscriptions")
-    .update({
-      stripe_subscription_id: null,
-      plan_id: "free",
-      status: "active",
-      current_period_end: null,
-    })
-    .eq("stripe_customer_id", customerId);
-
+  const { error } = await getSupabaseAnon().rpc("stripe_webhook_subscription_deleted", {
+    p_secret: process.env.SUPABASE_WEBHOOK_SECRET!,
+    p_stripe_customer_id: customerId,
+  });
+  if (error) throw error;
   console.log(`Subscription canceled for customer: ${customerId}`);
 }
 
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
-
-  await getSupabaseAdmin()
-    .from("subscriptions")
-    .update({
-      status: "past_due",
-    })
-    .eq("stripe_customer_id", customerId);
-
+  const { error } = await getSupabaseAnon().rpc("stripe_webhook_payment_failed", {
+    p_secret: process.env.SUPABASE_WEBHOOK_SECRET!,
+    p_stripe_customer_id: customerId,
+  });
+  if (error) throw error;
   console.log(`Payment failed for customer: ${customerId}`);
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  if (!invoice.subscription) return;
+  const subscriptionId =
+    typeof invoice.subscription === "string"
+      ? invoice.subscription
+      : invoice.subscription.id;
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  const customerId = subscription.customer as string;
+  const priceId = subscription.items.data[0]?.price?.id ?? "";
+  const planId = planIdFromStripePriceId(priceId);
+  const currentPeriodEnd = new Date(subscription.current_period_end * 1000).toISOString();
+
+  const { error } = await getSupabaseAnon().rpc("stripe_webhook_invoice_paid", {
+    p_secret: process.env.SUPABASE_WEBHOOK_SECRET!,
+    p_stripe_customer_id: customerId,
+    p_plan_id: planId,
+    p_current_period_end: currentPeriodEnd,
+  });
+  if (error) throw error;
+  console.log(`Invoice paid for customer: ${customerId}, plan: ${planId}`);
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceInvitationByToken } from "@/lib/queries/workspaces";
+import { checkCanInviteToWorkspace } from "@/lib/plan-limits";
 
 export type UpdateProfileNameState = {
   error?: string;
@@ -98,6 +99,9 @@ export async function inviteUserToWorkspaceAction(
   const ws = await supabase.from("workspaces").select("id, owner_id").eq("id", workspaceId).single();
   if (ws.error || !ws.data) return { error: "Workspace non trovato" };
   if (ws.data.owner_id !== user.id) return { error: "Solo il proprietario del workspace può invitare" };
+
+  const canInvite = await checkCanInviteToWorkspace(ws.data.owner_id, workspaceId);
+  if (!canInvite.allowed) return { error: canInvite.error };
 
   const token = crypto.randomUUID();
   const expiresAt = new Date();

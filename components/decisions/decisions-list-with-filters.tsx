@@ -483,8 +483,8 @@ export function DecisionsListWithFilters({
               <colgroup>
                 <col style={{ width: "26%" }} />
                 <col style={{ width: "17%" }} />
-                <col style={{ width: "11%" }} />
-                <col style={{ width: "13%" }} />
+                <col style={{ width: "14%" }} />
+                <col style={{ width: "10%" }} />
                 <col style={{ width: "26%" }} />
                 <col style={{ width: "7%" }} />
               </colgroup>
@@ -585,7 +585,7 @@ export function DecisionsListWithFilters({
                           {decision.author ? (decision.author.full_name || decision.author.email) : "—"}
                         </span>
                       </td>
-                      <td className="px-3 py-2">
+                      <td className="min-w-[7rem] shrink-0 px-3 py-2">
                         <select
                           value={decision.status}
                           onChange={(e) =>
@@ -596,9 +596,9 @@ export function DecisionsListWithFilters({
                           }
                           disabled={updatingStatusId === decision.id}
                           className={cn(
-                            "min-w-0 max-w-full cursor-pointer rounded-full border px-2 py-0.5 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0",
+                            "w-full min-w-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0 whitespace-nowrap appearance-none",
                             statusColors[decision.status],
-                            "border-gray-300/80 bg-inherit hover:border-gray-400",
+                            "border-transparent hover:opacity-90",
                           )}
                           onClick={(e) => e.stopPropagation()}
                         >
@@ -665,7 +665,7 @@ export function DecisionsListWithFilters({
                         <Link
                           href={`/dashboard/decisions/new?duplicate=${decision.id}`}
                           className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                          title="Duplica decisione (apri form con campi precompilati)"
+                          title="Duplica decisione"
                           aria-label="Duplica decisione"
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

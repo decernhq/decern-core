@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import type { Workspace } from "@/types/database";
 import { Logo } from "@/components/logo";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
+import { UpgradeButton } from "@/app/(dashboard)/dashboard/settings/upgrade-button";
 import { cn } from "@/lib/utils";
 
 const iconClass = "h-5 w-5 flex-shrink-0";
@@ -61,9 +62,11 @@ const navigation = [
 export function Sidebar({
   workspaces,
   selectedWorkspaceId,
+  isFreePlan = false,
 }: {
   workspaces: Workspace[];
   selectedWorkspaceId: string | null;
+  isFreePlan?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -78,7 +81,7 @@ export function Sidebar({
           selectedWorkspaceId={selectedWorkspaceId}
         />
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navigation.map((item) => {
           const isActive =
             item.href === "/dashboard"
@@ -104,6 +107,11 @@ export function Sidebar({
           );
         })}
       </nav>
+      {isFreePlan && (
+        <div className="border-t border-app-border p-3">
+          <UpgradeButton className="w-full" size="sm" />
+        </div>
+      )}
     </aside>
   );
 }

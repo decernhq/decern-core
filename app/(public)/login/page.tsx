@@ -36,7 +36,8 @@ export default function LoginPage() {
       return;
     }
 
-    router.push(next && next.startsWith("/dashboard") ? next : "/dashboard");
+    const safeNext = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+    router.push(safeNext);
     router.refresh();
   };
 

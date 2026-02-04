@@ -23,8 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Piano non valido" }, { status: 400 });
     }
 
-    if (!plan.priceId) {
-      return NextResponse.json({ error: "Piano non valido" }, { status: 400 });
+    if (!plan.priceId?.trim()) {
+      return NextResponse.json(
+        {
+          error:
+            "Stripe non configurato per questo piano. Imposta STRIPE_PRO_PRICE_ID in .env (Price ID da Stripe Dashboard, es. price_xxx).",
+        },
+        { status: 400 }
+      );
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";

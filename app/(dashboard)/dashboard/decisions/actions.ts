@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { checkCanCreateDecision } from "@/lib/plan-limits";
 
 function parseExternalLinks(raw: string | null | undefined): { url: string; label?: string }[] {
   if (!raw?.trim()) return [];
@@ -56,6 +57,15 @@ export async function createDecisionAction(
   if (!projectId) {
     return { error: "Seleziona un progetto" };
   }
+
+  const project = await supabase.from("projects").select("workspace_id").eq("id", projectId).single();
+  if (project.error || !project.data) return { error: "Progetto non trovato" };
+  const workspaceId = project.data.workspace_id;
+
+  const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
+  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
+  const canCreate = await checkCanCreateDecision(ws.data.owner_id, workspaceId);
+  if (!canCreate.allowed) return { error: canCreate.error };
 
   if (!title || title.trim().length === 0) {
     return { error: "Il titolo è obbligatorio" };

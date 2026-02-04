@@ -15,15 +15,21 @@ export function WorkspaceSwitcher({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   if (workspaces.length === 0) return null;
 
   async function handleChange(workspaceId: string) {
     if (workspaceId === selectedWorkspaceId) return;
     setLoading(true);
-    await setWorkspaceCookieAction(workspaceId);
-    router.refresh();
+    setError(null);
+    const result = await setWorkspaceCookieAction(workspaceId);
     setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+      return;
+    }
+    router.refresh();
   }
 
   return (
@@ -56,6 +62,11 @@ export function WorkspaceSwitcher({
       {loading && (
         <p className="mt-2 text-xs text-app-active-text" role="status">
           Caricando Workspace…
+        </p>
+      )}
+      {error && (
+        <p className="mt-2 text-xs text-red-600" role="alert">
+          {error}
         </p>
       )}
     </div>

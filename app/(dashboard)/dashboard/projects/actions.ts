@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
+import { checkCanCreateProject } from "@/lib/plan-limits";
 
 export type ActionState = {
   error?: string;
@@ -38,6 +39,11 @@ export async function createProjectAction(
     workspaceId = w?.id ?? null;
   }
   if (!workspaceId) return { error: "Workspace non disponibile" };
+
+  const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
+  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
+  const canCreate = await checkCanCreateProject(ws.data.owner_id, workspaceId);
+  if (!canCreate.allowed) return { error: canCreate.error };
 
   const { error } = await supabase.from("projects").insert({
     name: name.trim(),

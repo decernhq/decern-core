@@ -24,6 +24,16 @@ const statusLabels: Record<string, string> = {
   rejected: "Rifiutata",
 };
 
+function slugify(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "") || "decisione";
+}
+
 function decisionToMarkdown(decision: DecisionForMarkdown): string {
   const lines: string[] = [];
 
@@ -107,8 +117,9 @@ interface CopyDecisionMarkdownProps {
 export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
   const [copied, setCopied] = useState(false);
 
+  const markdown = decisionToMarkdown(decision);
+
   const handleCopy = async () => {
-    const markdown = decisionToMarkdown(decision);
     try {
       await navigator.clipboard.writeText(markdown);
       setCopied(true);
@@ -118,48 +129,82 @@ export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
     }
   };
 
+  const handleDownload = () => {
+    const filename = `${slugify(decision.title)}.md`;
+    const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={handleCopy}
-      className="h-10 gap-2"
-    >
-      {copied ? (
-        <>
-          <svg
-            className="h-4 w-4 text-green-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M5 13l4 4L19 7"
-            />
-          </svg>
-          Copiato!
-        </>
-      ) : (
-        <>
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l2-2m-2 2l2 2"
-            />
-          </svg>
-          Copia in Markdown
-        </>
-      )}
-    </Button>
+    <div className="flex gap-2">
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleCopy}
+        className="h-10 gap-2"
+      >
+        {copied ? (
+          <>
+            <svg
+              className="h-4 w-4 text-green-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            Copiato!
+          </>
+        ) : (
+          <>
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l2-2m-2 2l2 2"
+              />
+            </svg>
+            Copia in Markdown
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        onClick={handleDownload}
+        className="h-10 gap-2"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+          />
+        </svg>
+        Scarica .md
+      </Button>
+    </div>
   );
 }

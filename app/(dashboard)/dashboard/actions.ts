@@ -3,14 +3,31 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { getWorkspacesForCurrentUser, countWorkspacesOwnedByCurrentUser } from "@/lib/queries/workspaces";
+import { getWorkspacesForCurrentUser, getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
 import { WORKSPACE_COOKIE_NAME, WORKSPACE_COOKIE_OPTIONS } from "@/lib/workspace-cookie";
-import { getEffectivePlanId } from "@/lib/billing";
-import { PLANS } from "@/types/billing";
+import { checkCanCreateWorkspace } from "@/lib/plan-limits";
+
+/**
+ * Crea il workspace di default (se mancante), imposta il cookie e revalida.
+ * Usato dalla vista "Preparando il tuo workspace" al primo accesso.
+ */
+export async function prepareWorkspaceAction(): Promise<{ error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato" };
+
+  const defaultWs = await getOrCreateDefaultWorkspace();
+  if (!defaultWs) return { error: "Impossibile creare il workspace" };
+
+  const cookieStore = await cookies();
+  cookieStore.set(WORKSPACE_COOKIE_NAME, defaultWs.id, WORKSPACE_COOKIE_OPTIONS);
+  revalidatePath("/dashboard", "layout");
+  return {};
+}
 
 /**
  * Imposta il workspace selezionato (cookie) e revalida.
- * Mostra "Caricando Workspace" lato client mentre si fa refresh.
+ * È consentito solo se il workspace è tra quelli accessibili (primi N per creazione, in base al piano).
  */
 export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ error?: string }> {
   const supabase = await createClient();
@@ -19,7 +36,9 @@ export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ e
 
   const workspaces = await getWorkspacesForCurrentUser();
   const canAccess = workspaces.some((w) => w.id === workspaceId);
-  if (!canAccess) return { error: "Workspace non trovato" };
+  if (!canAccess) {
+    return { error: "Non hai il piano per accedere a questo workspace." };
+  }
 
   const cookieStore = await cookies();
   cookieStore.set(WORKSPACE_COOKIE_NAME, workspaceId, WORKSPACE_COOKIE_OPTIONS);
@@ -31,7 +50,7 @@ export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ e
 }
 
 /**
- * Crea un nuovo workspace. Solo piano Pro può averne più di uno.
+ * Crea un nuovo workspace. Limiti in base al piano (Free: 1, Pro: 1, Ultra: illimitati, Enterprise: da DB).
  */
 export async function createWorkspaceAction(
   _prev: { error?: string },
@@ -41,25 +60,8 @@ export async function createWorkspaceAction(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Non autenticato" };
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("plan_id")
-    .eq("user_id", user.id)
-    .single();
-
-  const planId = getEffectivePlanId(subscription?.plan_id);
-  const plan = PLANS[planId];
-  const workspaceLimit = plan.limits.workspaces;
-
-  if (workspaceLimit !== -1) {
-    const count = await countWorkspacesOwnedByCurrentUser();
-    if (count >= workspaceLimit) {
-      return {
-        error:
-          "Il piano attuale permette un solo workspace. Passa a Pro per crearne di più.",
-      };
-    }
-  }
+  const canCreate = await checkCanCreateWorkspace(user.id);
+  if (!canCreate.allowed) return { error: canCreate.error };
 
   const name = (formData.get("name") as string)?.trim() || "Nuovo workspace";
   const { data, error } = await supabase

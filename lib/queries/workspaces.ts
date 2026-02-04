@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Workspace } from "@/types/database";
+import { getPlanLimits } from "@/lib/plan-limits";
 
 export type WorkspaceMemberWithProfile = {
   user_id: string;
@@ -27,6 +28,7 @@ export async function getOrCreateDefaultWorkspace(): Promise<Workspace | null> {
     .from("workspaces")
     .select("*")
     .eq("owner_id", user.id)
+    .order("created_at", { ascending: true })
     .limit(1)
     .single();
 
@@ -53,9 +55,10 @@ export async function getWorkspaceById(id: string): Promise<Workspace | null> {
 }
 
 /**
- * Get all workspaces the current user can access (owner or member)
+ * Lista completa di tutti i workspace che l'utente può vedere (owner o member), in ordine di creazione.
+ * Usare per mostrare la lista in sidebar / pagina workspace.
  */
-export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
+export async function getAllWorkspacesForCurrentUser(): Promise<Workspace[]> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return [];
@@ -64,7 +67,7 @@ export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
     .from("workspaces")
     .select("*")
     .eq("owner_id", user.id)
-    .order("name");
+    .order("created_at", { ascending: true });
 
   const { data: memberRows } = await supabase
     .from("workspace_members")
@@ -72,24 +75,45 @@ export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
     .eq("user_id", user.id);
 
   const memberIds = (memberRows ?? []).map((r) => r.workspace_id).filter(Boolean);
-  if (memberIds.length === 0) return owned ?? [];
+  let allWorkspaces: Workspace[] = owned ?? [];
 
-  const { data: memberWorkspaces } = await supabase
-    .from("workspaces")
-    .select("*")
-    .in("id", memberIds)
-    .order("name");
-
-  const ownedList = owned ?? [];
-  const memberList = memberWorkspaces ?? [];
-  const seen = new Set(ownedList.map((w) => w.id));
-  for (const w of memberList) {
-    if (!seen.has(w.id)) {
-      seen.add(w.id);
-      ownedList.push(w);
+  if (memberIds.length > 0) {
+    const { data: memberWorkspaces } = await supabase
+      .from("workspaces")
+      .select("*")
+      .in("id", memberIds);
+    const memberList = memberWorkspaces ?? [];
+    const seen = new Set(allWorkspaces.map((w) => w.id));
+    for (const w of memberList) {
+      if (!seen.has(w.id)) {
+        seen.add(w.id);
+        allWorkspaces.push(w);
+      }
     }
   }
-  return ownedList.sort((a, b) => a.name.localeCompare(b.name));
+
+  return allWorkspaces.sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
+}
+
+/**
+ * Workspace a cui l'utente può accedere con il piano attuale: i primi N per created_at (N = workspaces_limit).
+ * Usato per cookie e per validare il cambio workspace (se provi a passare a un altro mostri "non hai il piano").
+ */
+export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
+  const all = await getAllWorkspacesForCurrentUser();
+  if (all.length === 0) return [];
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
+  const limits = await getPlanLimits(user.id);
+  if (limits && limits.workspaces_limit !== -1) {
+    return all.slice(0, limits.workspaces_limit);
+  }
+  return all;
 }
 
 /**

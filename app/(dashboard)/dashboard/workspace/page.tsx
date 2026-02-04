@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   getOrCreateDefaultWorkspace,
   getWorkspaceById,
-  getWorkspacesForCurrentUser,
+  getAllWorkspacesForCurrentUser,
   getWorkspaceMembersWithProfiles,
   getWorkspaceInvitationsPending,
 } from "@/lib/queries/workspaces";
@@ -28,7 +28,7 @@ export default async function WorkspacePage() {
 
   const selectedId = await getSelectedWorkspaceId();
   const [workspaces, workspace] = await Promise.all([
-    getWorkspacesForCurrentUser(),
+    getAllWorkspacesForCurrentUser(),
     selectedId ? getWorkspaceById(selectedId) : getOrCreateDefaultWorkspace(),
   ]);
 
@@ -47,7 +47,7 @@ export default async function WorkspacePage() {
     .eq("user_id", user.id)
     .single();
   const planId = getEffectivePlanId(subscription?.plan_id);
-  const canCreateWorkspaces = PLANS[planId].limits.workspaces === -1;
+  const canCreateWorkspaces = PLANS[planId].limits.workspaces_limit === -1;
 
   const [members, invitations, ownerProfile] = await Promise.all([
     getWorkspaceMembersWithProfiles(workspace.id),
@@ -74,7 +74,7 @@ export default async function WorkspacePage() {
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-gray-900">Crea nuovo workspace</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Con il piano Pro puoi creare più workspace per organizzare team e progetti.
+            Con il piano Ultra puoi creare più workspace per organizzare team e progetti.
           </p>
           <div className="mt-4">
             <CreateWorkspaceForm />
@@ -86,7 +86,7 @@ export default async function WorkspacePage() {
         <p className="mt-4 text-sm text-gray-500">
           Per creare più workspace passa al{" "}
           <Link href="/dashboard/settings" className="font-medium text-brand-600 hover:text-brand-700">
-            piano Pro
+            piano Ultra
           </Link>.
         </p>
       )}

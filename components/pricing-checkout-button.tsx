@@ -1,23 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-type UpgradeButtonProps = {
-  planId?: "pro" | "ultra";
+
+type PricingCheckoutButtonProps = {
+  planId: "pro" | "ultra";
+  planName: string;
   className?: string;
   size?: "sm" | "md" | "lg";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "danger";
 };
 
-const labels: Record<"pro" | "ultra", string> = {
-  pro: "Passa a Pro",
-  ultra: "Passa a Ultra",
-};
-
-export function UpgradeButton({ planId = "pro", className, size }: UpgradeButtonProps) {
+export function PricingCheckoutButton({
+  planId,
+  planName,
+  className,
+  size = "sm",
+  variant = "primary",
+}: PricingCheckoutButtonProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  const handleUpgrade = async () => {
+  const handleClick = async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/stripe/checkout", {
@@ -28,13 +34,18 @@ export function UpgradeButton({ planId = "pro", className, size }: UpgradeButton
 
       const data = await response.json();
 
+      if (response.status === 401) {
+        router.push("/login?next=/pricing");
+        return;
+      }
+
       if (data.url) {
         window.location.href = data.url;
       } else {
         alert(data.error || "Errore durante l'upgrade");
       }
     } catch (error) {
-      console.error("Upgrade error:", error);
+      console.error("Checkout error:", error);
       alert("Errore durante l'upgrade");
     } finally {
       setLoading(false);
@@ -42,8 +53,14 @@ export function UpgradeButton({ planId = "pro", className, size }: UpgradeButton
   };
 
   return (
-    <Button onClick={handleUpgrade} disabled={loading} className={cn(className)} size={size}>
-      {loading ? "Caricamento..." : labels[planId]}
+    <Button
+      onClick={handleClick}
+      disabled={loading}
+      className={cn("w-full", className)}
+      size={size}
+      variant={variant}
+    >
+      {loading ? "Caricamento..." : `Scegli ${planName}`}
     </Button>
   );
 }

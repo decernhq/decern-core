@@ -92,17 +92,25 @@
 .dark .border-green-200,
 .dark .border-red-200 { border-color: var(--app-border) !important; }
 
-/* Chip e badge (Proprietario, In uso, Attivo, Membro): in dark sfondo e testo dedicati per leggibilità */
+/* Chip e badge (Proprietario, In uso, Attivo, Membro, stato decisione): in dark sfondo e testo dedicati per leggibilità */
 .dark .bg-gray-200 { background-color: var(--app-chip) !important; }
 .dark .bg-gray-200.text-gray-700 { color: var(--app-chip-text) !important; }
 .dark .bg-brand-100 { background-color: var(--app-chip-brand) !important; }
 .dark .text-brand-800 { color: var(--app-chip-brand-text) !important; }
 .dark .bg-gray-100.text-gray-600,
-.dark .bg-gray-100.text-gray-700 { color: var(--app-chip-text) !important; }
+.dark .bg-gray-100.text-gray-700,
+.dark .bg-gray-100.text-gray-800 { color: var(--app-chip-text) !important; }
 .dark .rounded.bg-gray-100,
 .dark .rounded-full.bg-gray-100 { background-color: var(--app-chip) !important; }
 .dark .rounded.bg-brand-100,
 .dark .rounded-full.bg-brand-100 { background-color: var(--app-chip-brand) !important; }
+/* Chip stato decisione (Proposta, Approvata, Superata, Rifiutata) in dark: contrasto leggibile */
+.dark .rounded-full.bg-yellow-100 { background-color: rgba(202, 138, 4, 0.35) !important; }
+.dark .rounded-full.bg-yellow-100.text-yellow-800 { color: #fef08a !important; }
+.dark .rounded-full.bg-green-100 { background-color: rgba(34, 197, 94, 0.35) !important; }
+.dark .rounded-full.bg-green-100.text-green-800 { color: #86efac !important; }
+.dark .rounded-full.bg-red-100 { background-color: rgba(239, 68, 68, 0.35) !important; }
+.dark .rounded-full.bg-red-100.text-red-800 { color: #fca5a5 !important; }
 
 /* Tabella decisioni: bordi e linee divisorie più tenui in dark */
 .dark .divide-gray-200 > * + * { border-color: var(--app-border-subtle) !important; }

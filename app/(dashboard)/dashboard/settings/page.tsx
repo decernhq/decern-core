@@ -27,9 +27,10 @@ export default async function SettingsPage() {
 
   const effectivePlanId = getEffectivePlanId(subscription?.plan_id);
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
-  const isPro = effectivePlanId === "pro";
+  const isPaid = effectivePlanId === "pro" || effectivePlanId === "ultra";
+  const isEnterprise = effectivePlanId === "enterprise";
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
-  const isOverridden = planOverride === "pro" || planOverride === "free";
+  const isOverridden = ["free", "pro", "ultra", "enterprise"].includes(planOverride ?? "");
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -67,19 +68,21 @@ export default async function SettingsPage() {
             <div>
               <p className="font-medium text-gray-900">Piano {currentPlan.name}</p>
               <p className="text-sm text-gray-500">
-                {isPro
+                {currentPlan.price > 0
                   ? `€${currentPlan.price}/mese`
-                  : "Gratuito"}
+                  : isEnterprise
+                    ? "Personalizzato"
+                    : "Gratuito"}
               </p>
             </div>
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                isPro
+                isPaid || isEnterprise
                   ? "bg-brand-100 text-brand-700"
                   : "bg-gray-100 text-gray-700"
               }`}
             >
-              {isPro ? "Attivo" : "Free"}
+              {isPaid ? "Attivo" : isEnterprise ? "Enterprise" : "Free"}
             </span>
           </div>
 
@@ -103,11 +106,16 @@ export default async function SettingsPage() {
             </p>
           )}
 
-          <div className="mt-6">
-            {isPro ? (
+          <div className="mt-6 flex flex-wrap gap-3">
+            {isPaid ? (
               <ManageSubscriptionButton />
+            ) : isEnterprise ? (
+              <p className="text-sm text-gray-500">Contatta il supporto per modifiche al piano.</p>
             ) : (
-              <UpgradeButton />
+              <>
+                <UpgradeButton planId="pro" />
+                <UpgradeButton planId="ultra" />
+              </>
             )}
           </div>
         </div>

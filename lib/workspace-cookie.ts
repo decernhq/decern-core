@@ -1,20 +1,22 @@
 import { cookies } from "next/headers";
-import { getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
 
 const WORKSPACE_COOKIE = "workspace_id";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 /**
  * Restituisce l'id del workspace attualmente selezionato.
- * Se non c'è cookie, usa il workspace predefinito (il cookie si imposta solo
- * quando l'utente seleziona un workspace dal menu, via Server Action).
+ * Se il piano ha un limite (es. 1 o 2), si può accedere solo ai primi N workspace per creazione:
+ * se il cookie punta a un workspace fuori da quei N, si usa il primo accessibile (in ordine di creazione).
  */
 export async function getSelectedWorkspaceId(): Promise<string | null> {
+  const { getWorkspacesForCurrentUser } = await import("@/lib/queries/workspaces");
+  const allowed = await getWorkspacesForCurrentUser();
+  if (allowed.length === 0) return null;
+
   const cookieStore = cookies();
   const id = cookieStore.get(WORKSPACE_COOKIE)?.value ?? null;
-  if (id) return id;
-  const w = await getOrCreateDefaultWorkspace();
-  return w?.id ?? null;
+  const isAllowed = id && allowed.some((w) => w.id === id);
+  return isAllowed ? id : allowed[0].id;
 }
 
 /**

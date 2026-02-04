@@ -3,8 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { FloatingNewDecisionButton } from "@/components/dashboard/floating-new-decision-button";
-import { getWorkspacesForCurrentUser } from "@/lib/queries/workspaces";
+import { PreparingWorkspaceView } from "@/components/dashboard/preparing-workspace-view";
+import { getAllWorkspacesForCurrentUser } from "@/lib/queries/workspaces";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
+import { getEffectivePlanId } from "@/lib/billing";
 
 export default async function DashboardLayout({
   children,
@@ -21,16 +23,26 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  const [workspaces, selectedWorkspaceId] = await Promise.all([
-    getWorkspacesForCurrentUser(),
+  const [workspaces, selectedWorkspaceId, subscription] = await Promise.all([
+    getAllWorkspacesForCurrentUser(),
     getSelectedWorkspaceId(),
+    supabase.from("subscriptions").select("plan_id").eq("user_id", user.id).single(),
   ]);
+
+  // Nessun workspace: mostra "Preparando il tuo workspace", crea il workspace e reindirizza alla Dashboard
+  if (workspaces.length === 0) {
+    return <PreparingWorkspaceView />;
+  }
+
+  const planId = getEffectivePlanId(subscription?.data?.plan_id);
+  const isFree = planId === "free";
 
   return (
     <div className="flex h-screen bg-app-bg">
       <Sidebar
         workspaces={workspaces}
         selectedWorkspaceId={selectedWorkspaceId}
+        isFreePlan={isFree}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader userEmail={user.email} />
