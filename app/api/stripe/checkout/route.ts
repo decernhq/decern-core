@@ -16,18 +16,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => ({}));
-    const planId = body.planId ?? "pro";
+    const planId = body.planId ?? "team";
 
     const plan = PLANS[planId as keyof typeof PLANS];
     if (!plan) {
-      return NextResponse.json({ error: "Piano non valido" }, { status: 400 });
+      return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
     if (!plan.priceId?.trim()) {
       return NextResponse.json(
         {
           error:
-            "Stripe non configurato per questo piano. Imposta STRIPE_PRO_PRICE_ID in .env (Price ID da Stripe Dashboard, es. price_xxx).",
+            "Stripe not configured for this plan. Set STRIPE_TEAM_PRICE_ID or STRIPE_BUSINESS_PRICE_ID in .env.",
         },
         { status: 400 }
       );

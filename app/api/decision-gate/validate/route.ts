@@ -5,8 +5,12 @@ import { hashCiToken } from "@/lib/ci-token";
 const DECISION_ID_MAX_LENGTH = 128;
 const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 
+/** Free plan = CI observation only: gate never fails, but may return observationOnly + actual status */
+const OBSERVATION_ONLY_PLANS = ["free"] as const;
+
 type ValidateResponse =
   | { valid: true; decisionId: string; status: "approved" }
+  | { valid: true; observationOnly: true; decisionId: string; status: string }
   | { valid: false; reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "server_error"; status?: string };
 
 function json(body: ValidateResponse, status: number) {
@@ -45,19 +49,31 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const { data: workspace, error: wsError } = await supabase
       .from("workspaces")
-      .select("id")
+      .select("id, owner_id")
       .eq("ci_token_hash", tokenHash)
       .maybeSingle();
 
     if (wsError) {
       return json({ valid: false, reason: "server_error" }, 500);
     }
-    // .maybeSingle() must return one row or null; array = API misuse, fail fast
     if (Array.isArray(workspace)) {
       return json({ valid: false, reason: "server_error" }, 500);
     }
     if (!workspace?.id) {
       return json({ valid: false, reason: "unauthorized" }, 401);
+    }
+
+    // Resolve plan for workspace owner (free = observation only: CI never fails)
+    let observationOnly = false;
+    if (workspace.owner_id) {
+      const { data: sub } = await supabase
+        .from("subscriptions")
+        .select("plan_id")
+        .eq("user_id", workspace.owner_id)
+        .eq("status", "active")
+        .maybeSingle();
+      const planId = (sub as { plan_id?: string } | null)?.plan_id ?? "free";
+      observationOnly = OBSERVATION_ONLY_PLANS.includes(planId as (typeof OBSERVATION_ONLY_PLANS)[number]);
     }
 
     // Two explicit queries (decision → project) so workspace ownership is 100% reliable
@@ -98,8 +114,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return json({ valid: false, reason: "not_found" }, 404);
     }
 
-    const status = decision.status;
+    const status = decision.status as string;
     if (status !== "approved") {
+      if (observationOnly) {
+        return json(
+          { valid: true, observationOnly: true, decisionId: decision.id, status },
+          200
+        );
+      }
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
 

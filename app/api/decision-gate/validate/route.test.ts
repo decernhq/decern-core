@@ -15,19 +15,23 @@ function createRequest(options: { decisionId?: string; auth?: string }): NextReq
 const mockWorkspaceMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
+const mockSubMaybeSingle = vi.fn();
 
 vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
       select: () => ({
-        eq: () => ({
-          maybeSingle:
-            table === "workspaces"
-              ? mockWorkspaceMaybeSingle
-              : table === "decisions"
-                ? mockDecisionMaybeSingle
-                : mockProjectMaybeSingle,
-        }),
+        eq: (_key: string, _val?: string) =>
+          table === "subscriptions"
+            ? { eq: () => ({ maybeSingle: mockSubMaybeSingle }) }
+            : {
+                maybeSingle:
+                  table === "workspaces"
+                    ? mockWorkspaceMaybeSingle
+                    : table === "decisions"
+                      ? mockDecisionMaybeSingle
+                      : mockProjectMaybeSingle,
+              },
       }),
     }),
   }),
@@ -42,7 +46,11 @@ describe("GET /api/decision-gate/validate", () => {
     vi.clearAllMocks();
     process.env.NEXT_PUBLIC_SUPABASE_URL = "https://x.supabase.co";
     process.env.SUPABASE_SERVICE_ROLE_KEY = "service-role-key";
-    mockWorkspaceMaybeSingle.mockResolvedValue({ data: { id: WORKSPACE_ID }, error: null });
+    mockWorkspaceMaybeSingle.mockResolvedValue({
+      data: { id: WORKSPACE_ID, owner_id: "user-1" },
+      error: null,
+    });
+    mockSubMaybeSingle.mockResolvedValue({ data: { plan_id: "team" }, error: null });
   });
 
   it("1) no auth => 401", async () => {
@@ -178,5 +186,48 @@ describe("GET /api/decision-gate/validate", () => {
     const body = await res.json();
     expect(res.status).toBe(500);
     expect(body).toEqual({ valid: false, reason: "server_error" });
+  });
+
+  it("7) free plan + decision not approved => 200 observationOnly", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "proposed", project_id: "proj-1" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({
+      valid: true,
+      observationOnly: true,
+      decisionId,
+      status: "proposed",
+    });
+  });
+
+  it("8) free plan + decision approved => 200 (normal success, no observationOnly)", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "approved", project_id: "proj-1" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId, status: "approved" });
   });
 });

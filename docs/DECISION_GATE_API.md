@@ -1,6 +1,11 @@
 # Decision Gate API (MVP)
 
-Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in stato **approved**.
+Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in stato **approved**. Con piano **Free** la CI è in modalità **observation only**: il gate restituisce sempre `200` (la pipeline non fallisce), ma può includere `observationOnly: true` e lo stato reale della decisione.
+
+## Piano e comportamento
+
+- **Piano Free:** observation only — risposta sempre `200`. Se la decisione non è approvata, il body include `observationOnly: true` e lo `status` reale (es. `proposed`). La CI può mostrare un warning ma non fallire.
+- **Piani Team / Business / Enterprise / Governance:** enforcement — se la decisione non è approvata viene restituito `422` e la CI può far fallire la pipeline.
 
 ## Endpoint
 
@@ -18,11 +23,12 @@ Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in sta
 
 | Status | Body | Significato |
 |--------|------|-------------|
-| 200 | `{ "valid": true, "decisionId": "<id>", "status": "approved" }` | Decisione trovata e approvata. |
+| 200 | `{ "valid": true, "decisionId": "<id>", "status": "approved" }` | Decisione trovata e approvata (enforcement). |
+| 200 | `{ "valid": true, "observationOnly": true, "decisionId": "<id>", "status": "<status>" }` | Piano Free, decisione non approvata; CI non deve fallire. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token mancante o non valido. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | Nessuna decisione con quell’id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` vuoto, troppo lungo (>128) o caratteri non ammessi. |
-| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decisione trovata ma non in stato approved. |
+| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decisione trovata ma non approvata (piano a pagamento: enforcement). |
 | 500 | `{ "valid": false, "reason": "server_error" }` | Errore lato server (es. DB). |
 
 ## Validazione `decisionId`

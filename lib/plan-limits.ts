@@ -53,8 +53,8 @@ export async function checkCanCreateWorkspace(userId: string): Promise<{
       allowed: false,
       error:
         limits.workspaces_limit === 1
-          ? "Il piano Free permette un solo workspace. Passa a Pro o Ultra per crearne altri."
-          : "Hai raggiunto il limite di workspace del tuo piano.",
+          ? "The Free plan allows one workspace. Upgrade to Team or Business to create more."
+          : "You have reached the workspace limit for your plan.",
     };
   }
   return { allowed: true };

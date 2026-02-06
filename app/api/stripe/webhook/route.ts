@@ -100,12 +100,12 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function planIdFromStripePriceId(priceId: string): "pro" | "ultra" {
-  const proId = process.env.STRIPE_PRO_PRICE_ID?.trim();
-  const ultraId = process.env.STRIPE_ULTRA_PRICE_ID?.trim();
-  if (ultraId && priceId === ultraId) return "ultra";
-  if (proId && priceId === proId) return "pro";
-  return "pro";
+function planIdFromStripePriceId(priceId: string): "team" | "business" {
+  const teamId = process.env.STRIPE_TEAM_PRICE_ID?.trim();
+  const businessId = process.env.STRIPE_BUSINESS_PRICE_ID?.trim();
+  if (businessId && priceId === businessId) return "business";
+  if (teamId && priceId === teamId) return "team";
+  return "team";
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {

@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type UpgradeButtonProps = {
-  planId?: "pro" | "ultra";
+  planId?: "team" | "business";
   className?: string;
   size?: "sm" | "md" | "lg";
 };
 
-export function UpgradeButton({ planId = "pro", className, size }: UpgradeButtonProps) {
+export function UpgradeButton({ planId = "team", className, size }: UpgradeButtonProps) {
   const t = useTranslations("buttons");
   const tErrors = useTranslations("errors");
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ export function UpgradeButton({ planId = "pro", className, size }: UpgradeButton
     }
   };
 
-  const label = planId === "ultra" ? t("upgradeToUltra") : t("upgradeToPro");
+  const label = planId === "business" ? t("upgradeToBusiness") : t("upgradeToTeam");
 
   return (
     <Button onClick={handleUpgrade} disabled={loading} className={cn(className)} size={size}>

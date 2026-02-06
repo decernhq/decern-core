@@ -34,16 +34,18 @@ export default async function SettingsPage() {
 
   const effectivePlanId = getEffectivePlanId(subscription?.plan_id) as PlanId;
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
-  const isPaid = effectivePlanId === "pro" || effectivePlanId === "ultra";
+  const isPaid = effectivePlanId === "team" || effectivePlanId === "business";
   const isEnterprise = effectivePlanId === "enterprise";
+  const isGovernance = effectivePlanId === "governance";
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
-  const isOverridden = ["free", "pro", "ultra", "enterprise"].includes(planOverride ?? "");
+  const isOverridden = ["free", "team", "business", "enterprise", "governance"].includes(planOverride ?? "");
 
   const tPlans = await getTranslations("plans");
   const planName = tPlans(`${effectivePlanId}.name`);
   const messages = await getMessages();
   const planData = (messages?.plans as Record<string, { features?: string[] }>)?.[effectivePlanId];
-  const featuresList = Array.isArray(planData?.features) ? planData.features : currentPlan.features;
+  const featuresList =
+    Array.isArray(planData?.features) ? planData.features : currentPlan.features;
 
   const dateLocale = locale === "it" ? "it-IT" : "en-US";
 
@@ -93,12 +95,12 @@ export default async function SettingsPage() {
             </div>
             <span
               className={`rounded-full px-3 py-1 text-sm font-medium ${
-                isPaid || isEnterprise
+                isPaid || isEnterprise || isGovernance
                   ? "bg-brand-100 text-brand-700"
                   : "bg-gray-100 text-gray-700"
               }`}
             >
-              {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : tPricing("free")}
+              {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : isGovernance ? "Governance" : tPricing("free")}
             </span>
           </div>
 
@@ -122,12 +124,12 @@ export default async function SettingsPage() {
           <div className="mt-6 flex flex-wrap gap-3">
             {isPaid ? (
               <ManageSubscriptionButton />
-            ) : isEnterprise ? (
+            ) : isEnterprise || isGovernance ? (
               <p className="text-sm text-gray-500">{t("contactSupport")}</p>
             ) : (
               <>
-                <UpgradeButton planId="pro" />
-                <UpgradeButton planId="ultra" />
+                <UpgradeButton planId="team" />
+                <UpgradeButton planId="business" />
               </>
             )}
           </div>

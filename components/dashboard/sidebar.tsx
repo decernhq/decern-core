@@ -75,8 +75,8 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const navigation = useNavItems();
-  const showUpgrade = planId === "free" || planId === "pro";
-  const upgradePlanId = planId === "free" ? "pro" : "ultra";
+  const showUpgrade = planId === "free" || planId === "team";
+  const upgradePlanId = planId === "free" ? "team" : "business";
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-app-border bg-app-card">

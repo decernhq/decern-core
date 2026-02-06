@@ -2,7 +2,7 @@
  * Billing types for Stripe integration and plan limits
  */
 
-export type PlanId = "free" | "pro" | "ultra" | "enterprise";
+export type PlanId = "free" | "team" | "business" | "enterprise" | "governance";
 
 export interface PlanLimits {
   workspaces_limit: number;
@@ -17,7 +17,7 @@ export interface Plan {
   name: string;
   description: string;
   price: number; // monthly price in EUR
-  priceId: string | null; // Stripe Price ID (null for free/enterprise)
+  priceId: string | null; // Stripe Price ID (null for free/enterprise/governance)
   features: string[];
   limits: PlanLimits;
 }
@@ -26,57 +26,57 @@ export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: "free",
     name: "Free",
-    description: "Per provare il flusso",
+    description: "To get started",
     price: 0,
     priceId: null,
     features: [
       "1 workspace",
-      "1 progetto",
-      "1 utente",
-      "30 decisioni totali",
-      "5 generazioni AI/mese",
+      "1 project",
+      "Unlimited decisions",
+      "CI Observation Only",
+      "10 AI Assist Generation",
     ],
     limits: {
       workspaces_limit: 1,
       projects_limit: 1,
       users_per_workspace_limit: 1,
-      decisions_limit: 30,
-      ai_generations_per_month: 5,
+      decisions_limit: -1,
+      ai_generations_per_month: 10,
     },
   },
-  pro: {
-    id: "pro",
-    name: "Pro",
-    description: "Freelance e piccoli team",
-    price: 19,
-    priceId: process.env.STRIPE_PRO_PRICE_ID || "",
+  team: {
+    id: "team",
+    name: "Team",
+    description: "For growing teams",
+    price: 49,
+    priceId: process.env.STRIPE_TEAM_PRICE_ID || "",
     features: [
       "1 workspace",
-      "Progetti illimitati",
-      "Fino a 5 utenti",
-      "Decisioni illimitate",
-      "300 generazioni AI/mese",
+      "Unlimited projects",
+      "Unlimited decisions",
+      "Full CI Enforcement Integration",
+      "500 AI Assist Generation",
     ],
     limits: {
       workspaces_limit: 1,
       projects_limit: -1,
-      users_per_workspace_limit: 5,
+      users_per_workspace_limit: 10,
       decisions_limit: -1,
-      ai_generations_per_month: 300,
+      ai_generations_per_month: 500,
     },
   },
-  ultra: {
-    id: "ultra",
-    name: "Ultra",
-    description: "Team di prodotto/engineering",
-    price: 49,
-    priceId: process.env.STRIPE_ULTRA_PRICE_ID || "",
+  business: {
+    id: "business",
+    name: "Business",
+    description: "For organizations",
+    price: 99,
+    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || "",
     features: [
-      "Workspace illimitati",
-      "Progetti illimitati",
-      "Fino a 20 utenti per workspace",
-      "Decisioni illimitate",
-      "1.500 generazioni AI/mese",
+      "Unlimited workspaces",
+      "Unlimited projects",
+      "Unlimited decisions",
+      "Full CI Enforcement Integration",
+      "1500 AI Assist Generation",
     ],
     limits: {
       workspaces_limit: -1,
@@ -89,10 +89,25 @@ export const PLANS: Record<PlanId, Plan> = {
   enterprise: {
     id: "enterprise",
     name: "Enterprise",
-    description: "Let's talk",
+    description: "Let's Talk",
     price: 0,
     priceId: null,
-    features: ["Limiti personalizzati", "Supporto dedicato"],
+    features: ["Custom limits", "Dedicated Support", "Dedicated Hosting"],
+    limits: {
+      workspaces_limit: -1,
+      projects_limit: -1,
+      users_per_workspace_limit: -1,
+      decisions_limit: -1,
+      ai_generations_per_month: -1,
+    },
+  },
+  governance: {
+    id: "governance",
+    name: "Governance / On Prem",
+    description: "Let's Talk",
+    price: 0,
+    priceId: null,
+    features: ["Custom limits", "Dedicated Support", "On Prem"],
     limits: {
       workspaces_limit: -1,
       projects_limit: -1,

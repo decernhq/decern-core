@@ -65,7 +65,7 @@
   },
   "pricing": {
     "title": "Prezzi semplici e trasparenti",
-    "subtitle": "Scegli il piano più adatto: da Free per provare fino a Ultra per i team.",
+    "subtitle": "Scegli il piano più adatto: da Free a Business ed Enterprise.",
     "perMonth": "/mese",
     "mostPopular": "Più popolare",
     "startFree": "Inizia gratis",
@@ -78,23 +78,28 @@
   "plans": {
     "free": {
       "name": "Free",
-      "description": "Per provare il flusso",
-      "features": ["1 workspace", "1 progetto", "1 utente", "30 decisioni totali", "5 generazioni AI/mese"]
+      "description": "Per iniziare",
+      "features": ["1 workspace", "1 progetto", "Decisioni illimitate", "CI Observation Only", "10 AI Assist Generation"]
     },
-    "pro": {
-      "name": "Pro",
-      "description": "Freelance e piccoli team",
-      "features": ["1 workspace", "Progetti illimitati", "Fino a 5 utenti", "Decisioni illimitate", "300 generazioni AI/mese"]
+    "team": {
+      "name": "Team",
+      "description": "Per team in crescita",
+      "features": ["1 workspace", "Progetti illimitati", "Decisioni illimitate", "Full CI Enforcement Integration", "500 AI Assist Generation"]
     },
-    "ultra": {
-      "name": "Ultra",
-      "description": "Team di prodotto/engineering",
-      "features": ["Workspace illimitati", "Progetti illimitati", "Fino a 20 utenti per workspace", "Decisioni illimitate", "1.500 generazioni AI/mese"]
+    "business": {
+      "name": "Business",
+      "description": "Per le organizzazioni",
+      "features": ["Workspace illimitati", "Progetti illimitati", "Decisioni illimitate", "Full CI Enforcement Integration", "1500 AI Assist Generation"]
     },
     "enterprise": {
       "name": "Enterprise",
-      "description": "Let's talk",
-      "features": ["Limiti personalizzati", "Supporto dedicato"]
+      "description": "Let's Talk",
+      "features": ["Limiti personalizzati", "Supporto dedicato", "Dedicated Hosting"]
+    },
+    "governance": {
+      "name": "Governance / On Prem",
+      "description": "Let's Talk",
+      "features": ["Limiti personalizzati", "Supporto dedicato", "On Prem"]
     }
   },
   "dashboard": {
@@ -234,7 +239,7 @@
     "createNew": "Crea nuovo workspace",
     "createHint": "Con il piano Ultra puoi creare più workspace per organizzare team e progetti.",
     "upgradeForWorkspaces": "Per creare più workspace passa al",
-    "ultraPlan": "piano Ultra",
+    "businessPlan": "piano Business",
     "membersAndInvites": "Workspace – Membri e inviti",
     "membersHint": "Gli utenti invitati al workspace vedranno tutti i progetti. Gestisci inviti e membri qui.",
     "owner": "Proprietario",
@@ -296,8 +301,8 @@
   },
   "buttons": {
     "upgrade": "Upgrade",
-    "upgradeToPro": "Passa a Pro",
-    "upgradeToUltra": "Passa a Ultra",
+    "upgradeToTeam": "Passa a Team",
+    "upgradeToBusiness": "Passa a Business",
     "upgradeLoading": "Caricamento...",
     "manageSubscription": "Gestisci abbonamento"
   }

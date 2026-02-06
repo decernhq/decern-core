@@ -87,7 +87,7 @@ export default async function WorkspacePage() {
         <p className="mt-4 text-sm text-gray-500">
           {t("upgradeForWorkspaces")}{" "}
           <Link href="/dashboard/settings" className="font-medium text-brand-600 hover:text-brand-700">
-            {t("ultraPlan")}
+            {t("businessPlan")}
           </Link>.
         </p>
       )}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type PricingCheckoutButtonProps = {
-  planId: "pro" | "ultra";
+  planId: "team" | "business";
   planName: string;
   className?: string;
   size?: "sm" | "md" | "lg";
