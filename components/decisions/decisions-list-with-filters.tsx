@@ -3,20 +3,19 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Tooltip } from "@/components/ui/tooltip";
 import { DecisionStatus } from "@/types/decision";
 import type { Project } from "@/types/database";
 import {
-  DECISION_STATUS_OPTIONS,
-  getDecisionStatusLabel,
+  DECISION_STATUS_VALUES,
   STATUS_COLORS,
 } from "@/lib/constants/decision-status";
 import type { DecisionWithAuthor } from "@/lib/queries/decisions";
 import { cn } from "@/lib/utils";
 import { updateDecisionStatusAction } from "@/app/(dashboard)/dashboard/decisions/actions";
 
-const statusOptions = DECISION_STATUS_OPTIONS;
 const statusColors = STATUS_COLORS;
 
 const PAGE_SIZE = 24;
@@ -38,6 +37,18 @@ export function DecisionsListWithFilters({
   availableTags,
   hasProjects,
 }: DecisionsListWithFiltersProps) {
+  const t = useTranslations("decisions");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("decisionStatus");
+  const locale = useLocale();
+  const dateLocale = locale === "it" ? "it-IT" : "en-US";
+  const statusOptions = useMemo(
+    () => [
+      { value: "" as const, label: tStatus("allStatuses") },
+      ...DECISION_STATUS_VALUES.map((value) => ({ value, label: tStatus(value) })),
+    ],
+    [t, tStatus]
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<DecisionStatus | "">("");
   const [projectFilter, setProjectFilter] = useState<string>("");
@@ -291,16 +302,16 @@ export function DecisionsListWithFilters({
           type="search"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Cerca per titolo o contesto..."
+          placeholder={t("searchPlaceholder")}
           className="w-full rounded-lg border border-gray-300 bg-white py-2.5 pl-10 pr-4 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          aria-label="Cerca decisioni"
+          aria-label={t("searchAria")}
         />
         {searchQuery && (
           <button
             type="button"
             onClick={() => setSearchQuery("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-            aria-label="Cancella ricerca"
+            aria-label={t("clearSearch")}
           >
             ×
           </button>
@@ -310,14 +321,14 @@ export function DecisionsListWithFilters({
       {/* Filter bar */}
       <div className="space-y-4 rounded-xl border border-gray-200 bg-gray-50/80 p-4">
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-sm font-medium text-gray-700">Filtri:</span>
+          <span className="text-sm font-medium text-gray-700">{t("filters")}</span>
 
           <select
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
             className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-700 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
-            <option value="">Tutti i progetti</option>
+            <option value="">{t("allProjects")}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -341,7 +352,7 @@ export function DecisionsListWithFilters({
 
           <div className="flex items-center gap-2">
             <label htmlFor="date-from" className="text-xs text-gray-500">
-              Da
+              {t("dateFrom")}
             </label>
             <input
               id="date-from"
@@ -353,7 +364,7 @@ export function DecisionsListWithFilters({
           </div>
           <div className="flex items-center gap-2">
             <label htmlFor="date-to" className="text-xs text-gray-500">
-              A
+              {t("dateTo")}
             </label>
             <input
               id="date-to"
@@ -372,15 +383,14 @@ export function DecisionsListWithFilters({
               onClick={clearFilters}
               className="ml-auto text-gray-600"
             >
-              Cancella filtri
+              {t("clearFilters")}
             </Button>
           )}
         </div>
 
-        {/* Tag filter: input + dropdown + selected chips */}
         <div className="border-t border-gray-200 pt-4">
           <label className="mb-2 block text-sm font-medium text-gray-700">
-            Tag
+            {t("tags")}
           </label>
           <div className="flex flex-wrap items-center gap-2">
             {selectedTags.map((tag) => (
@@ -393,7 +403,7 @@ export function DecisionsListWithFilters({
                   type="button"
                   onClick={() => removeTag(tag)}
                   className="rounded-full p-0.5 hover:bg-brand-200"
-                  aria-label={`Rimuovi tag ${tag}`}
+                  aria-label={t("removeTag", { tag })}
                 >
                   ×
                 </button>
@@ -415,7 +425,7 @@ export function DecisionsListWithFilters({
                     addTag(filteredTagSuggestions[0]);
                   }
                 }}
-                placeholder="Scrivi e seleziona tag..."
+                placeholder={t("tagPlaceholder")}
                 className="h-9 w-full rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
               {tagDropdownOpen && (
@@ -437,8 +447,8 @@ export function DecisionsListWithFilters({
                   ) : (
                     <p className="px-3 py-2 text-sm text-gray-500">
                       {availableTags.length === 0
-                        ? "Nessun tag disponibile"
-                        : "Nessun tag corrispondente"}
+                        ? t("noTagsAvailable")
+                        : t("noTagsMatch")}
                     </p>
                   )}
                 </div>
@@ -451,14 +461,14 @@ export function DecisionsListWithFilters({
       {/* Results count */}
       <p className="text-sm text-gray-500">
         {filteredDecisions.length === decisions.length ? (
-          <>{decisions.length} decisioni</>
+          <>{t("ofCount", { count: decisions.length, total: decisions.length })}</>
         ) : (
           <>
-            {filteredDecisions.length} di {decisions.length} decisioni
+            {t("ofCount", { count: filteredDecisions.length, total: decisions.length })}
           </>
         )}
         {totalPages > 1 && (
-          <> · Pagina {currentPage} di {totalPages}</>
+          <> · {t("pageOf", { current: currentPage, total: totalPages })}</>
         )}
       </p>
 
@@ -483,7 +493,7 @@ export function DecisionsListWithFilters({
                       onClick={() => handleSort("title")}
                       className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
                     >
-                      Titolo
+                      {t("titleCol")}
                       <SortIcon columnKey="title" />
                     </button>
                   </th>
@@ -493,7 +503,7 @@ export function DecisionsListWithFilters({
                       onClick={() => handleSort("project")}
                       className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
                     >
-                      Progetto
+                      {t("projectCol")}
                       <SortIcon columnKey="project" />
                     </button>
                   </th>
@@ -503,7 +513,7 @@ export function DecisionsListWithFilters({
                       onClick={() => handleSort("author")}
                       className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
                     >
-                      Autore
+                      {t("authorCol")}
                       <SortIcon columnKey="author" />
                     </button>
                   </th>
@@ -513,12 +523,12 @@ export function DecisionsListWithFilters({
                       onClick={() => handleSort("status")}
                       className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
                     >
-                      Stato
+                      {t("statusCol")}
                       <SortIcon columnKey="status" />
                     </button>
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    Tags
+                    {t("tags")}
                   </th>
                   <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
                     <button
@@ -526,12 +536,12 @@ export function DecisionsListWithFilters({
                       onClick={() => handleSort("date")}
                       className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
                     >
-                      Data
+                      {t("dateCol")}
                       <SortIcon columnKey="date" />
                     </button>
                   </th>
                   <th className="w-10 px-2 py-2 text-right text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <span className="sr-only">Duplica</span>
+                    <span className="sr-only">{t("duplicateDecision")}</span>
                   </th>
                 </tr>
               </thead>
@@ -620,8 +630,8 @@ export function DecisionsListWithFilters({
                                 setOpenTagsPopoverId((id) => (id === decision.id ? null : decision.id));
                               }}
                               className="inline-flex shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
-                              title={`Mostra tutti i tag (${tags.length})`}
-                              aria-label={`Mostra tutti i tag (${tags.length})`}
+                              title={t("showAllTags", { count: tags.length })}
+                              aria-label={t("showAllTags", { count: tags.length })}
                             >
                               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7a1.994 1.994 0 01-.586-1.414V7a2 2 0 012-2z" />
@@ -630,7 +640,7 @@ export function DecisionsListWithFilters({
                           )}
                           {isTagsPopoverOpen && hasMoreTags && (
                             <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
-                              <p className="mb-1.5 px-2 text-xs font-medium text-gray-500">Tutti i tag</p>
+                              <p className="mb-1.5 px-2 text-xs font-medium text-gray-500">{t("allTags")}</p>
                               <div className="flex flex-wrap gap-1 px-2">
                                 {tags.map((tag) => (
                                   <span
@@ -646,14 +656,14 @@ export function DecisionsListWithFilters({
                         </div>
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {new Date(decision.created_at).toLocaleDateString("it-IT")}
+                        {new Date(decision.created_at).toLocaleDateString(dateLocale)}
                       </td>
                       <td className="overflow-visible px-2 py-2 text-right">
-                        <Tooltip label="Duplica decisione">
+                        <Tooltip label={t("duplicateDecision")}>
                           <Link
                             href={`/dashboard/decisions/new?duplicate=${decision.id}`}
                             className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                            aria-label="Duplica decisione"
+                            aria-label={t("duplicateDecision")}
                           >
                             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -683,7 +693,7 @@ export function DecisionsListWithFilters({
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   className="h-8 px-2 text-xs"
                 >
-                  Precedente
+                  {tCommon("previous")}
                 </Button>
                 <Button
                   type="button"
@@ -693,7 +703,7 @@ export function DecisionsListWithFilters({
                   onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   className="h-8 px-2 text-xs"
                 >
-                  Successiva
+                  {tCommon("next")}
                 </Button>
               </div>
             </div>
@@ -703,8 +713,8 @@ export function DecisionsListWithFilters({
         <div className="rounded-xl border border-gray-200 bg-white p-12 text-center">
           <p className="text-sm text-gray-500">
             {decisions.length === 0
-              ? "Nessuna decisione. Creane una per iniziare."
-              : "Nessun risultato con i filtri selezionati. Prova a cambiare ricerca o tag."}
+              ? t("noDecisionsCreate")
+              : t("noResultsFilters")}
           </p>
           {hasActiveFilters && (
             <Button
@@ -713,7 +723,7 @@ export function DecisionsListWithFilters({
               className="mt-4"
               onClick={clearFilters}
             >
-              Cancella filtri
+              {t("clearFilters")}
             </Button>
           )}
         </div>

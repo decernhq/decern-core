@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -12,6 +13,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
   const router = useRouter();
   const supabase = createClient();
+  const t = useTranslations("nav");
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -28,7 +30,7 @@ export function DashboardHeader({ userEmail }: DashboardHeaderProps) {
           <span className="text-sm text-app-text-muted">{userEmail}</span>
         )}
         <Button variant="outline" size="sm" onClick={handleLogout}>
-          Logout
+          {t("logout")}
         </Button>
       </div>
     </header>

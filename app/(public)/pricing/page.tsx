@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations, getMessages } from "next-intl/server";
 import { PLANS, type PlanId } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { PricingCheckoutButton } from "@/components/pricing-checkout-button";
@@ -6,17 +7,30 @@ import { cn } from "@/lib/utils";
 
 const PLAN_ORDER: PlanId[] = ["free", "pro", "ultra", "enterprise"];
 
-export default function PricingPage() {
-  const plans = PLAN_ORDER.map((id) => PLANS[id]);
+export default async function PricingPage() {
+  const t = await getTranslations("pricing");
+  const messages = await getMessages();
+  const plansData = (messages as { plans?: Record<string, { name?: string; description?: string; features?: string[] }> })?.plans;
+
+  const plans = PLAN_ORDER.map((id) => {
+    const plan = PLANS[id];
+    const pm = plansData?.[id];
+    return {
+      ...plan,
+      name: pm?.name ?? plan.name,
+      description: pm?.description ?? plan.description,
+      features: pm?.features ?? plan.features,
+    };
+  });
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4 py-16">
       <div className="mx-auto max-w-5xl text-center">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-          Prezzi semplici e trasparenti
+          {t("title")}
         </h1>
         <p className="mt-4 text-lg text-gray-600">
-          Scegli il piano più adatto: da Free per provare fino a Ultra per i team.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -34,7 +48,7 @@ export default function PricingPage() {
             {plan.id === "pro" && (
               <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                 <span className="rounded-full bg-brand-600 px-3 py-0.5 text-xs font-medium text-white">
-                  Più popolare
+                  {t("mostPopular")}
                 </span>
               </div>
             )}
@@ -53,7 +67,7 @@ export default function PricingPage() {
                       : `€${plan.price}`}
                 </span>
                 {plan.price > 0 && (
-                  <span className="text-gray-500 text-sm">/mese</span>
+                  <span className="text-gray-500 text-sm">{t("perMonth")}</span>
                 )}
               </div>
             </div>
@@ -83,7 +97,7 @@ export default function PricingPage() {
               {plan.id === "free" ? (
                 <Link href="/signup" className="block">
                   <Button variant="outline" className="w-full">
-                    Inizia gratis
+                    {t("startFree")}
                   </Button>
                 </Link>
               ) : plan.id === "enterprise" ? (
@@ -92,7 +106,7 @@ export default function PricingPage() {
                   className="block"
                 >
                   <Button variant="outline" className="w-full">
-                    Contattaci
+                    {t("contactUs")}
                   </Button>
                 </a>
               ) : (
@@ -109,7 +123,7 @@ export default function PricingPage() {
       </div>
 
       <p className="mt-12 text-center text-sm text-gray-500">
-        Hai domande?{" "}
+        {t("questions")}{" "}
         <a
           href="mailto:support@decern.app"
           className="text-brand-600 hover:text-brand-500"

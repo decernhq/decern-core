@@ -29,7 +29,6 @@ export default async function DashboardLayout({
     supabase.from("subscriptions").select("plan_id").eq("user_id", user.id).single(),
   ]);
 
-  // Nessun workspace: mostra "Preparando il tuo workspace", crea il workspace e reindirizza alla Dashboard
   if (workspaces.length === 0) {
     return <PreparingWorkspaceView />;
   }

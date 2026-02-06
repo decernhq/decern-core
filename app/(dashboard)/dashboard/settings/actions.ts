@@ -2,9 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceInvitationByToken } from "@/lib/queries/workspaces";
 import { checkCanInviteToWorkspace } from "@/lib/plan-limits";
+
+const LOCALE_COOKIE = "NEXT_LOCALE";
+const VALID_LOCALES = ["en", "it"] as const;
 
 export type UpdateProfileNameState = {
   error?: string;
@@ -28,7 +32,7 @@ export async function updateProfileNameAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Non autenticato" };
+    return { error: "not_authenticated" };
   }
 
   const full_name = (formData.get("full_name") as string)?.trim() ?? "";
@@ -40,7 +44,7 @@ export async function updateProfileNameAction(
 
   if (error) {
     console.error("Error updating profile name:", error);
-    return { error: "Impossibile aggiornare il nome. Riprova." };
+    return { error: "name_update_failed" };
   }
 
   revalidatePath("/dashboard/settings");
@@ -64,7 +68,7 @@ export async function updateProfileRoleAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Non autenticato" };
+    return { error: "not_authenticated" };
   }
 
   const role = (formData.get("role") as string)?.trim() || null;
@@ -76,7 +80,7 @@ export async function updateProfileRoleAction(
 
   if (error) {
     console.error("Error updating profile role:", error);
-    return { error: "Impossibile aggiornare il ruolo. Riprova." };
+    return { error: "role_update_failed" };
   }
 
   revalidatePath("/dashboard/settings");
@@ -217,5 +221,42 @@ export async function revokeWorkspaceInvitationAction(invitationId: string): Pro
   }
 
   revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+export type UpdateProfileLocaleState = {
+  error?: string;
+  success?: boolean;
+};
+
+export async function updateProfileLocaleAction(
+  _prevState: UpdateProfileLocaleState,
+  formData: FormData
+): Promise<UpdateProfileLocaleState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  const locale = (formData.get("locale") as string)?.trim();
+  if (!locale || !VALID_LOCALES.includes(locale as (typeof VALID_LOCALES)[number])) {
+    return { error: "Invalid locale" };
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({ locale })
+    .eq("id", user.id);
+
+  if (error) {
+    console.error("Error updating profile locale:", error);
+    return { error: "Failed to update language" };
+  }
+
+  const store = await cookies();
+  store.set(LOCALE_COOKIE, locale, { path: "/", maxAge: 60 * 60 * 24 * 365 });
+  revalidatePath("/dashboard/settings");
+  revalidatePath("/", "layout");
   return { success: true };
 }

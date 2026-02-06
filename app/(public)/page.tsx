@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import { Button } from "@/components/ui/button";
 
 export default async function LandingPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  const t = await getTranslations("home");
+  const tNav = await getTranslations("nav");
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center px-4">
@@ -13,23 +16,23 @@ export default async function LandingPage() {
           Decern
         </h1>
         <p className="mt-6 text-xl leading-8 text-gray-600">
-          Il registro delle decisioni tecniche del tuo team.
+          {t("tagline")}
           <br />
-          Documenta, condividi e traccia le scelte architetturali che contano.
+          {t("taglineSub")}
         </p>
         <div className="mt-10 flex items-center justify-center gap-4">
           {user ? (
             <Link href="/dashboard">
-              <Button size="lg">Entra</Button>
+              <Button size="lg">{tNav("enter")}</Button>
             </Link>
           ) : (
             <>
               <Link href="/signup">
-                <Button size="lg">Sign up</Button>
+                <Button size="lg">{tNav("signUp")}</Button>
               </Link>
               <Link href="/login">
                 <Button variant="outline" size="lg">
-                  Log in
+                  {tNav("logIn")}
                 </Button>
               </Link>
             </>
@@ -37,35 +40,19 @@ export default async function LandingPage() {
         </div>
       </div>
 
-      {/* Features section */}
       <section className="mx-auto mt-24 max-w-5xl px-4">
         <div className="grid gap-8 sm:grid-cols-3">
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Documenta le decisioni
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Registra il contesto, le opzioni valutate e le conseguenze di ogni
-              decisione tecnica.
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">{t("feature1Title")}</h3>
+            <p className="mt-2 text-sm text-gray-600">{t("feature1Desc")}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Organizza per progetto
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Raggruppa le decisioni per progetto e mantieni tutto ordinato e
-              accessibile.
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">{t("feature2Title")}</h3>
+            <p className="mt-2 text-sm text-gray-600">{t("feature2Desc")}</p>
           </div>
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h3 className="text-lg font-semibold text-gray-900">
-              Condividi col team
-            </h3>
-            <p className="mt-2 text-sm text-gray-600">
-              Collabora con il tuo team e mantieni tutti allineati sulle scelte
-              fatte.
-            </p>
+            <h3 className="text-lg font-semibold text-gray-900">{t("feature3Title")}</h3>
+            <p className="mt-2 text-sm text-gray-600">{t("feature3Desc")}</p>
           </div>
         </div>
       </section>

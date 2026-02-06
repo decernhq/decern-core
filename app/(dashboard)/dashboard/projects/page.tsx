@@ -1,9 +1,11 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getProjects, getDecisionCountsByProjectIds } from "@/lib/queries/projects";
 import { ProjectCard } from "@/components/projects/project-card";
 import { Button } from "@/components/ui/button";
 
 export default async function ProjectsPage() {
+  const t = await getTranslations("projects");
   const projects = await getProjects();
   const projectIds = projects.map((p) => p.id);
   const decisionCounts = await getDecisionCountsByProjectIds(projectIds);
@@ -12,13 +14,11 @@ export default async function ProjectsPage() {
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Progetti</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            Gestisci i tuoi progetti e le relative decisioni
-          </p>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+          <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
         </div>
         <Link href="/dashboard/projects/new">
-          <Button>+ Nuovo progetto</Button>
+          <Button>{t("newProject")}</Button>
         </Link>
       </div>
 
@@ -49,14 +49,10 @@ export default async function ProjectsPage() {
               />
             </svg>
           </div>
-          <h3 className="mt-4 text-sm font-medium text-gray-900">
-            Nessun progetto
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Inizia creando il tuo primo progetto per organizzare le decisioni.
-          </p>
+          <h3 className="mt-4 text-sm font-medium text-gray-900">{t("noProjects")}</h3>
+          <p className="mt-1 text-sm text-gray-500">{t("noProjectsHint")}</p>
           <Link href="/dashboard/projects/new">
-            <Button className="mt-6">Crea progetto</Button>
+            <Button className="mt-6">{t("createProject")}</Button>
           </Link>
         </div>
       )}

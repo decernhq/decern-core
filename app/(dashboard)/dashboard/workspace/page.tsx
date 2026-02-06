@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getTranslations } from "next-intl/server";
 import {
   getOrCreateDefaultWorkspace,
   getWorkspaceById,
@@ -19,6 +20,7 @@ import Link from "next/link";
 
 export default async function WorkspacePage() {
   const supabase = await createClient();
+  const t = await getTranslations("workspace");
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -36,8 +38,8 @@ export default async function WorkspacePage() {
   if (!workspace) {
     return (
       <div className="mx-auto max-w-2xl">
-        <h1 className="text-2xl font-bold text-gray-900">Workspace</h1>
-        <p className="mt-4 text-gray-600">Impossibile caricare il workspace.</p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <p className="mt-4 text-gray-600">{t("loadError")}</p>
       </div>
     );
   }
@@ -60,10 +62,8 @@ export default async function WorkspacePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-900">Workspace</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        Gestisci membri e inviti. Gli utenti invitati vedranno tutti i progetti del workspace.
-      </p>
+      <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+      <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
 
       <div className="mt-6">
         <WorkspaceList
@@ -75,10 +75,8 @@ export default async function WorkspacePage() {
 
       {canCreateWorkspaces && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900">Crea nuovo workspace</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Con il piano Ultra puoi creare più workspace per organizzare team e progetti.
-          </p>
+          <h2 className="text-lg font-semibold text-gray-900">{t("createNew")}</h2>
+          <p className="mt-1 text-sm text-gray-500">{t("createHint")}</p>
           <div className="mt-4">
             <CreateWorkspaceForm />
           </div>
@@ -87,9 +85,9 @@ export default async function WorkspacePage() {
 
       {!canCreateWorkspaces && (
         <p className="mt-4 text-sm text-gray-500">
-          Per creare più workspace passa al{" "}
+          {t("upgradeForWorkspaces")}{" "}
           <Link href="/dashboard/settings" className="font-medium text-brand-600 hover:text-brand-700">
-            piano Ultra
+            {t("ultraPlan")}
           </Link>.
         </p>
       )}

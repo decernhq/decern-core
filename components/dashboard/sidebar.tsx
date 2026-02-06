@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Workspace } from "@/types/database";
 import type { PlanId } from "@/types/billing";
 import { Logo } from "@/components/logo";
@@ -11,9 +12,11 @@ import { cn } from "@/lib/utils";
 
 const iconClass = "h-5 w-5 flex-shrink-0";
 
-const navigation = [
+function useNavItems() {
+  const t = useTranslations("nav");
+  return [
   {
-    name: "Dashboard",
+    name: t("dashboard"),
     href: "/dashboard",
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -22,7 +25,7 @@ const navigation = [
     ),
   },
   {
-    name: "Progetti",
+    name: t("projects"),
     href: "/dashboard/projects",
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -31,7 +34,7 @@ const navigation = [
     ),
   },
   {
-    name: "Decisioni",
+    name: t("decisions"),
     href: "/dashboard/decisions",
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -40,7 +43,7 @@ const navigation = [
     ),
   },
   {
-    name: "Workspace",
+    name: t("workspace"),
     href: "/dashboard/workspace",
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -49,7 +52,7 @@ const navigation = [
     ),
   },
   {
-    name: "Impostazioni",
+    name: t("settings"),
     href: "/dashboard/settings",
     icon: (
       <svg className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -59,6 +62,7 @@ const navigation = [
     ),
   },
 ];
+}
 
 export function Sidebar({
   workspaces,
@@ -70,6 +74,7 @@ export function Sidebar({
   planId: PlanId;
 }) {
   const pathname = usePathname();
+  const navigation = useNavItems();
   const showUpgrade = planId === "free" || planId === "pro";
   const upgradePlanId = planId === "free" ? "pro" : "ultra";
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { Logo } from "./logo";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./theme-toggle";
@@ -8,7 +9,9 @@ interface NavbarProps {
   user?: User | null;
 }
 
-export function Navbar({ user }: NavbarProps) {
+export async function Navbar({ user }: NavbarProps) {
+  const t = await getTranslations("nav");
+
   return (
     <header className="border-b border-app-border bg-app-card">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -17,19 +20,19 @@ export function Navbar({ user }: NavbarProps) {
           <ThemeToggle />
           <span className="flex items-center gap-4">
           <Link href="/pricing">
-            <Button variant="ghost">Prezzi</Button>
+            <Button variant="ghost">{t("pricing")}</Button>
           </Link>
           {user ? (
             <Link href="/dashboard">
-              <Button>Entra</Button>
+              <Button>{t("enter")}</Button>
             </Link>
           ) : (
             <>
               <Link href="/login">
-                <Button variant="ghost">Log in</Button>
+                <Button variant="ghost">{t("logIn")}</Button>
               </Link>
               <Link href="/signup">
-                <Button>Sign up</Button>
+                <Button>{t("signUp")}</Button>
               </Link>
             </>
           )}

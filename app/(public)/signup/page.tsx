@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useTranslations } from "next-intl";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,8 @@ export default function SignupPage() {
   const emailParam = searchParams.get("email");
   const nextParam = searchParams.get("next");
   const supabase = createClient();
+  const t = useTranslations("auth");
+  const tCommon = useTranslations("common");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState(emailParam ?? "");
@@ -30,7 +33,7 @@ export default function SignupPage() {
     setMessage(undefined);
 
     if (password !== confirmPassword) {
-      setMessage({ type: "error", text: "Le password non coincidono" });
+      setMessage({ type: "error", text: t("passwordsDoNotMatch") });
       setLoading(false);
       return;
     }
@@ -38,7 +41,7 @@ export default function SignupPage() {
     if (password.length < 6) {
       setMessage({
         type: "error",
-        text: "La password deve essere di almeno 6 caratteri",
+        text: t("passwordMinLength"),
       });
       setLoading(false);
       return;
@@ -69,7 +72,7 @@ export default function SignupPage() {
 
     setMessage({
       type: "success",
-      text: "Controlla la tua email per confermare la registrazione!",
+      text: t("checkEmail"),
     });
     setLoading(false);
   };
@@ -79,15 +82,15 @@ export default function SignupPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <Logo className="text-3xl" linkToHome={false} />
-          <p className="mt-2 text-gray-600">Crea il tuo account</p>
+          <p className="mt-2 text-gray-600">{t("createAccount")}</p>
         </div>
 
         <form onSubmit={handleSignup} className="space-y-4">
           <Input
             id="fullName"
             type="text"
-            label="Nome utente"
-            placeholder="Mario Rossi"
+            label={t("fullName")}
+            placeholder={t("fullNamePlaceholder")}
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             autoComplete="name"
@@ -95,7 +98,7 @@ export default function SignupPage() {
 
           <div className="w-full">
             <label htmlFor="role" className="mb-1.5 block text-sm font-medium text-gray-700">
-              Ruolo
+              {t("role")}
             </label>
             <select
               id="role"
@@ -103,7 +106,7 @@ export default function SignupPage() {
               onChange={(e) => setRole(e.target.value)}
               className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
             >
-              <option value="">Seleziona ruolo (facoltativo)</option>
+              <option value="">{t("selectRoleOptional")}</option>
               {USER_ROLES.map((r) => (
                 <option key={r} value={r}>
                   {r}
@@ -115,8 +118,8 @@ export default function SignupPage() {
           <Input
             id="email"
             type="email"
-            label="Email"
-            placeholder="tu@esempio.com"
+            label={tCommon("email")}
+            placeholder={t("emailPlaceholder")}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -125,8 +128,8 @@ export default function SignupPage() {
           <Input
             id="password"
             type="password"
-            label="Password"
-            placeholder="Almeno 6 caratteri"
+            label={tCommon("password")}
+            placeholder={t("passwordPlaceholderSignup")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -135,8 +138,8 @@ export default function SignupPage() {
           <Input
             id="confirmPassword"
             type="password"
-            label="Conferma password"
-            placeholder="Ripeti la password"
+            label={t("confirmPassword")}
+            placeholder={t("confirmPasswordPlaceholder")}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
@@ -145,17 +148,17 @@ export default function SignupPage() {
           <FormMessage message={message} />
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Registrazione in corso..." : "Registrati"}
+            {loading ? t("signingUp") : t("signUpButton")}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-600">
-          Hai già un account?{" "}
+          {t("alreadyHaveAccount")}{" "}
           <Link
             href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"}
             className="font-medium text-brand-600 hover:text-brand-500"
           >
-            Accedi
+            {t("signIn")}
           </Link>
         </p>
       </div>

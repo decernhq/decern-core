@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateProfileNameAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,9 @@ type Props = {
 };
 
 export function ProfileNameForm({ initialFullName }: Props) {
+  const t = useTranslations("profile");
+  const tErrors = useTranslations("errors");
+  const tCommon = useTranslations("common");
   const [fullName, setFullName] = useState(initialFullName ?? "");
   const [isPending, startTransition] = useTransition();
   const [feedback, setFeedback] = useState<{ type: "error" | "success"; text: string } | null>(null);
@@ -22,9 +26,10 @@ export function ProfileNameForm({ initialFullName }: Props) {
       formData.set("full_name", fullName);
       const result = await updateProfileNameAction({}, formData);
       if (result?.error) {
-        setFeedback({ type: "error", text: result?.error });
+        const msg = result.error in { not_authenticated: 1, name_update_failed: 1 } ? tErrors(result.error as "not_authenticated" | "name_update_failed") : result.error;
+        setFeedback({ type: "error", text: msg });
       } else {
-        setFeedback({ type: "success", text: "Nome aggiornato." });
+        setFeedback({ type: "success", text: t("nameUpdated") });
       }
     });
   };
@@ -36,8 +41,8 @@ export function ProfileNameForm({ initialFullName }: Props) {
           id="full_name"
           name="full_name"
           type="text"
-          label="Nome utente"
-          placeholder="Mario Rossi"
+          label={t("displayName")}
+          placeholder={t("displayNamePlaceholder")}
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
           disabled={isPending}
@@ -45,7 +50,7 @@ export function ProfileNameForm({ initialFullName }: Props) {
         />
       </div>
       <Button type="submit" disabled={isPending}>
-        {isPending ? "Salvataggio..." : "Salva"}
+        {isPending ? tCommon("saving") : tCommon("save")}
       </Button>
       {feedback && (
         <p

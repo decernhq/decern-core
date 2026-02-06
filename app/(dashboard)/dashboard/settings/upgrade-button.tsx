@@ -1,20 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
 type UpgradeButtonProps = {
   planId?: "pro" | "ultra";
   className?: string;
   size?: "sm" | "md" | "lg";
 };
 
-const labels: Record<"pro" | "ultra", string> = {
-  pro: "Passa a Pro",
-  ultra: "Passa a Ultra",
-};
-
 export function UpgradeButton({ planId = "pro", className, size }: UpgradeButtonProps) {
+  const t = useTranslations("buttons");
+  const tErrors = useTranslations("errors");
   const [loading, setLoading] = useState(false);
 
   const handleUpgrade = async () => {
@@ -31,19 +30,21 @@ export function UpgradeButton({ planId = "pro", className, size }: UpgradeButton
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || "Errore durante l'upgrade");
+        alert(data.error || tErrors("upgrade_failed"));
       }
     } catch (error) {
       console.error("Upgrade error:", error);
-      alert("Errore durante l'upgrade");
+      alert(tErrors("upgrade_failed"));
     } finally {
       setLoading(false);
     }
   };
 
+  const label = planId === "ultra" ? t("upgradeToUltra") : t("upgradeToPro");
+
   return (
     <Button onClick={handleUpgrade} disabled={loading} className={cn(className)} size={size}>
-      {loading ? "Caricamento..." : labels[planId]}
+      {loading ? t("upgradeLoading") : label}
     </Button>
   );
 }

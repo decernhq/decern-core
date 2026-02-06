@@ -1,6 +1,8 @@
 # Decern
 
-Il registro delle decisioni tecniche del tuo team.
+Your team's technical decision register. Document, share and track architectural choices.
+
+The app is available in **English** (default) and **Italian**. Logged-in users can set their language in **Dashboard → Settings → Language**; the choice is saved to their profile and used on all devices.
 
 ## Stack
 
