@@ -50,9 +50,6 @@ export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ e
   return {};
 }
 
-/**
- * Crea un nuovo workspace. Limiti in base al piano (Free: 1, Pro: 1, Ultra: illimitati, Enterprise: da DB).
- */
 export async function createWorkspaceAction(
   _prev: { error?: string },
   formData: FormData

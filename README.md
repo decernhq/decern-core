@@ -79,7 +79,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_PRO_PRICE_ID=price_...
+STRIPE_TEAM_PRICE_ID=price_...
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -158,7 +158,7 @@ decern/
 - [x] Tags for decisions
 - [x] Database schema with RLS policies
 - [x] Stripe integration (checkout, webhooks, customer portal)
-- [x] Subscription management (Free/Pro plans)
+- [x] Subscription management (Free/Team plans)
 - [x] Settings page with billing
 
 ### Planned

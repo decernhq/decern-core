@@ -160,7 +160,7 @@ export async function checkCanCreateDecision(
       allowed: false,
       error:
         limits.decisions_limit === 30
-          ? "Il piano Free permette fino a 30 decisioni totali. Passa a Pro per decisioni illimitate."
+          ? "Il piano Free permette fino a 30 decisioni totali. Passa a Team per decisioni illimitate."
           : "Hai raggiunto il limite di decisioni del tuo piano per questo workspace.",
     };
   }
@@ -209,7 +209,7 @@ export async function checkCanUseAiGeneration(userId: string): Promise<{
       allowed: false,
       error:
         limits.ai_generations_per_month === 5
-          ? "Hai esaurito le 5 generazioni AI mensili del piano Free. Passa a Pro per 300/mese."
+          ? "Hai esaurito le 5 generazioni AI mensili del piano Free. Passa al piano Team."
           : "Hai esaurito le generazioni AI incluse questo mese. Riprova il prossimo mese o passa a un piano superiore.",
     };
   }

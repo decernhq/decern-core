@@ -237,7 +237,7 @@
     "subtitle": "Gestisci membri e inviti. Gli utenti invitati vedranno tutti i progetti del workspace.",
     "loadError": "Impossibile caricare il workspace.",
     "createNew": "Crea nuovo workspace",
-    "createHint": "Con il piano Ultra puoi creare più workspace per organizzare team e progetti.",
+    "createHint": "Con il piano Business puoi creare più workspace per organizzare team e progetti.",
     "upgradeForWorkspaces": "Per creare più workspace passa al",
     "businessPlan": "piano Business",
     "membersAndInvites": "Workspace – Membri e inviti",

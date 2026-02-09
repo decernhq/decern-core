@@ -237,7 +237,7 @@
     "subtitle": "Manage members and invitations. Invited users will see all projects in the workspace.",
     "loadError": "Unable to load workspace.",
     "createNew": "Create new workspace",
-    "createHint": "With the Ultra plan you can create multiple workspaces to organize teams and projects.",
+    "createHint": "With the Business plan you can create multiple workspaces to organize teams and projects.",
     "upgradeForWorkspaces": "To create more workspaces, upgrade to the",
     "businessPlan": "Business plan",
     "membersAndInvites": "Workspace – Members and invites",
