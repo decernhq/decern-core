@@ -45,6 +45,15 @@ Se non sei sicuro, rigenera **SMTP login** e **SMTP key** in Brevo e aggiorna **
 - Se non compaiono richieste da Supabase, il problema è connessione/credenziali (host, porta, user, **SMTP key**).
 - Se compaiono come inviate ma non arrivano, controlla spam, mittente verificato e dominio (DKIM/SPF).
 
+## Recupero password (reset)
+
+Per il flusso “Password dimenticata” l’email di reset inviata da Supabase deve puntare alla tua app. In **Authentication** → **URL Configuration** → **Redirect URLs** aggiungi:
+
+- In sviluppo: `http://localhost:3000/login/reset-password` (o la porta che usi)
+- In produzione: `https://tuodominio.com/login/reset-password`
+
+Se l’URL di redirect non è in lista, il link nell’email di reset non funzionerà dopo il click.
+
 ## Riepilogo checklist
 
 | Cosa | Dove | Valore / azione |
