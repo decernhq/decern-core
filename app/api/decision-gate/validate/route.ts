@@ -7,12 +7,11 @@ const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 /** Short ref format: ADR-1, ADR-01, ADR-001, etc. (lookup by workspace + adr_ref) */
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
-/** Free plan = CI observation only: gate never fails, but may return observationOnly + actual status */
+/** Free plan = observation only: response is valid + decisionId (uuid) + adrRef + hasLinkedPr, no status */
 const OBSERVATION_ONLY_PLANS = ["free"] as const;
 
 type ValidateResponse =
-  | { valid: true; decisionId: string; status: "approved" }
-  | { valid: true; observationOnly: true; decisionId: string; status: string }
+  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPr: boolean; status?: "approved" }
   | { valid: false; reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "server_error"; status?: string };
 
 function json(body: ValidateResponse, status: number) {
@@ -88,7 +87,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace
     const query = supabase
       .from("decisions")
-      .select("id, status, project_id, adr_ref")
+      .select("id, status, project_id, adr_ref, pull_request_urls")
       .eq(isAdrRefLookup ? "workspace_id" : "id", isAdrRefLookup ? workspace.id : validated.id);
     if (isAdrRefLookup) {
       query.eq("adr_ref", validated.id);
@@ -124,21 +123,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    const responseId = (decision as { adr_ref?: string }).adr_ref ?? decision.id;
+    const adrRef = (decision as { adr_ref?: string }).adr_ref ?? null;
+    const pullRequestUrls = (decision as { pull_request_urls?: string[] }).pull_request_urls;
+    const hasLinkedPr = Array.isArray(pullRequestUrls) && pullRequestUrls.filter((u) => u && String(u).trim()).length > 0;
 
     const status = decision.status as string;
-    if (status !== "approved") {
-      if (observationOnly) {
-        return json(
-          { valid: true, observationOnly: true, decisionId: responseId, status },
-          200
-        );
-      }
+    if (status !== "approved" && !observationOnly) {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
-
+    // Free: solo valid, decisionId (uuid), adrRef, hasLinkedPr. Paid approved: anche status "approved"
     return json(
-      { valid: true, decisionId: responseId, status: "approved" },
+      {
+        valid: true,
+        decisionId: decision.id,
+        adrRef,
+        hasLinkedPr,
+        ...(!observationOnly && { status: "approved" as const }),
+      },
       200
     );
   } catch {
