@@ -44,7 +44,7 @@ export default async function LandingPage() {
         <div className="relative mx-auto max-w-4xl text-center">
           <Eyebrow>{t("hero.eyebrow")}</Eyebrow>
 
-          <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-6xl lg:leading-[1.08]">
+          <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl lg:text-7xl lg:leading-[1.08]">
             {t("hero.headline")}
           </h1>
 
@@ -53,7 +53,7 @@ export default async function LandingPage() {
           </p>
 
           {/* bullets */}
-          <ul className="mx-auto mt-10 max-w-md space-y-2.5 text-left">
+          <ul className="mx-auto mt-10 max-w-lg space-y-2.5 text-left">
             {(["bullet1", "bullet2", "bullet3"] as const).map((k) => (
               <li key={k} className="flex items-start gap-3">
                 <span
@@ -86,7 +86,7 @@ export default async function LandingPage() {
           </div>
 
           {/* Terminal mockup */}
-          <div className="mx-auto mt-16 max-w-lg overflow-hidden rounded-xl border border-gray-200 bg-gray-950 shadow-xl">
+          <div className="mx-auto mt-16 max-w-2xl overflow-hidden rounded-xl border border-gray-200 bg-gray-950 shadow-xl">
             <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-gray-900 px-4 py-2.5">
               <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
@@ -95,28 +95,36 @@ export default async function LandingPage() {
                 terminal
               </span>
             </div>
-            <div className="px-5 py-4 text-left font-mono text-[13px] leading-7 text-gray-400">
+            <div className="px-6 py-5 text-left font-mono text-[13px] leading-7 text-gray-400">
               <p>
                 <span className="text-gray-500">$</span>{" "}
                 <span className="text-white">npx decern-gate</span>
               </p>
               <p className="mt-2 text-gray-300">
-                Changed files: <span className="text-white">1</span>
+                Changed files (2):{" "}
+                <span className="text-gray-300">package.json, terraform/main.tf</span>
               </p>
               <p className="text-amber-400">
-                Decision required: <span className="text-amber-300 font-medium">YES</span>
+                Policy: decision required — <span className="text-amber-300 font-medium">YES</span>
               </p>
               <p className="text-gray-400">
                 Reason: High-impact patterns matched:{" "}
-                <span className="text-gray-300">terraform/main.tf</span>
+                <span className="text-gray-300">package.json, terraform/main.tf</span>
               </p>
               <p className="text-gray-400">
-                Found decision refs:{" "}
-                <span className="text-gray-300">ADR-042</span>
+                Matched (high-impact):{" "}
+                <span className="text-gray-300">package.json, terraform/main.tf</span>
+              </p>
+              <p className="mt-2 text-gray-400">
+                References: found 1 ref(s) (decision ID or ADR) —{" "}
+                <span className="text-gray-300">ADR-001</span>
               </p>
               <p className="mt-2 text-red-400">
-                Validation result: FAIL for ADR-042 — not_approved
-                (decision status: <span className="text-amber-400">proposed</span>)
+                Decision ADR-001: FAIL — Not Approved (decision status:{" "}
+                <span className="text-amber-400">Proposed</span>)
+              </p>
+              <p className="mt-2 text-red-400 font-medium">
+                Gate: blocked — no referenced decision is valid.
               </p>
             </div>
           </div>
@@ -280,14 +288,14 @@ export default async function LandingPage() {
           </div>
 
           {/* Card 8 — full width, highlighted */}
-          <div className="landing-bento mt-6 rounded-2xl border border-brand-200 bg-brand-50/40 p-8 text-center sm:px-12">
+          <div className="landing-bento mt-6 rounded-2xl border border-brand-200 bg-brand-50/40 p-8 text-center sm:px-12 dark:border-brand-700 dark:bg-brand-900/40">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">
               8
             </span>
-            <h3 className="mt-5 text-lg font-semibold text-gray-900">
+            <h3 className="mt-5 text-lg font-semibold text-gray-900 dark:text-gray-100">
               {t("features.f8Title")}
             </h3>
-            <p className="mx-auto mt-3 max-w-xl leading-relaxed text-gray-600">
+            <p className="mx-auto mt-3 max-w-xl leading-relaxed text-gray-600 dark:text-gray-300">
               {t("features.f8Desc")}
             </p>
           </div>
@@ -376,17 +384,26 @@ export default async function LandingPage() {
       </section>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 px-4 py-24 sm:py-28">
+      <section className="landing-cta-bg relative overflow-hidden px-4 py-24 sm:py-28">
+        {/* Floating blobs */}
+        <div className="landing-cta-blob landing-cta-blob-1 absolute -left-[20%] top-1/4" aria-hidden />
+        <div className="landing-cta-blob landing-cta-blob-2 absolute -right-[15%] bottom-1/4" aria-hidden />
+        <div className="landing-cta-blob landing-cta-blob-3 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" aria-hidden />
+        {/* Shine sweep */}
+        <div className="landing-cta-shine pointer-events-none absolute inset-0" aria-hidden />
+        {/* Top glow */}
         <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,255,255,0.15),transparent)]"
+          className="landing-cta-glow pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(255,255,255,0.18),transparent_60%)]"
           aria-hidden
         />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="text-2xl font-bold leading-snug tracking-tight text-white sm:text-3xl">
+          <h2 className="landing-cta-title text-2xl font-bold leading-snug tracking-tight text-white sm:text-3xl lg:text-4xl">
             {t.rich("cta.title", boldWhite)}
           </h2>
-          <p className="mt-4 text-brand-200">{t("cta.subline")}</p>
-          <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <p className="landing-cta-subline mt-5 text-brand-200/95 sm:text-lg">
+            {t("cta.subline")}
+          </p>
+          <div className="landing-cta-buttons mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
             {user ? (
               <Link href="/dashboard">
                 <Button
@@ -420,6 +437,57 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════ FOOTER ═══════════ */}
+      <footer className="border-t border-gray-200 bg-gray-50 px-4 py-12 dark:border-gray-800 dark:bg-gray-900/50">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-6 sm:flex-row">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-sm">
+            <Link
+              href="/pricing"
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            >
+              {t("footer.pricing")}
+            </Link>
+            <a
+              href="mailto:support@decern.app"
+              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            >
+              {t("footer.contact")}
+            </a>
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+              >
+                {t("footer.dashboard")}
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                >
+                  {t("footer.logIn")}
+                </Link>
+                <Link
+                  href="/signup"
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                >
+                  {t("footer.signUp")}
+                </Link>
+              </>
+            )}
+          </div>
+          <div className="text-center sm:text-right">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {t("footer.copyright")}
+            </p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+              {t("footer.builtBy")}
+            </p>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }

@@ -2,6 +2,8 @@
 
 Your team's technical decision register. Document, share and track architectural choices.
 
+**Repository:** [github.com/decernorg/decern](https://github.com/decernorg/decern)
+
 The app is available in **English** (default) and **Italian**. Logged-in users can set their language in **Dashboard → Settings → Language**; the choice is saved to their profile and used on all devices.
 
 ## Stack

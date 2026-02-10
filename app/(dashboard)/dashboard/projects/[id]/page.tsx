@@ -24,7 +24,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-7xl">
       <div className="mb-6">
         <Link
           href="/dashboard/projects"
@@ -88,6 +88,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                <th className="whitespace-nowrap px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  ADR REF
+                </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                   Titolo
                 </th>
@@ -105,6 +108,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             <tbody className="divide-y divide-gray-200 bg-white">
               {decisions.map((decision) => (
                 <tr key={decision.id} className="hover:bg-gray-50">
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {decision.adr_ref ? (
+                      <span className="font-mono text-sm text-gray-600">{decision.adr_ref}</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <Link
                       href={`/dashboard/decisions/${decision.id}`}

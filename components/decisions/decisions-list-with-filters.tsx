@@ -324,7 +324,7 @@ export function DecisionsListWithFilters({
     selectedTags.length > 0;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="mx-auto max-w-7xl space-y-4">
       {/* Search bar */}
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
@@ -419,24 +419,8 @@ export function DecisionsListWithFilters({
             />
           </div>
 
-          {hasActiveFilters && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearFilters}
-              className="ml-auto text-gray-600"
-            >
-              {t("clearFilters")}
-            </Button>
-          )}
-        </div>
-
-        <div className="border-t border-gray-200 pt-4">
-          <label className="mb-2 block text-sm font-medium text-gray-700">
-            {t("tags")}
-          </label>
           <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-gray-500">{t("tags")}</span>
             {selectedTags.map((tag) => (
               <span
                 key={tag}
@@ -453,7 +437,7 @@ export function DecisionsListWithFilters({
                 </button>
               </span>
             ))}
-            <div className="relative min-w-[180px]">
+            <div className="relative min-w-[160px]">
               <input
                 ref={tagInputRef}
                 type="text"
@@ -499,6 +483,18 @@ export function DecisionsListWithFilters({
               )}
             </div>
           </div>
+
+          {hasActiveFilters && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="ml-auto text-gray-600"
+            >
+              {t("clearFilters")}
+            </Button>
+          )}
         </div>
 
         <div className="border-t border-gray-200 pt-4">
