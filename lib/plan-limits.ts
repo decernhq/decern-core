@@ -219,6 +219,7 @@ export async function checkCanUseAiGeneration(userId: string): Promise<{
 /**
  * Incrementa il conteggio generazioni AI per l'utente nel mese corrente.
  * Chiamare solo dopo una generazione AI completata con successo.
+ * @deprecated Preferire reserveAiUsageSlot per enforcement atomico (anti-race).
  */
 export async function incrementAiUsage(userId: string): Promise<{ ok: boolean; error?: string }> {
   const supabase = await createClient();
@@ -233,4 +234,34 @@ export async function incrementAiUsage(userId: string): Promise<{ ok: boolean; e
     return { ok: false, error: "Errore nell'aggiornamento dell'uso" };
   }
   return { ok: true };
+}
+
+/**
+ * Riserva un slot di generazione AI in modo atomico (incremento solo se sotto il limite).
+ * Da chiamare PRIMA di chiamare OpenAI; se restituisce true lo slot è già consumato.
+ * A prova di race: richieste concorrenti non possono superare il limite.
+ */
+export async function reserveAiUsageSlot(userId: string): Promise<{
+  allowed: boolean;
+  error?: string;
+}> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("increment_ai_usage_if_allowed", {
+    p_user_id: userId,
+  });
+  if (error) {
+    console.error("Error reserving AI usage slot:", error);
+    return { allowed: false, error: "Errore di verifica limite" };
+  }
+  const allowed = data === true || (Array.isArray(data) && data[0] === true);
+  if (allowed) return { allowed: true };
+  const limits = await getPlanLimits(userId);
+  const limit = limits?.ai_generations_per_month ?? 5;
+  return {
+    allowed: false,
+    error:
+      limit === 5
+        ? "Hai esaurito le 5 generazioni AI mensili del piano Free. Passa al piano Team."
+        : "Hai esaurito le generazioni AI incluse questo mese. Riprova il prossimo mese o passa a un piano superiore.",
+  };
 }

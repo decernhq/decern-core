@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { checkCanUseAiGeneration, incrementAiUsage } from "@/lib/plan-limits";
+import { reserveAiUsageSlot } from "@/lib/plan-limits";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 
@@ -60,7 +60,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
   }
 
-  const usageCheck = await checkCanUseAiGeneration(user.id);
+  // Atomic reserve: consume one slot before calling OpenAI (attack-proof under concurrency)
+  const usageCheck = await reserveAiUsageSlot(user.id);
   if (!usageCheck.allowed) {
     return NextResponse.json(
       { error: usageCheck.error ?? "Limite generazioni AI raggiunto" },
@@ -157,8 +158,6 @@ export async function POST(request: NextRequest) {
       consequences: typeof parsed.consequences === "string" ? parsed.consequences : "",
       tags,
     };
-
-    await incrementAiUsage(user.id);
 
     return NextResponse.json(result);
   } catch (e) {

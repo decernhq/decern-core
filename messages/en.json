@@ -65,7 +65,7 @@
       "step1Title": "Record the decision",
       "step1Body": "Write your technical decision in Decern (context, options, what you chose, and why). You can draft with AI, but <b>a human reviews and approves</b>. Everything in one place.",
       "step2Title": "Link it to the PR",
-      "step2Body": "In the PR description, point to that decision. The PR now <b>\"carries\" the decision and its tags</b> (e.g. payments, security). Your pipeline knows which rules apply.",
+      "step2Body": "In your PR title/description, point to that decision. The PR now <b>\"carries\" the decision and its tags</b> (e.g. payments, security). Your pipeline knows which rules apply.",
       "step3Title": "Let Decern check in CI",
       "step3Body": "A small tool (decern-gate) runs in your CI (e.g. npx decern-gate). It reads the PR diff and the linked decision, and <b>checks that nothing in the change breaks your rules</b>: architecture, dependencies, security, or internal policies.",
       "step4Title": "Block or warn when something's off",
