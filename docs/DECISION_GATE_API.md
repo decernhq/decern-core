@@ -1,17 +1,17 @@
 # Decision Gate API (MVP)
 
-Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in stato **approved**. Con piano **Free** la CI è in modalità **observation only**: il gate restituisce sempre `200` (la pipeline non fallisce), ma può includere `observationOnly: true` e lo stato reale della decisione.
+Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in stato **approved**. Con piano **Free** la CI è in modalità observation only: il gate restituisce sempre `200` (la pipeline non fallisce); il body non include `status`.
 
 ## Piano e comportamento
 
-- **Piano Free:** observation only — risposta sempre `200`. Se la decisione non è approvata, il body include `observationOnly: true` e lo `status` reale (es. `proposed`). La CI può mostrare un warning ma non fallire.
-- **Piani Team / Business / Enterprise / Governance:** enforcement — se la decisione non è approvata viene restituito `422` e la CI può far fallire la pipeline.
+- **Piano Free:** observation only — risposta sempre `200` con `valid`, `decisionId`, `adrRef`, `hasLinkedPr`. Non viene incluso `status`; la CI non deve far fallire la pipeline.
+- **Piani Team / Business / Enterprise / Governance:** enforcement — se la decisione non è approvata viene restituito `422`; quando è approvata il body include anche `status: "approved"`.
 
 ## Endpoint
 
 - **Metodo:** `GET`
 - **URL:** `/api/decision-gate/validate`
-- **Query param:** `decisionId` (string, obbligatorio) — UUID della decisione
+- **Query param:** `decisionId` (UUID della decisione) oppure `adrRef` (es. `ADR-001`) — almeno uno obbligatorio. Con `adrRef` la decisione viene cercata per workspace + riferimento ADR.
 
 ## Autenticazione
 
@@ -23,8 +23,8 @@ Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in sta
 
 | Status | Body | Significato |
 |--------|------|-------------|
-| 200 | `{ "valid": true, "decisionId": "<id>", "status": "approved" }` | Decisione trovata e approvata (enforcement). |
-| 200 | `{ "valid": true, "observationOnly": true, "decisionId": "<id>", "status": "<status>" }` | Piano Free, decisione non approvata; CI non deve fallire. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPr": bool, "status": "approved" }` | Decisione trovata e approvata (piano a pagamento). |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Piano Free (observation only); nessun `hasLinkedPr` né `status`, CI non deve fallire. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token mancante o non valido. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | Nessuna decisione con quell’id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` vuoto, troppo lungo (>128) o caratteri non ammessi. |

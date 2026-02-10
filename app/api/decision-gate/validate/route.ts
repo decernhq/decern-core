@@ -7,11 +7,11 @@ const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 /** Short ref format: ADR-1, ADR-01, ADR-001, etc. (lookup by workspace + adr_ref) */
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
-/** Free plan = observation only: response is valid + decisionId (uuid) + adrRef + hasLinkedPr, no status */
+/** Free plan = observation only: always 200, no status in body; paid = 422 if not approved and include status "approved" when valid */
 const OBSERVATION_ONLY_PLANS = ["free"] as const;
 
 type ValidateResponse =
-  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPr: boolean; status?: "approved" }
+  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPr?: boolean; status?: "approved" }
   | { valid: false; reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "server_error"; status?: string };
 
 function json(body: ValidateResponse, status: number) {
@@ -71,8 +71,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return json({ valid: false, reason: "unauthorized" }, 401);
     }
 
-    // Resolve plan for workspace owner (free = observation only: CI never fails)
-    let observationOnly = false;
+    // Free plan: observation only (always 200, no status); paid: 422 if not approved, include status when valid
+    let isObservationOnlyPlan = false;
     if (workspace.owner_id) {
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .eq("status", "active")
         .maybeSingle();
       const planId = (sub as { plan_id?: string } | null)?.plan_id ?? "free";
-      observationOnly = OBSERVATION_ONLY_PLANS.includes(planId as (typeof OBSERVATION_ONLY_PLANS)[number]);
+      isObservationOnlyPlan = OBSERVATION_ONLY_PLANS.includes(planId as (typeof OBSERVATION_ONLY_PLANS)[number]);
     }
 
     // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace
@@ -128,17 +128,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const hasLinkedPr = Array.isArray(pullRequestUrls) && pullRequestUrls.filter((u) => u && String(u).trim()).length > 0;
 
     const status = decision.status as string;
-    if (status !== "approved" && !observationOnly) {
+    if (status !== "approved" && !isObservationOnlyPlan) {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
-    // Free: solo valid, decisionId (uuid), adrRef, hasLinkedPr. Paid approved: anche status "approved"
+    // Free: valid, decisionId, adrRef only. Paid: also hasLinkedPr and status "approved"
     return json(
       {
         valid: true,
         decisionId: decision.id,
         adrRef,
-        hasLinkedPr,
-        ...(!observationOnly && { status: "approved" as const }),
+        ...(!isObservationOnlyPlan && { hasLinkedPr, status: "approved" as const }),
       },
       200
     );
