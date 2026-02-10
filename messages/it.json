@@ -40,6 +40,103 @@
     "feature3Title": "Condividi col team",
     "feature3Desc": "Collabora con il tuo team e mantieni tutti allineati sulle scelte fatte."
   },
+  "landing": {
+    "hero": {
+      "eyebrow": "Decision log tecnico per team moderni",
+      "headline": "Le tue decisioni sotto controllo. Fatte rispettare in CI.",
+      "subheadline": "Decern è il posto dove registri le decisioni tecniche del team e le colleghi alle pull request. Un piccolo gate gira in CI e controlla che ogni modifica—<b>anche il codice generato dall'AI</b>—rispetti <b>quello che avete deciso davvero</b>.",
+      "bullet1": "Impedisci al codice che rompe l'architettura di arrivare in main",
+      "bullet2": "Un solo posto per le decisioni; controlli automatici su ogni PR",
+      "bullet3": "Basta cercare in documenti, Slack o note di meeting",
+      "ctaPrimary": "Prova Decern gratis",
+      "ctaSecondary": "Scopri come funziona"
+    },
+    "problem": {
+      "eyebrow": "Il problema",
+      "title": "Decisioni ovunque, controllo da nessuna parte",
+      "intro": "Dove vivono le decisioni tecniche del tuo team? Su Confluence, Notion, un file markdown, Slack, o negli appunti dell'ultimo meeting. Quando arriva una nuova pull request, <b>nessuno controlla</b> se rispetta ancora quanto deciso mesi fa. E con l'AI che scrive sempre più codice, la situazione peggiora: l'AI <b>non conosce le tue regole</b>. Può saltare layer, ignorare scelte di sicurezza o riportare pattern che volevi abbandonare.",
+      "example1": "Ti è mai capitata una PR che aggiungeva un layer nuovo bypassando il pattern su cui vi eravate accordati?",
+      "example2": "O un refactor che doveva eliminare un approccio vecchio—e la PR dopo l'ha reintrodotto perché nessuno controllava?",
+      "example3": "Con il codice generato dall'AI è ancora più rischioso: tanto output, zero memoria delle tue decisioni."
+    },
+    "solution": {
+      "eyebrow": "Come funziona",
+      "title": "Quattro passi semplici",
+      "step1Title": "Registra la decisione",
+      "step1Body": "Scrivi la decisione tecnica in Decern (contesto, opzioni, cosa avete scelto e perché). Puoi abbozzarla con l'AI, ma <b>è un umano che revisiona e approva</b>. Tutto in un posto.",
+      "step2Title": "Collega la decisione alla PR",
+      "step2Body": "Nella descrizione della PR indica quella decisione. La PR <b>\"porta\" la decisione e i suoi tag</b> (es. payments, security). La pipeline sa quali regole applicare.",
+      "step3Title": "Lascia che Decern controlli in CI",
+      "step3Body": "Un piccolo tool (decern-gate) gira in CI—ad es. npx decern-gate. Legge il diff della PR e la decisione collegata, e <b>verifica che nulla nella modifica violi le vostre regole</b>: architettura, dipendenze, sicurezza o policy interne.",
+      "step4Title": "Blocca o avvisa quando qualcosa non torna",
+      "step4Body": "Se qualcosa non coincide, ricevi un commento sulla PR e opzionalmente un job fallito. Così <b>né l'AI né nessun altro</b> può mergiare codice che va contro quanto il team ha concordato."
+    },
+    "ai": {
+      "eyebrow": "Perché ora",
+      "title": "Perché conta con l'AI",
+      "intro": "Qualche anno fa la parte difficile era scrivere codice. Oggi la parte difficile è <b>assicurarsi che quello che viene scritto sia quello che volete</b>. L'AI va dall'idea al codice in fretta—ma non conosce la vostra architettura. I team rischiano di perdere il controllo non solo su cosa è stato deciso, ma su <b>cosa finisce davvero in produzione</b>.",
+      "point1": "Decern trasforma le decisioni del team in <b>controlli che girano in CI</b>.",
+      "point2": "È il filtro tra «quello che l'AI ha suggerito» e <b>«quello che va in produzione».</b>"
+    },
+    "features": {
+      "eyebrow": "Cosa ottieni",
+      "title": "Fatto per chiarezza e controllo",
+      "f1Title": "Decision log strutturato",
+      "f1Desc": "Un posto per ogni decisione: contesto, opzioni, esito e conseguenze. Niente più documenti o thread sparsi.",
+      "f2Title": "Decisioni collegate alle PR",
+      "f2Desc": "Allega le decisioni alle pull request. La pipeline sa quali regole applicare a ogni modifica.",
+      "f3Title": "Gate in CI: avvisa o blocca",
+      "f3Desc": "Scegli se le violazioni fanno fallire il job o vengono solo segnalate. Su Free segnaliamo senza bloccare.",
+      "f4Title": "Regole per area (payments, security, ecc.)",
+      "f4Desc": "Organizza le decisioni per tema e fai rispettare le regole giuste per ogni PR.",
+      "f5Title": "Vedi quando le regole vengono violate",
+      "f5Desc": "Nel tempo vedi dove e quando le decisioni sono state violate—così puoi correggere il drift prima che diventi un casino.",
+      "f6Title": "AI e umani, nell'ordine giusto",
+      "f6Desc": "Le tue decisioni fissano le regole. L'AI può suggerire codice, ma deve passare gli stessi controlli di tutti gli altri.",
+      "f7Title": "Team e workspace",
+      "f7Desc": "Workspace, progetti e ruoli così che le persone giuste possano possedere e approvare le decisioni.",
+      "f8Title": "Genera decisioni con l'AI",
+      "f8Desc": "Incolla note di meeting o una descrizione grezza e lascia che l'AI abbozzi una decisione strutturata. Tu revisioni, affini e approvi—il pensiero resta umano."
+    },
+    "useCases": {
+      "eyebrow": "Per chi è",
+      "title": "Casi d'uso",
+      "uc1Title": "Team che usano l'AI ogni giorno",
+      "uc1Desc": "Vuoi fidarti del codice generato perché passa dalle stesse decisioni e dagli stessi controlli del resto del codebase.",
+      "uc2Title": "Refactor importanti e pulizia",
+      "uc2Desc": "Assicurati che le nuove PR non reintroducano pattern che stai cercando di togliere. Il gate mantiene tutti sulla stessa direzione.",
+      "uc3Title": "Audit e compliance",
+      "uc3Desc": "Mostra cosa è stato deciso e come è stato fatto rispettare in CI—evidenza chiara per chi ne ha bisogno.",
+      "uc4Title": "Onboarding di nuovi sviluppatori",
+      "uc4Desc": "I nuovi arrivati vedono le regole vere in azione su ogni PR. Senza scavare in wiki obsolete."
+    },
+    "trust": {
+      "eyebrow": "Perché Decern",
+      "title": "Pensato per chi ha a cuore il controllo",
+      "claim1": "Per tech lead e architect che vogliono più controllo e meno burocrazia.",
+      "claim2": "L'unico tool che mette insieme decision log, collegamento alle PR e gate in CI in un solo posto.",
+      "testimonialPlaceholder": "Spazio per future testimonianze."
+    },
+    "faq": {
+      "title": "Domande frequenti",
+      "q1": "In cosa è diverso da Confluence, Notion o ADR in Markdown?",
+      "a1": "Quei tool conservano documenti ma non li fanno rispettare. Decern collega le decisioni alle PR e fa girare i controlli in CI. Se una PR viola una decisione, la pipeline può bloccare o segnalare. Hai anche un log strutturato (stato, tag, link alle PR) che puoi cercare e usare per report.",
+      "q2": "In cosa è diverso da code review o analisi statica?",
+      "a2": "Review e linter non conoscono le tue decisioni architetturali. Decern le codifica e controlla ogni PR rispetto a quelle. Aggiunge una domanda semplice: «Questo rispetta quello che abbiamo deciso?»",
+      "q3": "L'AI scrive le decisioni al posto nostro?",
+      "a3": "Puoi usare l'AI per abbozzare una decisione (es. da note di meeting), ma è un umano che revisiona e approva. Il compito di Decern è far rispettare ciò che gli umani hanno deciso—non sostituire il processo decisionale.",
+      "q4": "Non si rischia di bloccare troppo la pipeline?",
+      "a4": "Scegli tu. Il gate può far fallire il job (strict) o solo segnalare (modalità observation). Sul piano Free segnaliamo solo, così puoi abituarti senza bloccare le release.",
+      "q5": "Dobbiamo cambiare il nostro flusso su GitHub o GitLab?",
+      "a5": "Quasi nessun cambiamento. Aggiungi un link alla decisione nella descrizione della PR e un passaggio in CI (es. npx decern-gate). Il resto del processo resta uguale."
+    },
+    "cta": {
+      "title": "Metti <b>un gate sulle decisioni</b> prima che il codice arrivi in produzione",
+      "subline": "Un decision log. Collegato alle PR. Controllato in CI.",
+      "ctaPrimary": "Provalo gratis con il tuo team",
+      "ctaSecondary": "Vedi i prezzi"
+    }
+  },
   "auth": {
     "loginSubtitle": "Accedi al tuo account",
     "emailPlaceholder": "tu@esempio.com",

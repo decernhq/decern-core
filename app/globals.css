@@ -124,3 +124,27 @@
 .dark .divide-gray-200 > * + * { border-color: var(--app-border-subtle) !important; }
 .dark thead th { border-color: var(--app-border-subtle) !important; }
 .dark thead { border-bottom: 1px solid var(--app-border-subtle) !important; }
+
+/* ========== Landing page ========== */
+
+/* Hero grid pattern — light & dark */
+.landing-grid {
+  background-image:
+    linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+.dark .landing-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+}
+
+/* Bento card hover lift */
+.landing-bento {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.landing-bento:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
