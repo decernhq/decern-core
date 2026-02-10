@@ -11,11 +11,35 @@ const ADR_REF_REGEX = /^ADR-\d+$/i;
 const OBSERVATION_ONLY_PLANS = ["free"] as const;
 
 type ValidateResponse =
-  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPr?: boolean; status?: "approved" }
+  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPR?: boolean; status?: "approved" }
   | { valid: false; reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "server_error"; status?: string };
 
 function json(body: ValidateResponse, status: number) {
   return NextResponse.json(body, { status });
+}
+
+/** Normalize pull_request_urls from DB: can be array or Postgres text representation */
+function normalizePullRequestUrls(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((u): u is string => typeof u === "string" && u.trim().length > 0).map((u) => u.trim());
+  }
+  if (typeof value === "string" && value.trim()) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (Array.isArray(parsed)) return normalizePullRequestUrls(parsed);
+      return [];
+    } catch {
+      if (value.startsWith("{") && value.endsWith("}")) {
+        return value
+          .slice(1, -1)
+          .split(",")
+          .map((s) => s.replace(/^"|"$/g, "").trim())
+          .filter(Boolean);
+      }
+      return [];
+    }
+  }
+  return [];
 }
 
 function getBearerToken(request: NextRequest): string | null {
@@ -124,20 +148,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     const adrRef = (decision as { adr_ref?: string }).adr_ref ?? null;
-    const pullRequestUrls = (decision as { pull_request_urls?: string[] }).pull_request_urls;
-    const hasLinkedPr = Array.isArray(pullRequestUrls) && pullRequestUrls.filter((u) => u && String(u).trim()).length > 0;
+    const pullRequestUrlsRaw = (decision as { pull_request_urls?: unknown }).pull_request_urls;
+    const pullRequestUrls = normalizePullRequestUrls(pullRequestUrlsRaw);
+    const hasLinkedPR = pullRequestUrls.length > 0;
 
     const status = decision.status as string;
     if (status !== "approved" && !isObservationOnlyPlan) {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
-    // Free: valid, decisionId, adrRef only. Paid: also hasLinkedPr and status "approved"
+    // Free: valid, decisionId, adrRef only. Paid: also hasLinkedPR and status "approved"
     return json(
       {
         valid: true,
         decisionId: decision.id,
         adrRef,
-        ...(!isObservationOnlyPlan && { hasLinkedPr, status: "approved" as const }),
+        ...(!isObservationOnlyPlan && { hasLinkedPR, status: "approved" as const }),
       },
       200
     );

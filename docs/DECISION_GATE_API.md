@@ -4,7 +4,7 @@ Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in sta
 
 ## Piano e comportamento
 
-- **Piano Free:** observation only — risposta sempre `200` con `valid`, `decisionId`, `adrRef`, `hasLinkedPr`. Non viene incluso `status`; la CI non deve far fallire la pipeline.
+- **Piano Free:** observation only — risposta sempre `200` con `valid`, `decisionId`, `adrRef`. Non vengono inclusi `hasLinkedPR` né `status`; la CI non deve far fallire la pipeline.
 - **Piani Team / Business / Enterprise / Governance:** enforcement — se la decisione non è approvata viene restituito `422`; quando è approvata il body include anche `status: "approved"`.
 
 ## Endpoint
@@ -23,8 +23,8 @@ Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in sta
 
 | Status | Body | Significato |
 |--------|------|-------------|
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPr": bool, "status": "approved" }` | Decisione trovata e approvata (piano a pagamento). |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Piano Free (observation only); nessun `hasLinkedPr` né `status`, CI non deve fallire. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decisione trovata e approvata (piano a pagamento). |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Piano Free (observation only); nessun `hasLinkedPR` né `status`, CI non deve fallire. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token mancante o non valido. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | Nessuna decisione con quell’id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` vuoto, troppo lungo (>128) o caratteri non ammessi. |
