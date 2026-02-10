@@ -121,7 +121,8 @@ export async function getDecisionWithProject(id: string) {
     .from("decisions")
     .select(`
       *,
-      project:projects(id, name)
+      project:projects(id, name),
+      author:profiles!decisions_created_by_fkey(full_name, email)
     `)
     .eq("id", id)
     .single();

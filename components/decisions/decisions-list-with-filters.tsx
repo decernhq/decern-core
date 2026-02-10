@@ -24,6 +24,27 @@ const TAGS_VISIBLE = 3;
 type SortKey = "title" | "project" | "author" | "status" | "date";
 type SortDirection = "asc" | "desc";
 
+const TOGGLEABLE_COLUMN_KEYS = ["title", "project", "author", "status", "tags", "date"] as const;
+type ToggleableColumnKey = (typeof TOGGLEABLE_COLUMN_KEYS)[number];
+const DEFAULT_VISIBLE_COLUMNS: Record<ToggleableColumnKey, boolean> = {
+  title: true,
+  project: true,
+  author: false,
+  status: true,
+  tags: true,
+  date: true,
+};
+const COLUMN_WIDTHS: Record<ToggleableColumnKey | "adr" | "copy", string> = {
+  adr: "7%",
+  title: "27%",
+  project: "14%",
+  author: "12%",
+  status: "10%",
+  tags: "21%",
+  date: "6%",
+  copy: "3%",
+};
+
 interface DecisionsListWithFiltersProps {
   decisions: DecisionWithAuthor[];
   projects: Project[];
@@ -60,8 +81,31 @@ export function DecisionsListWithFilters({
   const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [openTagsPopoverId, setOpenTagsPopoverId] = useState<string | null>(null);
+  const [copiedAdrDecisionId, setCopiedAdrDecisionId] = useState<string | null>(null);
+  const [visibleColumns, setVisibleColumns] = useState<Record<ToggleableColumnKey, boolean>>(DEFAULT_VISIBLE_COLUMNS);
   const [sortBy, setSortBy] = useState<SortKey | null>("date");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
+
+  const toggleColumn = (key: ToggleableColumnKey) => {
+    setVisibleColumns((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const visibleColumnKeys = useMemo(
+    () => ["adr", ...TOGGLEABLE_COLUMN_KEYS.filter((k) => visibleColumns[k]), "copy"] as const,
+    [visibleColumns]
+  );
+  const colgroupWidths = useMemo(() => {
+    const fixedTotal = visibleColumnKeys
+      .filter((k) => k !== "title")
+      .reduce((sum, k) => sum + parseInt(COLUMN_WIDTHS[k], 10), 0);
+    const titleWidth = visibleColumnKeys.includes("title")
+      ? Math.max(0, 100 - fixedTotal)
+      : 0;
+    return visibleColumnKeys.map((k) => ({
+      key: k,
+      width: k === "title" ? `${titleWidth}%` : `${COLUMN_WIDTHS[k]}`,
+    }));
+  }, [visibleColumnKeys]);
   const tagInputRef = useRef<HTMLInputElement>(null);
   const tagDropdownRef = useRef<HTMLDivElement>(null);
   const tagsPopoverRef = useRef<HTMLDivElement>(null);
@@ -456,6 +500,39 @@ export function DecisionsListWithFilters({
             </div>
           </div>
         </div>
+
+        <div className="border-t border-gray-200 pt-4">
+          <p className="mb-2 text-sm font-medium text-gray-700">
+            {t("columnsVisibility")}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {TOGGLEABLE_COLUMN_KEYS.map((key) => {
+              const isChecked = visibleColumns[key];
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => toggleColumn(key)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-1",
+                    isChecked
+                      ? "border-brand-200 bg-brand-50 text-brand-800 hover:bg-brand-100"
+                      : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300 hover:bg-gray-100 hover:text-gray-700"
+                  )}
+                  aria-pressed={isChecked}
+                  aria-label={key === "tags" ? t("tags") : t(`${key}Col`)}
+                >
+                  {isChecked && (
+                    <svg className="h-4 w-4 shrink-0 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {key === "tags" ? t("tags") : t(`${key}Col`)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Results count */}
@@ -478,71 +555,87 @@ export function DecisionsListWithFilters({
           <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
             <table className="min-w-full table-fixed divide-y divide-gray-200">
               <colgroup>
-                <col style={{ width: "26%" }} />
-                <col style={{ width: "17%" }} />
-                <col style={{ width: "14%" }} />
-                <col style={{ width: "10%" }} />
-                <col style={{ width: "26%" }} />
-                <col style={{ width: "7%" }} />
+                {colgroupWidths.map(({ key, width }) => (
+                  <col key={key} style={{ width }} />
+                ))}
               </colgroup>
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <button
-                      type="button"
-                      onClick={() => handleSort("title")}
-                      className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
-                    >
-                      {t("titleCol")}
-                      <SortIcon columnKey="title" />
-                    </button>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <button
-                      type="button"
-                      onClick={() => handleSort("project")}
-                      className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
-                    >
-                      {t("projectCol")}
-                      <SortIcon columnKey="project" />
-                    </button>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <button
-                      type="button"
-                      onClick={() => handleSort("author")}
-                      className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
-                    >
-                      {t("authorCol")}
-                      <SortIcon columnKey="author" />
-                    </button>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <button
-                      type="button"
-                      onClick={() => handleSort("status")}
-                      className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
-                    >
-                      {t("statusCol")}
-                      <SortIcon columnKey="status" />
-                    </button>
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    {t("tags")}
-                  </th>
-                  <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <button
-                      type="button"
-                      onClick={() => handleSort("date")}
-                      className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
-                    >
-                      {t("dateCol")}
-                      <SortIcon columnKey="date" />
-                    </button>
-                  </th>
-                  <th className="w-10 px-2 py-2 text-right text-xs font-medium tracking-wider text-gray-500" scope="col">
-                    <span className="sr-only">{t("duplicateDecision")}</span>
-                  </th>
+                  {visibleColumnKeys.includes("adr") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      ADR REF
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("title") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <button
+                        type="button"
+                        onClick={() => handleSort("title")}
+                        className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
+                      >
+                        {t("titleCol")}
+                        <SortIcon columnKey="title" />
+                      </button>
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("project") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <button
+                        type="button"
+                        onClick={() => handleSort("project")}
+                        className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
+                      >
+                        {t("projectCol")}
+                        <SortIcon columnKey="project" />
+                      </button>
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("author") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <button
+                        type="button"
+                        onClick={() => handleSort("author")}
+                        className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
+                      >
+                        {t("authorCol")}
+                        <SortIcon columnKey="author" />
+                      </button>
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("status") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <button
+                        type="button"
+                        onClick={() => handleSort("status")}
+                        className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
+                      >
+                        {t("statusCol")}
+                        <SortIcon columnKey="status" />
+                      </button>
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("tags") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      {t("tags")}
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("date") && (
+                    <th className="px-3 py-2 text-left text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <button
+                        type="button"
+                        onClick={() => handleSort("date")}
+                        className="inline-flex items-center hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:ring-offset-0"
+                      >
+                        {t("dateCol")}
+                        <SortIcon columnKey="date" />
+                      </button>
+                    </th>
+                  )}
+                  {visibleColumnKeys.includes("copy") && (
+                    <th className="w-10 shrink-0 px-2 py-2 text-right text-xs font-medium tracking-wider text-gray-500" scope="col">
+                      <span className="sr-only">{t("copyAdrNumber")}</span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -553,124 +646,164 @@ export function DecisionsListWithFilters({
                   const isTagsPopoverOpen = openTagsPopoverId === decision.id;
                   return (
                     <tr key={decision.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-2">
-                        <Link
-                          href={`/dashboard/decisions/${decision.id}`}
-                          className="block min-w-0 truncate font-medium text-gray-900 hover:text-brand-600"
-                          title={decision.title}
-                        >
-                          {decision.title}
-                        </Link>
-                        <div className="mt-0.5 line-clamp-2 min-w-0 overflow-hidden text-ellipsis text-xs text-gray-500" title={decision.context ?? undefined}>
-                          {decision.context}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2">
-                        <Link
-                          href={`/dashboard/projects/${decision.project_id}`}
-                          className="block truncate text-sm text-gray-600 hover:text-brand-600"
-                          title={projectMap.get(decision.project_id) ?? undefined}
-                        >
-                          {projectMap.get(decision.project_id) || "—"}
-                        </Link>
-                      </td>
-                      <td className="overflow-hidden px-3 py-2">
-                        <span
-                          className="block min-w-0 max-w-[20ch] truncate text-sm text-gray-600"
-                          title={decision.author ? (decision.author.full_name || decision.author.email) : undefined}
-                        >
-                          {decision.author ? (decision.author.full_name || decision.author.email) : "—"}
-                        </span>
-                      </td>
-                      <td className="min-w-[7rem] shrink-0 px-3 py-2">
-                        <select
-                          value={decision.status}
-                          onChange={(e) =>
-                            handleStatusChange(
-                              decision.id,
-                              e.target.value as DecisionStatus,
-                            )
-                          }
-                          disabled={updatingStatusId === decision.id}
-                          className={cn(
-                            "w-full min-w-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0 whitespace-nowrap appearance-none",
-                            statusColors[decision.status],
-                            "border-transparent hover:opacity-90",
-                          )}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          {statusOptions
-                            .filter((opt) => opt.value !== "")
-                            .map((opt) => (
-                              <option
-                                key={opt.value}
-                                value={opt.value}
-                                className="bg-white text-gray-900"
-                              >
-                                {opt.label}
-                              </option>
-                            ))}
-                        </select>
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="relative flex flex-wrap items-center gap-1" ref={isTagsPopoverOpen ? tagsPopoverRef : undefined}>
-                          {visibleTags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="inline-flex max-w-full shrink-0 truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
-                            >
-                              {tag}
+                      {visibleColumnKeys.includes("adr") && (
+                        <td className="whitespace-nowrap px-3 py-2">
+                          {decision.adr_ref ? (
+                            <span className="font-mono text-sm text-gray-600" title={decision.adr_ref}>
+                              {decision.adr_ref}
                             </span>
-                          ))}
-                          {hasMoreTags && (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setOpenTagsPopoverId((id) => (id === decision.id ? null : decision.id));
-                              }}
-                              className="inline-flex shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
-                              title={t("showAllTags", { count: tags.length })}
-                              aria-label={t("showAllTags", { count: tags.length })}
-                            >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7a1.994 1.994 0 01-.586-1.414V7a2 2 0 012-2z" />
-                              </svg>
-                            </button>
+                          ) : (
+                            <span className="text-gray-400">—</span>
                           )}
-                          {isTagsPopoverOpen && hasMoreTags && (
-                            <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
-                              <p className="mb-1.5 px-2 text-xs font-medium text-gray-500">{t("allTags")}</p>
-                              <div className="flex flex-wrap gap-1 px-2">
-                                {tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
-                        {new Date(decision.created_at).toLocaleDateString(dateLocale)}
-                      </td>
-                      <td className="overflow-visible px-2 py-2 text-right">
-                        <Tooltip label={t("duplicateDecision")}>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("title") && (
+                        <td className="px-3 py-2">
                           <Link
-                            href={`/dashboard/decisions/new?duplicate=${decision.id}`}
-                            className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                            aria-label={t("duplicateDecision")}
+                            href={`/dashboard/decisions/${decision.id}`}
+                            className="block min-w-0 break-words font-medium text-gray-900 hover:text-brand-600"
+                            title={decision.title}
                           >
-                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
+                            {decision.title}
                           </Link>
-                        </Tooltip>
-                      </td>
+                          <div className="mt-0.5 line-clamp-2 min-w-0 overflow-hidden text-ellipsis text-xs text-gray-500" title={decision.context ?? undefined}>
+                            {decision.context}
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("project") && (
+                        <td className="min-w-0 max-w-0 overflow-hidden px-3 py-2">
+                          <Link
+                            href={`/dashboard/projects/${decision.project_id}`}
+                            className="block min-w-0 truncate text-sm text-gray-600 hover:text-brand-600"
+                            title={projectMap.get(decision.project_id) ?? undefined}
+                          >
+                            {projectMap.get(decision.project_id) || "—"}
+                          </Link>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("author") && (
+                        <td className="overflow-hidden px-3 py-2">
+                          <span
+                            className="block min-w-0 max-w-[20ch] truncate text-sm text-gray-600"
+                            title={decision.author ? (decision.author.full_name || decision.author.email) : undefined}
+                          >
+                            {decision.author ? (decision.author.full_name || decision.author.email) : "—"}
+                          </span>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("status") && (
+                        <td className="min-w-[7rem] shrink-0 px-3 py-2">
+                          <select
+                            value={decision.status}
+                            onChange={(e) =>
+                              handleStatusChange(
+                                decision.id,
+                                e.target.value as DecisionStatus,
+                              )
+                            }
+                            disabled={updatingStatusId === decision.id}
+                            className={cn(
+                              "w-full min-w-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0 whitespace-nowrap appearance-none",
+                              statusColors[decision.status],
+                              "border-transparent hover:opacity-90",
+                            )}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {statusOptions
+                              .filter((opt) => opt.value !== "")
+                              .map((opt) => (
+                                <option
+                                  key={opt.value}
+                                  value={opt.value}
+                                  className="bg-white text-gray-900"
+                                >
+                                  {opt.label}
+                                </option>
+                              ))}
+                          </select>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("tags") && (
+                        <td className="px-3 py-2">
+                          <div className="relative flex flex-wrap items-center gap-1" ref={isTagsPopoverOpen ? tagsPopoverRef : undefined}>
+                            {visibleTags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex max-w-full shrink-0 truncate rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                            {hasMoreTags && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setOpenTagsPopoverId((id) => (id === decision.id ? null : decision.id));
+                                }}
+                                className="inline-flex shrink-0 rounded p-0.5 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                                title={t("showAllTags", { count: tags.length })}
+                                aria-label={t("showAllTags", { count: tags.length })}
+                              >
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7a1.994 1.994 0 01-.586-1.414V7a2 2 0 012-2z" />
+                                </svg>
+                              </button>
+                            )}
+                            {isTagsPopoverOpen && hasMoreTags && (
+                              <div className="absolute left-0 top-full z-20 mt-1 min-w-[140px] rounded-lg border border-gray-200 bg-white py-2 shadow-lg">
+                                <p className="mb-1.5 px-2 text-xs font-medium text-gray-500">{t("allTags")}</p>
+                                <div className="flex flex-wrap gap-1 px-2">
+                                  {tags.map((tag) => (
+                                    <span
+                                      key={tag}
+                                      className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-600"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("date") && (
+                        <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500">
+                          {new Date(decision.created_at).toLocaleDateString(dateLocale)}
+                        </td>
+                      )}
+                      {visibleColumnKeys.includes("copy") && (
+                        <td className="w-10 shrink-0 overflow-visible px-2 py-2 text-right">
+                          {decision.adr_ref ? (
+                            <Tooltip label={copiedAdrDecisionId === decision.id ? t("copyAdrNumberCopied") : t("copyAdrNumber")}>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(decision.adr_ref!);
+                                  setCopiedAdrDecisionId(decision.id);
+                                  window.setTimeout(() => setCopiedAdrDecisionId(null), 2000);
+                                }}
+                                className="inline-flex rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                aria-label={copiedAdrDecisionId === decision.id ? t("copyAdrNumberCopied") : t("copyAdrNumber")}
+                              >
+                                {copiedAdrDecisionId === decision.id ? (
+                                  <svg className="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                ) : (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                  </svg>
+                                )}
+                              </button>
+                            </Tooltip>
+                          ) : (
+                            <span className="inline-block p-1.5 text-gray-300" aria-hidden>-</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

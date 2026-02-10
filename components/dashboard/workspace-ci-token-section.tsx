@@ -67,7 +67,7 @@ export function WorkspaceCiTokenSection({
       <h2 className="text-lg font-semibold text-gray-900">Token CI (Decision Gate)</h2>
       <p className="mt-1 text-sm text-gray-500">
         Usa questo token nelle pipeline CI per verificare che una decisione sia approvata prima di procedere.
-        Endpoint: <code className="rounded bg-gray-100 px-1 text-xs">GET /api/decision-gate/validate?decisionId=...</code>
+        Endpoint: <code className="rounded bg-gray-100 px-1 text-xs">GET /api/decision-gate/validate?adrRef=ADR-001</code> oppure <code className="rounded bg-gray-100 px-1 text-xs">?decisionId=uuid</code>
       </p>
       {error && (
         <p className="mt-2 text-sm text-red-600">{error}</p>

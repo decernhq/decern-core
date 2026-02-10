@@ -4,6 +4,8 @@ import { hashCiToken } from "@/lib/ci-token";
 
 const DECISION_ID_MAX_LENGTH = 128;
 const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
+/** Short ref format: ADR-1, ADR-01, ADR-001, etc. (lookup by workspace + adr_ref) */
+const ADR_REF_REGEX = /^ADR-\d+$/i;
 
 /** Free plan = CI observation only: gate never fails, but may return observationOnly + actual status */
 const OBSERVATION_ONLY_PLANS = ["free"] as const;
@@ -37,11 +39,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return json({ valid: false, reason: "unauthorized" }, 401);
   }
 
-  const decisionId = request.nextUrl.searchParams.get("decisionId");
-  const validated = validateDecisionId(decisionId);
+  const decisionIdParam = request.nextUrl.searchParams.get("decisionId");
+  const adrRefTrimmed = request.nextUrl.searchParams.get("adrRef")?.trim() ?? "";
+  const useAdrRef = adrRefTrimmed.length > 0;
+  const validated = useAdrRef
+    ? ADR_REF_REGEX.test(adrRefTrimmed) && adrRefTrimmed.length <= DECISION_ID_MAX_LENGTH
+      ? { ok: true as const, id: adrRefTrimmed }
+      : { ok: false as const }
+    : validateDecisionId(decisionIdParam);
   if (!validated.ok) {
     return json({ valid: false, reason: "invalid_input" }, 422);
   }
+  const isAdrRefLookup = useAdrRef;
 
   try {
     const supabase = createServiceRoleClient();
@@ -76,13 +85,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       observationOnly = OBSERVATION_ONLY_PLANS.includes(planId as (typeof OBSERVATION_ONLY_PLANS)[number]);
     }
 
-    // Two explicit queries (decision → project) so workspace ownership is 100% reliable
-    // without depending on Supabase nested select / FK naming (project:projects(...)).
-    const { data: decision, error: decError } = await supabase
+    // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace
+    const query = supabase
       .from("decisions")
-      .select("id, status, project_id")
-      .eq("id", validated.id)
-      .maybeSingle();
+      .select("id, status, project_id, adr_ref")
+      .eq(isAdrRefLookup ? "workspace_id" : "id", isAdrRefLookup ? workspace.id : validated.id);
+    if (isAdrRefLookup) {
+      query.eq("adr_ref", validated.id);
+    }
+    const { data: decision, error: decError } = await query.maybeSingle();
 
     if (decError) {
       return json({ valid: false, reason: "server_error" }, 500);
@@ -97,28 +108,29 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (decision.project_id == null || decision.project_id === undefined) {
       return json({ valid: false, reason: "server_error" }, 500);
     }
+    // When lookup was by adr_ref, decision is already in this workspace; when by id, verify
+    if (!isAdrRefLookup) {
+      const { data: project, error: projError } = await supabase
+        .from("projects")
+        .select("workspace_id")
+        .eq("id", decision.project_id)
+        .maybeSingle();
 
-    const { data: project, error: projError } = await supabase
-      .from("projects")
-      .select("workspace_id")
-      .eq("id", decision.project_id)
-      .maybeSingle();
+      if (projError) {
+        return json({ valid: false, reason: "server_error" }, 500);
+      }
+      if (Array.isArray(project) || !project?.workspace_id || project.workspace_id !== workspace.id) {
+        return json({ valid: false, reason: "not_found" }, 404);
+      }
+    }
 
-    if (projError) {
-      return json({ valid: false, reason: "server_error" }, 500);
-    }
-    if (Array.isArray(project)) {
-      return json({ valid: false, reason: "server_error" }, 500);
-    }
-    if (!project?.workspace_id || project.workspace_id !== workspace.id) {
-      return json({ valid: false, reason: "not_found" }, 404);
-    }
+    const responseId = (decision as { adr_ref?: string }).adr_ref ?? decision.id;
 
     const status = decision.status as string;
     if (status !== "approved") {
       if (observationOnly) {
         return json(
-          { valid: true, observationOnly: true, decisionId: decision.id, status },
+          { valid: true, observationOnly: true, decisionId: responseId, status },
           200
         );
       }
@@ -126,7 +138,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     return json(
-      { valid: true, decisionId: decision.id, status: "approved" },
+      { valid: true, decisionId: responseId, status: "approved" },
       200
     );
   } catch {

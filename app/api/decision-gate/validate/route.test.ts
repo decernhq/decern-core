@@ -17,6 +17,11 @@ const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
 const mockSubMaybeSingle = vi.fn();
 
+const chainEqMaybe = (maybeSingle: typeof mockDecisionMaybeSingle) => ({
+  maybeSingle,
+  eq: () => ({ maybeSingle }),
+});
+
 vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
@@ -24,14 +29,14 @@ vi.mock("@/lib/supabase/service-role", () => ({
         eq: (_key: string, _val?: string) =>
           table === "subscriptions"
             ? { eq: () => ({ maybeSingle: mockSubMaybeSingle }) }
-            : {
-                maybeSingle:
-                  table === "workspaces"
-                    ? mockWorkspaceMaybeSingle
-                    : table === "decisions"
-                      ? mockDecisionMaybeSingle
+            : table === "decisions"
+              ? chainEqMaybe(mockDecisionMaybeSingle)
+              : {
+                  maybeSingle:
+                    table === "workspaces"
+                      ? mockWorkspaceMaybeSingle
                       : mockProjectMaybeSingle,
-              },
+                },
       }),
     }),
   }),
@@ -142,7 +147,7 @@ describe("GET /api/decision-gate/validate", () => {
   it("6) decision approved => 200", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
-      data: { id: decisionId, status: "approved", project_id: "proj-1" },
+      data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-042" },
       error: null,
     });
     mockProjectMaybeSingle.mockResolvedValueOnce({
@@ -154,7 +159,26 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, status: "approved" });
+    expect(body).toEqual({ valid: true, decisionId: "ADR-042", status: "approved" });
+  });
+
+  it("6b) decisionId ADR-001 => lookup by workspace + adr_ref, 200 with decisionId ADR-001", async () => {
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: "550e8400-e29b-41d4-a716-446655440000",
+        status: "approved",
+        project_id: "proj-1",
+        adr_ref: "ADR-001",
+      },
+      error: null,
+    });
+    const req = createRequest({ decisionId: "ADR-001", auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId: "ADR-001", status: "approved" });
+    expect(mockProjectMaybeSingle).not.toHaveBeenCalled();
   });
 
   it("decision in altro workspace => 404", async () => {

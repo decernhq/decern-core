@@ -160,6 +160,8 @@ export interface Database {
         Row: {
           id: string;
           project_id: string;
+          workspace_id: string;
+          adr_ref: string;
           title: string;
           status: "proposed" | "approved" | "superseded" | "rejected";
           context: string;
@@ -177,6 +179,8 @@ export interface Database {
         Insert: {
           id?: string;
           project_id: string;
+          workspace_id?: string;
+          adr_ref?: string;
           title: string;
           status?: "proposed" | "approved" | "superseded" | "rejected";
           context?: string;
@@ -194,6 +198,8 @@ export interface Database {
         Update: {
           id?: string;
           project_id?: string;
+          workspace_id?: string;
+          adr_ref?: string;
           title?: string;
           status?: "proposed" | "approved" | "superseded" | "rejected";
           context?: string;

@@ -21,6 +21,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
   }
 
   const project = decision.project as { id: string; name: string } | null;
+  const author = (decision as { author?: { full_name: string | null; email: string } | null }).author;
   const linkedDecision = decision.linked_decision as { id: string; title: string } | null;
   const supersededBy = (decision as { superseded_by?: { id: string; title: string }[] }).superseded_by ?? [];
 
@@ -59,7 +60,12 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           </Link>
         </div>
         <div className="mt-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {decision.adr_ref && (
+              <code className="rounded border border-gray-200 bg-gray-50 px-2 py-1 font-mono text-sm text-gray-600">
+                {decision.adr_ref}
+              </code>
+            )}
             <h1 className="text-2xl font-bold text-gray-900">
               {decision.title}
             </h1>
@@ -75,10 +81,15 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           {project && (
             <Link
               href={`/dashboard/projects/${project.id}`}
-              className="mt-1 text-sm text-gray-500 hover:text-brand-600"
+              className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
             >
               Progetto: {project.name}
             </Link>
+          )}
+          {author && (
+            <p className="mt-0.5 text-sm text-gray-500">
+              Autore: {author.full_name?.trim() || author.email || "—"}
+            </p>
           )}
           {linkedDecision && (
             <Link

@@ -112,10 +112,10 @@ export default async function LandingPage() {
               </p>
               <p className="text-gray-400">
                 Found decision refs:{" "}
-                <span className="text-gray-300">6d33cc96-059a-434d-906d-18443c92b945</span>
+                <span className="text-gray-300">ADR-042</span>
               </p>
               <p className="mt-2 text-red-400">
-                Validation result: FAIL for 6d33cc96-059a-434d-906d-18443c92b945 — not_approved
+                Validation result: FAIL for ADR-042 — not_approved
                 (decision status: <span className="text-amber-400">proposed</span>)
               </p>
             </div>
