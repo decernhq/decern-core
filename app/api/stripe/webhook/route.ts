@@ -184,6 +184,21 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   });
   if (error) throw error;
   console.log(`Payment failed for customer: ${customerId}`);
+
+  const isJudgeInvoice =
+    !invoice.subscription &&
+    typeof invoice.description === "string" &&
+    /^Judge usage (\d{4}-\d{2})$/.test(invoice.description.trim());
+  if (isJudgeInvoice) {
+    const period = invoice.description.trim().replace(/^Judge usage /, "");
+    const { error: judgeError } = await getSupabaseAnon().rpc("stripe_webhook_judge_invoice_failed", {
+      p_secret: process.env.SUPABASE_WEBHOOK_SECRET!,
+      p_stripe_customer_id: customerId,
+      p_period: period,
+    });
+    if (judgeError) console.error("Judge invoice failed: reset billed_at error", judgeError);
+    else console.log(`Judge usage ${period} marked for retry (customer: ${customerId})`);
+  }
 }
 
 async function handleInvoicePaid(invoice: Stripe.Invoice) {

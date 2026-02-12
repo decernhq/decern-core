@@ -89,6 +89,7 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
 
   const inputCentsPer1M = getInputCentsPer1M();
   const outputCentsPer1M = getOutputCentsPer1M();
+  const billedOwnerIds: string[] = [];
 
   for (const [ownerId, tokens] of workspaceByOwner) {
     const customerId = customerByOwner.get(ownerId);
@@ -118,19 +119,27 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
       await stripe.invoices.finalizeInvoice(invoice.id);
       billedOwners += 1;
       totalAmountCents += amountCents;
+      billedOwnerIds.push(ownerId);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       errors.push(`Owner ${ownerId} (${customerId}): ${msg}`);
     }
   }
 
-  if (billedOwners > 0) {
-    const { error: updateError } = await supabase
-      .from("judge_usage")
-      .update({ billed_at: new Date().toISOString() })
-      .eq("period", period)
-      .is("billed_at", null);
-    if (updateError) errors.push(`Failed to set billed_at: ${updateError.message}`);
+  if (billedOwnerIds.length > 0) {
+    const { data: workspaceIdsToMark } = await supabase
+      .from("workspaces")
+      .select("id")
+      .in("owner_id", billedOwnerIds);
+    const ids = (workspaceIdsToMark ?? []).map((w) => w.id);
+    if (ids.length > 0) {
+      const { error: updateError } = await supabase
+        .from("judge_usage")
+        .update({ billed_at: new Date().toISOString() })
+        .eq("period", period)
+        .in("workspace_id", ids);
+      if (updateError) errors.push(`Failed to set billed_at: ${updateError.message}`);
+    }
   }
 
   return { period, billedOwners, totalAmountCents, errors };

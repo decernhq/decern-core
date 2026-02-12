@@ -26,6 +26,7 @@ function createJudgeRequest(
 }
 
 const mockWorkspaceMaybeSingle = vi.fn();
+const mockSubscriptionMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
 const mockFetch = vi.fn();
@@ -35,6 +36,7 @@ const chainEqMaybe = (maybeSingle: typeof mockDecisionMaybeSingle) => {
   return chain;
 };
 
+const mockRpc = vi.fn();
 vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
@@ -42,12 +44,15 @@ vi.mock("@/lib/supabase/service-role", () => ({
         eq: (_key: string, _val?: string) =>
           table === "decisions"
             ? chainEqMaybe(mockDecisionMaybeSingle)
-            : {
-                maybeSingle:
-                  table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
-              },
+            : table === "subscriptions"
+              ? { maybeSingle: mockSubscriptionMaybeSingle }
+              : {
+                  maybeSingle:
+                    table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
+                },
       }),
     }),
+    rpc: (_name: string, _args: unknown) => mockRpc(),
   }),
 }));
 
@@ -59,6 +64,11 @@ describe("POST /api/decision-gate/judge", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     process.env.ANTHROPIC_API_KEY = "sk-ant-test-key";
+    mockRpc.mockResolvedValue({ data: true });
+    mockSubscriptionMaybeSingle.mockResolvedValue({
+      data: { stripe_customer_id: "cus_test123", plan_id: "team" },
+      error: null,
+    });
     mockWorkspaceMaybeSingle.mockResolvedValue({
       data: { id: WORKSPACE_ID, owner_id: "user-1" },
       error: null,
@@ -160,6 +170,57 @@ describe("POST /api/decision-gate/judge", () => {
     const data = await res.json();
     expect(res.status).toBe(200);
     expect(data).toEqual({ allowed: false, reason: "Invalid adrRef or decisionId." });
+  });
+
+  it("owner has no Stripe customer => 200 allowed: false, Billing not set up", async () => {
+    mockSubscriptionMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "Billing not set up. Add a payment method to use the Judge.",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("owner on free plan => 200 allowed: false, Judge Team and above", async () => {
+    mockSubscriptionMaybeSingle.mockResolvedValueOnce({
+      data: { stripe_customer_id: "cus_xxx", plan_id: "free" },
+      error: null,
+    });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "Judge is available on Team plan and above.",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("rate limit exceeded => 200 allowed: false", async () => {
+    mockRpc.mockResolvedValueOnce({ data: false });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({ allowed: false, reason: "Rate limit exceeded. Try again later." });
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("wrong token => 200 allowed: false, Unauthorized", async () => {

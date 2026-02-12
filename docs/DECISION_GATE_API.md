@@ -72,6 +72,7 @@ Dopo la validazione (validate), il CLI **decern-gate** può chiamare l’endpoin
 - **Metodo:** `POST`
 - **URL:** `/api/decision-gate/judge` (path configurabile lato client con `DECERN_JUDGE_PATH`).
 - **Autenticazione:** come per validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
+- **Piano richiesto:** Judge è disponibile solo per piani **Team** e superiori (Business, Enterprise, Governance). Il piano Free non può usare il Judge; in tal caso la risposta è `200` con `allowed: false` e `reason: "Judge is available on Team plan and above."`.
 
 ## Request body (JSON)
 
@@ -159,3 +160,15 @@ Esempio di chiamata (es. da cron il 1° del mese):
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
   "https://your-app.vercel.app/api/cron/bill-judge-usage"
 ```
+
+## Sicurezza e protezione costi (Judge)
+
+Per evitare abusi e perdite economiche sono attive le seguenti misure:
+
+| Misura | Descrizione |
+|--------|-------------|
+| **Rate limit** | Massimo N richieste per workspace per minuto (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Oltre il limite: `200` con `allowed: false`, `reason: "Rate limit exceeded. Try again later."` senza chiamare l’LLM. |
+| **Billing obbligatorio** | Il workspace deve avere un owner con `stripe_customer_id` (pagamento configurato). Altrimenti: `allowed: false`, `reason: "Billing not set up. Add a payment method to use the Judge."`. |
+| **Piano Team+** | Solo piani Team, Business, Enterprise o Governance possono usare il Judge. Piano Free: `allowed: false`, `reason: "Judge is available on Team plan and above."`. |
+| **Billing idempotente** | Il cron di billing imposta `billed_at` solo per i workspace degli owner effettivamente fatturati con successo. Una seconda esecuzione per lo stesso periodo non crea doppie fatture. |
+| **Pagamento fallito** | In caso di `invoice.payment_failed` su una fattura Judge (descrizione "Judge usage YYYY-MM"), il webhook Stripe resetta `billed_at` per quel customer/periodo così il cron può ritentare l’addebito. |

@@ -12,6 +12,9 @@ const ADR_REF_REGEX = /^ADR-\d+$/i;
 /** Max diff length to send to LLM (~25k tokens if 4 chars/token). Backend truncation if client sent more. */
 const MAX_DIFF_CHARS = 120_000;
 
+/** Judge is only available on paid plans (Team and above). */
+const JUDGE_ALLOWED_PLANS = new Set(["team", "business", "enterprise", "governance"]);
+
 export type JudgeRequestBody = {
   diff: string;
   truncated?: boolean;
@@ -131,6 +134,30 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     if (!workspace?.id) {
       return judgeJson(false, "Unauthorized.");
+    }
+
+    const rateLimitPerMinute = Math.min(
+      1000,
+      Math.max(1, parseInt(process.env.JUDGE_RATE_LIMIT_PER_MINUTE ?? "60", 10) || 60)
+    );
+    const { data: underLimit } = await supabase.rpc("check_and_increment_judge_rate_limit", {
+      p_workspace_id: workspace.id,
+      p_limit_per_minute: rateLimitPerMinute,
+    });
+    if (!underLimit) {
+      return judgeJson(false, "Rate limit exceeded. Try again later.");
+    }
+
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id, plan_id")
+      .eq("user_id", workspace.owner_id)
+      .maybeSingle();
+    if (!subscription?.stripe_customer_id) {
+      return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
+    }
+    if (!JUDGE_ALLOWED_PLANS.has((subscription.plan_id ?? "free") as string)) {
+      return judgeJson(false, "Judge is available on Team plan and above.");
     }
 
     let query = supabase
