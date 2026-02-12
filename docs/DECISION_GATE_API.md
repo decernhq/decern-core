@@ -62,3 +62,100 @@ npm run test
 ```
 
 I test coprono: assenza auth, token errato, `decisionId` invalido/mancante, decisione non trovata, decisione non approvata, decisione approvata, errore server.
+
+---
+
+# Endpoint Judge (LLM as a judge)
+
+Dopo la validazione (validate), il CLI **decern-gate** può chiamare l’endpoint **judge** per far valutare da un LLM se il **diff** inviato è coerente con la decisione referenziata (ADR o decision ID). Il judge usa **Claude 3.5 Sonnet** (Anthropic). Se sì la CI può passare; se no la gate blocca.
+
+- **Metodo:** `POST`
+- **URL:** `/api/decision-gate/judge` (path configurabile lato client con `DECERN_JUDGE_PATH`).
+- **Autenticazione:** come per validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
+
+## Request body (JSON)
+
+Il client invia **esattamente uno** tra `adrRef` e `decisionId` (non entrambi).
+
+| Campo        | Tipo    | Descrizione |
+|-------------|---------|-------------|
+| `diff`      | string  | Diff unificato completo (`git diff base...head`), già filtrato lato client (esclusi binari/immagini e file con patch >1MB); dimensione massima 2 MB. |
+| `truncated` | boolean | `true` se il client ha troncato il diff a 2 MB (il judge lavora su un diff potenzialmente parziale). |
+| `baseSha`   | string  | Ref git base (es. `origin/main` o SHA). |
+| `headSha`   | string  | Ref git head (es. `HEAD` o SHA). |
+| `adrRef`    | string  | Presente **solo** se la decisione è un ADR (es. `ADR-002`). |
+| `decisionId`| string  | Presente **solo** se la decisione è un UUID (non ADR). |
+
+Esempio con ADR:
+
+```json
+{
+  "diff": "diff --git a/src/app.ts b/src/app.ts\n--- a/src/app.ts\n+++ b/src/app.ts\n@@ -1,3 +1,4 @@\n ...",
+  "truncated": false,
+  "baseSha": "origin/main",
+  "headSha": "HEAD",
+  "adrRef": "ADR-002"
+}
+```
+
+Esempio con UUID:
+
+```json
+{
+  "diff": "...",
+  "truncated": false,
+  "baseSha": "abc123",
+  "headSha": "def456",
+  "decisionId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+## Response
+
+Sempre **status 200 OK** (anche quando si blocca: il blocco è indicato da `allowed: false`).
+
+| Campo    | Tipo    | Descrizione |
+|----------|---------|-------------|
+| `allowed`| boolean | `true` = il cambiamento è coerente con la decisione, la gate può passare; `false` = blocca la CI. |
+| `reason` | string (opzionale) | Breve motivazione (per log o output CI). |
+
+Esempi:
+
+- Pass: `{"allowed": true, "reason": "Change aligns with ADR-002."}`
+- Block: `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}`
+
+In caso di errore (token non valido, decisione non trovata, timeout LLM, errore di rete verso l’LLM): risposta **200** con `{"allowed": false, "reason": "<messaggio appropriato>"}` (fail-closed). In tutti i casi decern-gate considera la gate bloccata se `allowed` è `false`.
+
+## Variabili d’ambiente (backend)
+
+- `ANTHROPIC_API_KEY`: richiesta per le chiamate a Claude 3.5 Sonnet (API Anthropic). Chiave da [Console Anthropic](https://console.anthropic.com/).
+- `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`: come per validate (lettura decisioni e lookup token).
+
+## Storico usage e addebito mensile
+
+Ogni chiamata al judge che riceve una risposta valida da Claude viene registrata nella tabella **judge_usage** (per workspace e mese `YYYY-MM`): si salvano `input_tokens` e `output_tokens` restituiti dall’API Anthropic.
+
+A **fine mese** si può addebitare l’usage del mese su Stripe chiamando l’endpoint di cron:
+
+- **POST** `/api/cron/bill-judge-usage`
+- **Header:** `Authorization: Bearer <CRON_SECRET>` (impostare `CRON_SECRET` in `.env`).
+- **Query (opzionale):** `?period=YYYY-MM` (default: mese precedente).
+
+L’endpoint:
+
+1. Legge da `judge_usage` tutti i record del periodo con `billed_at` nullo.
+2. Raggruppa per owner del workspace (utente che ha la subscription Stripe).
+3. Per ogni owner con `stripe_customer_id`, calcola l’importo in centesimi (token × prezzo per 1M token) e crea una fattura Stripe con una riga “Judge usage YYYY-MM”.
+4. Imposta `billed_at` sui record usati per evitare doppi addebiti.
+
+Prezzi (centesimi per 1M token), configurabili in env:
+
+- `JUDGE_BILLING_INPUT_CENTS_PER_1M` (default 840, ~8,40 €/1M input, 3× costo Anthropic).
+- `JUDGE_BILLING_OUTPUT_CENTS_PER_1M` (default 4200, ~42 €/1M output, 3× costo Anthropic).
+
+Esempio di chiamata (es. da cron il 1° del mese):
+
+```bash
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
+  "https://your-app.vercel.app/api/cron/bill-judge-usage"
+```

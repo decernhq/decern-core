@@ -215,6 +215,35 @@ export interface Database {
           updated_at?: string;
         };
       };
+      judge_usage: {
+        Row: {
+          workspace_id: string;
+          period: string;
+          input_tokens: number;
+          output_tokens: number;
+          billed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          period: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          billed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          period?: string;
+          input_tokens?: number;
+          output_tokens?: number;
+          billed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
     };
     Enums: {
       decision_status: "proposed" | "approved" | "superseded" | "rejected";
@@ -239,3 +268,4 @@ export type InsertProject = Database["public"]["Tables"]["projects"]["Insert"];
 export type UpdateProject = Database["public"]["Tables"]["projects"]["Update"];
 export type InsertDecision = Database["public"]["Tables"]["decisions"]["Insert"];
 export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"];
+export type JudgeUsage = Database["public"]["Tables"]["judge_usage"]["Row"];
