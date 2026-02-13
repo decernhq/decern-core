@@ -172,8 +172,28 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({ allowed: false, reason: "Invalid adrRef or decisionId." });
   });
 
-  it("owner has no Stripe customer => 200 allowed: false, Billing not set up", async () => {
+  it("owner has no subscription (free) => 200 allowed: false, Judge Team and above", async () => {
     mockSubscriptionMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "Judge is available on Team plan and above.",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("owner on Team plan but no Stripe customer => 200 allowed: false, Billing not set up", async () => {
+    mockSubscriptionMaybeSingle.mockResolvedValueOnce({
+      data: { stripe_customer_id: null, plan_id: "team" },
+      error: null,
+    });
     const req = createJudgeRequest(
       { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
       `Bearer ${VALID_TOKEN}`

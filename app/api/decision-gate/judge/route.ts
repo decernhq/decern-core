@@ -153,11 +153,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .select("stripe_customer_id, plan_id")
       .eq("user_id", workspace.owner_id)
       .maybeSingle();
+    const planId = (subscription?.plan_id ?? "free") as string;
+    if (!JUDGE_ALLOWED_PLANS.has(planId)) {
+      return judgeJson(false, "Judge is available on Team plan and above.");
+    }
     if (!subscription?.stripe_customer_id) {
       return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
-    }
-    if (!JUDGE_ALLOWED_PLANS.has((subscription.plan_id ?? "free") as string)) {
-      return judgeJson(false, "Judge is available on Team plan and above.");
     }
 
     let query = supabase
