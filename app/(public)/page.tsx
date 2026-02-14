@@ -45,7 +45,9 @@ export default async function LandingPage() {
   return (
     <main className="overflow-x-hidden">
       {/* ═══════════ HERO ═══════════ */}
-      <section className="landing-grid relative overflow-hidden border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 pb-20 pt-16 sm:pb-28 sm:pt-24 lg:pb-32 lg:pt-28">
+      <section className="relative overflow-hidden border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 pb-20 pt-16 sm:pb-28 sm:pt-24 lg:pb-32 lg:pt-28">
+        {/* Grid layer: visible at top, fades out toward bottom */}
+        <div className="pointer-events-none absolute inset-0 landing-grid-pattern landing-hero-grid-fade" aria-hidden />
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(14,165,233,0.08),transparent)] dark:bg-[radial-gradient(ellipse_60%_40%_at_50%_0%,rgba(14,165,233,0.15),transparent)]" aria-hidden />
         <div className="relative mx-auto max-w-4xl text-center">
           <FadeIn delay={0} duration={600}>
@@ -153,15 +155,34 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ SOLUTION — 4 steps vertical, white rounded boxes ═══════════ */}
+      {/* ═══════════ THE SOLUTION — ADR intro + 4 steps ═══════════ */}
       <section
         id="solution"
         className="scroll-mt-20 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-24 sm:py-28"
       >
         <div className="mx-auto max-w-2xl">
-          <FadeIn className="text-center">
+          <FadeIn>
             <Eyebrow>{t("solution.eyebrow")}</Eyebrow>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+            <p className="mt-4 text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+              {t.rich("solution.adrIntro", {
+                ...bold,
+                a: (chunks: React.ReactNode) => (
+                  <a
+                    href={t("solution.adrLinkUrl")}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={t("solution.adrLinkLabel")}
+                    className="font-medium text-brand-600 dark:text-brand-400 underline decoration-brand-400/50 hover:decoration-brand-500 dark:hover:decoration-brand-400"
+                  >
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </p>
+          </FadeIn>
+
+          <FadeIn className="mt-14 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
               {t("solution.title")}
             </h2>
           </FadeIn>
