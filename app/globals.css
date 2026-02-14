@@ -142,11 +142,32 @@
 
 /* Bento card hover lift */
 .landing-bento {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
 }
 .landing-bento:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+}
+.dark .landing-bento:hover {
+  box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+}
+
+/* Judge card pulsing glow */
+@keyframes judge-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
+}
+.landing-judge-pulse {
+  animation: judge-pulse 3s ease-in-out infinite;
+}
+
+/* Terminal floating */
+@keyframes terminal-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.landing-terminal {
+  animation: terminal-float 5s ease-in-out infinite;
 }
 
 /* CTA section: animated background */
