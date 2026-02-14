@@ -43,7 +43,7 @@
   "landing": {
     "hero": {
       "eyebrow": "Decision log tecnico per team moderni",
-      "headline": "Collega le tue decisioni tecniche al codice",
+      "headline": "Mantieni il codice generato dall'AI allineato alle tue decisioni tecniche",
       "subheadline": "Scrivi cosa avete deciso. Decern lo collega a ogni pull request e <b>controlla che il codice rispetti quella decisione</b>. Se la modifica va oltre quanto approvato (Terraform, dipendenze, scope creep), <b>il gate blocca</b> prima del merge.",
       "bullet1": "Un posto per ogni decisione. Un gate in CI. Niente più drift tra documenti e codice.",
       "bullet2": "Prima controlliamo: c'è una decisione ed è approvata? Poi: questa modifica al codice rispetta quella decisione?",
@@ -60,10 +60,13 @@
       "example3": "L'AI scrive tanto codice in fretta. Zero memoria delle tue decisioni. Il costo del drift sale."
     },
     "solution": {
-      "eyebrow": "Come funziona",
+      "eyebrow": "La soluzione",
+      "adrIntro": "Decern si basa sugli <b>Architecture Decision Record (ADR)</b>: note brevi che dicono cosa avete deciso e perché. Ogni record segue una struttura semplice: contesto, decisione, conseguenze. Così tutti possono leggerlo e aggiornarlo. Il formato è stato proposto da Michael Nygard. Leggi l'<a>articolo originale</a> per saperne di più.",
+      "adrLinkUrl": "https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions",
+      "adrLinkLabel": "Documenting Architecture Decisions (Nygard, 2011)",
       "title": "Quattro passi semplici",
       "step1Title": "Registra una decisione tecnica in meno di 60 secondi con l'AI",
-      "step1Body": "Genera la decisione con l'AI a partire da note di meeting o una descrizione breve. Tu revisioni e approvi—il pensiero resta umano. Contesto, opzioni, cosa avete scelto, perché: un posto per tutto.",
+      "step1Body": "Genera la decisione con l'AI a partire da note di meeting o una descrizione breve. Tu revisioni e approvi. Il pensiero resta umano. Contesto, opzioni, cosa avete scelto, perché: un posto per tutto.",
       "step2Title": "Collega la decisione alla PR",
       "step2Body": "Nel titolo o nella descrizione della PR indica quella decisione (es. ADR-001). La PR <b>porta la decisione</b>. La pipeline sa quali regole applicare.",
       "step3Title": "Fai girare il gate in CI",

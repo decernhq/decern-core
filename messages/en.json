@@ -43,7 +43,7 @@
   "landing": {
     "hero": {
       "eyebrow": "Technical decision log for modern teams",
-      "headline": "Connect your technical decisions with your code",
+      "headline": "Keep AI-generated code aligned with your technical decisions",
       "subheadline": "You write down what you decided. Decern links it to every pull request and <b>checks the code change against it</b>. If the change goes beyond what was approved (Terraform, dependencies, scope creep), <b>the gate blocks</b> before merge.",
       "bullet1": "One place for every decision. One gate in CI. No more drift between docs and code.",
       "bullet2": "First we check: is there a decision, and is it approved? Then we check: does this code change fit that decision?",
@@ -60,10 +60,13 @@
       "example3": "AI writes a lot of code fast. Zero memory of your decisions. The cost of drift goes up."
     },
     "solution": {
-      "eyebrow": "How it works",
+      "eyebrow": "The Solution",
+      "adrIntro": "Decern uses <b>Architecture Decision Records (ADRs)</b>: short notes that say what you decided and why. Each record follows a simple structure: context, decision, consequences. So everyone can read and update it. This format was proposed by Michael Nygard. Read the <a>original article</a> to learn more.",
+      "adrLinkUrl": "https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions",
+      "adrLinkLabel": "Documenting Architecture Decisions (Nygard, 2011)",
       "title": "Four simple steps",
-      "step1Title": "Instantly record technical decisions with AI",
-      "step1Body": "Generate your decision with AI from meeting notes or a short brief. You review and approve—the thinking stays human. Context, options, what you chose, why. One place for everything.",
+      "step1Title": "Record a technical decision",
+      "step1Body": "Generate your decision with AI from meeting notes or a short brief. You review and approve. The thinking stays human. Context, options, what you chose, why. One place for everything.",
       "step2Title": "Link it to the PR",
       "step2Body": "In the PR title or description, point to that decision (e.g. ADR-001). The PR <b>carries the decision</b>. Your pipeline knows which rules apply.",
       "step3Title": "Run the gate in CI",

@@ -127,17 +127,25 @@
 
 /* ========== Landing page ========== */
 
-/* Hero grid pattern — light & dark */
-.landing-grid {
+/* Hero grid pattern — light & dark (used on a separate layer so we can mask it) */
+.landing-grid-pattern {
   background-image:
     linear-gradient(rgba(0,0,0,0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0,0,0,0.04) 1px, transparent 1px);
   background-size: 64px 64px;
 }
-.dark .landing-grid {
+.dark .landing-grid-pattern {
   background-image:
     linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+}
+
+/* Hero: grid fades out toward the bottom */
+.landing-hero-grid-fade {
+  mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 75%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 15%, transparent 75%);
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
 }
 
 /* Bento card hover lift */
