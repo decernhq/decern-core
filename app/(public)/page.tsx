@@ -240,6 +240,38 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ═══════════ YOUR MODEL, YOUR KEYS — Judge / LLM (inverted: cards left, copy right) ═══════════ */}
+      <section id="judge" className="scroll-mt-20 border-t border-gray-200 dark:border-gray-800 bg-violet-50/40 dark:bg-violet-950/20 px-4 py-24 sm:py-28">
+        <div className="mx-auto max-w-5xl lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
+          <FadeIn direction="left" distance={20}>
+            <div className="mt-10 space-y-5 lg:mt-0">
+              {(["point1", "point2"] as const).map((k) => (
+                <div
+                  key={k}
+                  className="rounded-2xl border border-violet-200 dark:border-violet-700/50 bg-white/80 dark:bg-gray-900/80 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                >
+                  <p className="text-lg font-medium leading-relaxed text-gray-900 dark:text-gray-100">
+                    {t(`judge.${k}`)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+
+          <FadeIn direction="right" distance={20} delay={200}>
+            <div>
+              <Eyebrow>{t("judge.eyebrow")}</Eyebrow>
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+                {t("judge.title")}
+              </h2>
+              <p className="mt-6 text-lg leading-relaxed text-gray-600 dark:text-gray-400">
+                {t("judge.intro")}
+              </p>
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
       {/* ═══════════ FEATURES — bento grid ═══════════ */}
       <section
         id="features"

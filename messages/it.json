@@ -87,6 +87,13 @@
       "point1": "La decisione può essere approvata e collegata. Blocchiamo comunque quando la <b>modifica non rispetta</b> la decisione.",
       "point2": "Ti diciamo il perché. Esempio: «ADR-001 approva solo la nuova API. Il diff modifica Terraform e package.json. Fuori scope.»"
     },
+    "judge": {
+      "eyebrow": "Il Judge",
+      "title": "Il tuo modello. Le tue chiavi. Il tuo controllo.",
+      "intro": "Il Judge che confronta il diff con la decisione usa l'LLM che configuri tu—OpenAI, Claude o qualsiasi API compatibile con OpenAI. Scegli tu provider e modello.",
+      "point1": "Scegli tu provider e modello. OpenAI, Claude o qualsiasi endpoint compatibile con OpenAI. Il Judge usa la tua configurazione solo per quella richiesta.",
+      "point2": "Non memorizziamo né logghiamo la tua API key. Viene inviata solo per la richiesta del Judge e non viene mai conservata."
+    },
     "features": {
       "eyebrow": "Cosa ottieni",
       "title": "Fatto per chiarezza e controllo",
