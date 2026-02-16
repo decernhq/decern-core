@@ -1,49 +1,49 @@
 # Decision Gate API (MVP)
 
-Endpoint di validazione per CI/CD: verifica se una decisione esiste ed è in stato **approved**. Con piano **Free** la CI è in modalità observation only: il gate restituisce sempre `200` (la pipeline non fallisce); il body non include `status`.
+CI/CD validation endpoint: it checks whether a decision exists and is in **approved** status. On the **Free** plan the CI runs in observation-only mode: the gate always returns `200` (the pipeline does not fail); the response body does not include `status`.
 
-## Piano e comportamento
+## Plan and behaviour
 
-- **Piano Free:** observation only — risposta sempre `200` con `valid`, `decisionId`, `adrRef`. Non vengono inclusi `hasLinkedPR` né `status`; la CI non deve far fallire la pipeline.
-- **Piani Team / Business / Enterprise / Governance:** enforcement — se la decisione non è approvata viene restituito `422`; quando è approvata il body include anche `status: "approved"`.
+- **Free plan:** observation only — response is always `200` with `valid`, `decisionId`, `adrRef`. Neither `hasLinkedPR` nor `status` are included; the CI must not fail the pipeline.
+- **Team / Business / Enterprise / Governance plans:** enforcement — if the decision is not approved the response is `422`; when it is approved the body also includes `status: "approved"`.
 
 ## Endpoint
 
-- **Metodo:** `GET`
+- **Method:** `GET`
 - **URL:** `/api/decision-gate/validate`
-- **Query param:** `decisionId` (UUID della decisione) oppure `adrRef` (es. `ADR-001`) — almeno uno obbligatorio. Con `adrRef` la decisione viene cercata per workspace + riferimento ADR.
+- **Query params:** `decisionId` (decision UUID) or `adrRef` (e.g. `ADR-001`) — at least one required. With `adrRef` the decision is looked up by workspace + ADR reference.
 
-## Autenticazione
+## Authentication
 
 - **Header:** `Authorization: Bearer <token>`
-- Il token è **per workspace**: si crea da **Dashboard → Workspace** (sezione "Token CI (Decision Gate)"). Solo il proprietario del workspace può generare o revocare il token. Il token in chiaro viene mostrato una sola volta alla generazione; in DB viene salvato solo l’hash.
-- Se manca o non è valido per nessun workspace → `401` con `{ "valid": false, "reason": "unauthorized" }`.
+- The token is **per workspace**: it is created from **Dashboard → Workspace** (section "CI Token (Decision Gate)"). Only the workspace owner can create or revoke the token. The plain token is shown only once at creation; only its hash is stored in the DB.
+- If missing or invalid for every workspace → `401` with `{ "valid": false, "reason": "unauthorized" }`.
 
-## Risposte
+## Responses
 
-| Status | Body | Significato |
-|--------|------|-------------|
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decisione trovata e approvata (piano a pagamento). |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Piano Free (observation only); nessun `hasLinkedPR` né `status`, CI non deve fallire. |
-| 401 | `{ "valid": false, "reason": "unauthorized" }` | Token mancante o non valido. |
-| 404 | `{ "valid": false, "reason": "not_found" }` | Nessuna decisione con quell’id. |
-| 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` vuoto, troppo lungo (>128) o caratteri non ammessi. |
-| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decisione trovata ma non approvata (piano a pagamento: enforcement). |
-| 500 | `{ "valid": false, "reason": "server_error" }` | Errore lato server (es. DB). |
+| Status | Body | Meaning |
+|--------|------|---------|
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decision found and approved (paid plan). |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Free plan (observation only); no `hasLinkedPR` or `status`, CI must not fail. |
+| 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
+| 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
+| 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |
+| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decision found but not approved (paid plan: enforcement). |
+| 500 | `{ "valid": false, "reason": "server_error" }` | Server error (e.g. DB). |
 
-## Validazione `decisionId`
+## `decisionId` validation
 
-- Obbligatorio, non vuoto.
-- Lunghezza massima 128 caratteri.
-- Caratteri ammessi: `[a-zA-Z0-9_-]` (compatibile con UUID).
+- Required, non-empty.
+- Maximum length 128 characters.
+- Allowed characters: `[a-zA-Z0-9_-]` (UUID-compatible).
 
-## Sicurezza
+## Security
 
-- La lettura usa **Supabase Service Role** (bypass RLS), solo server-side.
-- In risposta non vengono mai restituiti contenuti della decisione (progetto, workspace, autore).
-- Token e `decisionId` non vanno loggati in chiaro.
+- Reads use **Supabase Service Role** (bypass RLS), server-side only.
+- The response never includes decision contents (project, workspace, author).
+- Token and `decisionId` must not be logged in plain text.
 
-## Esempio (curl)
+## Example (curl)
 
 ```bash
 export DECERN_CI_TOKEN="your-secret-token"
@@ -51,43 +51,55 @@ curl -s -H "Authorization: Bearer $DECERN_CI_TOKEN" \
   "https://your-app.vercel.app/api/decision-gate/validate?decisionId=550e8400-e29b-41d4-a716-446655440000"
 ```
 
-## Variabili d’ambiente
+## Environment variables
 
-- `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`: richiesti per la lettura delle decisioni e il lookup del token per workspace.
+- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: required for reading decisions and workspace token lookup.
 
-## Test
+## Tests
 
 ```bash
 npm run test
 ```
 
-I test coprono: assenza auth, token errato, `decisionId` invalido/mancante, decisione non trovata, decisione non approvata, decisione approvata, errore server.
+Tests cover: missing auth, invalid token, invalid/missing `decisionId`, decision not found, decision not approved, decision approved, server error.
 
 ---
 
-# Endpoint Judge (LLM as a judge)
+# Judge endpoint (LLM as a judge)
 
-Dopo la validazione (validate), il CLI **decern-gate** può chiamare l’endpoint **judge** per far valutare da un LLM se il **diff** inviato è coerente con la decisione referenziata (ADR o decision ID). Il judge usa **Claude 3.5 Sonnet** (Anthropic). Se sì la CI può passare; se no la gate blocca.
+After validation (validate), the **decern-gate** CLI can call the **judge** endpoint to have an LLM evaluate whether the submitted **diff** is consistent with the referenced decision (ADR or decision ID). The **LLM is chosen and configured by the user**: decern-gate sends in the request body the parameters needed to call the LLM. **Decern does not store or retain API keys**: they are used only for the single request.
 
-- **Metodo:** `POST`
-- **URL:** `/api/decision-gate/judge` (path configurabile lato client con `DECERN_JUDGE_PATH`).
-- **Autenticazione:** come per validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
-- **Piano richiesto:** Judge è disponibile solo per piani **Team** e superiori (Business, Enterprise, Governance). Il piano Free non può usare il Judge; in tal caso la risposta è `200` con `allowed: false` e `reason: "Judge is available on Team plan and above."`.
+- **Anthropic:** if `llm.baseUrl` is `https://api.anthropic.com` (with or without path, e.g. `https://api.anthropic.com/v1`), the backend uses the **native** Messages API (`POST /v1/messages`), with no gateway.
+- **Other providers:** for any other URL (OpenAI, Together, OpenRouter, etc.) the backend uses the **OpenAI-compatible fallback** (`POST {baseUrl}/chat/completions`).
+
+- **Method:** `POST`
+- **URL:** `/api/decision-gate/judge` (path configurable client-side via `DECERN_JUDGE_PATH`).
+- **Authentication:** same as validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
+- **Required plan:** Judge is available only on **Team** and higher plans (Business, Enterprise, Governance). The Free plan cannot use the Judge; in that case the response is `200` with `allowed: false` and `reason: "Judge is available on Team plan and above."`.
 
 ## Request body (JSON)
 
-Il client invia **esattamente uno** tra `adrRef` e `decisionId` (non entrambi).
+The client sends **exactly one** of `adrRef` or `decisionId` (not both) and **must** send the `llm` object with the user’s chosen LLM configuration (native Anthropic or OpenAI-compatible).
 
-| Campo        | Tipo    | Descrizione |
+| Field        | Type    | Description |
 |-------------|---------|-------------|
-| `diff`      | string  | Diff unificato completo (`git diff base...head`), già filtrato lato client (esclusi binari/immagini e file con patch >1MB); dimensione massima 2 MB. |
-| `truncated` | boolean | `true` se il client ha troncato il diff a 2 MB (il judge lavora su un diff potenzialmente parziale). |
-| `baseSha`   | string  | Ref git base (es. `origin/main` o SHA). |
-| `headSha`   | string  | Ref git head (es. `HEAD` o SHA). |
-| `adrRef`    | string  | Presente **solo** se la decisione è un ADR (es. `ADR-002`). |
-| `decisionId`| string  | Presente **solo** se la decisione è un UUID (non ADR). |
+| `diff`      | string  | Full unified diff (`git diff base...head`), already filtered client-side (excluding binaries/images and files with patch >1MB); maximum size 2 MB. |
+| `truncated` | boolean | `true` if the client truncated the diff to 2 MB (the judge may work on a partial diff). |
+| `baseSha`   | string  | Git base ref (e.g. `origin/main` or SHA). |
+| `headSha`   | string  | Git head ref (e.g. `HEAD` or SHA). |
+| `adrRef`    | string  | Present **only** when the decision is an ADR (e.g. `ADR-002`). |
+| `decisionId`| string  | Present **only** when the decision is a UUID (not ADR). |
+| `llm`       | object  | **Required.** User’s LLM configuration (never stored). See below. |
 
-Esempio con ADR:
+### `llm` object
+
+| Field     | Type   | Description |
+|----------|--------|-------------|
+| `baseUrl`| string | API base URL. If it is `https://api.anthropic.com` the native Anthropic API is used; otherwise the OpenAI-compatible endpoint `{baseUrl}/chat/completions` is used. Examples: `https://api.openai.com/v1`, `https://api.anthropic.com`, `https://api.together.xyz/v1`. Must be HTTPS; only localhost may use `http`. |
+| `apiKey` | string | API key for the LLM. Used only for this request, never stored or logged. For Anthropic it is sent as the `x-api-key` header. |
+| `model`  | string | Model name (e.g. `gpt-4o-mini`, `claude-3-5-sonnet-20241022`). |
+
+Example with ADR:
 
 ```json
 {
@@ -95,11 +107,16 @@ Esempio con ADR:
   "truncated": false,
   "baseSha": "origin/main",
   "headSha": "HEAD",
-  "adrRef": "ADR-002"
+  "adrRef": "ADR-002",
+  "llm": {
+    "baseUrl": "https://api.openai.com/v1",
+    "apiKey": "sk-...",
+    "model": "gpt-4o-mini"
+  }
 }
 ```
 
-Esempio con UUID:
+Example with UUID:
 
 ```json
 {
@@ -107,68 +124,73 @@ Esempio con UUID:
   "truncated": false,
   "baseSha": "abc123",
   "headSha": "def456",
-  "decisionId": "550e8400-e29b-41d4-a716-446655440000"
+  "decisionId": "550e8400-e29b-41d4-a716-446655440000",
+  "llm": {
+    "baseUrl": "https://api.openai.com/v1",
+    "apiKey": "sk-...",
+    "model": "gpt-4o-mini"
+  }
 }
 ```
 
 ## Response
 
-Sempre **status 200 OK** (anche quando si blocca: il blocco è indicato da `allowed: false`).
+Always **status 200 OK** (even when the gate blocks: blocking is indicated by `allowed: false`).
 
-| Campo    | Tipo    | Descrizione |
+| Field    | Type    | Description |
 |----------|---------|-------------|
-| `allowed`| boolean | `true` = il cambiamento è coerente con la decisione, la gate può passare; `false` = blocca la CI. |
-| `reason` | string (opzionale) | Breve motivazione (per log o output CI). |
+| `allowed`| boolean | `true` = the change is consistent with the decision, the gate can pass; `false` = block the CI. |
+| `reason` | string (optional) | Short explanation (for logs or CI output). |
 
-Esempi:
+Examples:
 
 - Pass: `{"allowed": true, "reason": "Change aligns with ADR-002."}`
 - Block: `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}`
 
-In caso di errore (token non valido, decisione non trovata, timeout LLM, errore di rete verso l’LLM): risposta **200** con `{"allowed": false, "reason": "<messaggio appropriato>"}` (fail-closed). In tutti i casi decern-gate considera la gate bloccata se `allowed` è `false`.
+On error (invalid token, decision not found, LLM timeout, network error to the LLM): response **200** with `{"allowed": false, "reason": "<appropriate message>"}` (fail-closed). In all cases decern-gate treats the gate as blocked when `allowed` is `false`.
 
-## Variabili d’ambiente (backend)
+## Environment variables (backend)
 
-- `ANTHROPIC_API_KEY`: richiesta per le chiamate a Claude 3.5 Sonnet (API Anthropic). Chiave da [Console Anthropic](https://console.anthropic.com/).
-- `NEXT_PUBLIC_SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY`: come per validate (lettura decisioni e lookup token).
+- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: same as validate (reading decisions and token lookup). No LLM keys are required on the backend: the user supplies their LLM configuration in the request body.
 
-## Storico usage e addebito mensile
+## Usage history and monthly billing
 
-Ogni chiamata al judge che riceve una risposta valida da Claude viene registrata nella tabella **judge_usage** (per workspace e mese `YYYY-MM`): si salvano `input_tokens` e `output_tokens` restituiti dall’API Anthropic.
+Each judge call that receives a valid response from the LLM (configured by the user) may record tokens in the **judge_usage** table (per workspace and month `YYYY-MM`) when the provider returns `usage` (OpenAI-compatible: `prompt_tokens`, `completion_tokens`). Stripe billing is optional and configurable.
 
-A **fine mese** si può addebitare l’usage del mese su Stripe chiamando l’endpoint di cron:
+At **month end** you can bill that month’s usage to Stripe by calling the cron endpoint:
 
 - **POST** `/api/cron/bill-judge-usage`
-- **Header:** `Authorization: Bearer <CRON_SECRET>` (impostare `CRON_SECRET` in `.env`).
-- **Query (opzionale):** `?period=YYYY-MM` (default: mese precedente).
+- **Header:** `Authorization: Bearer <CRON_SECRET>` (set `CRON_SECRET` in `.env`).
+- **Query (optional):** `?period=YYYY-MM` (default: previous month).
 
-L’endpoint:
+The endpoint:
 
-1. Legge da `judge_usage` tutti i record del periodo con `billed_at` nullo.
-2. Raggruppa per owner del workspace (utente che ha la subscription Stripe).
-3. Per ogni owner con `stripe_customer_id`, calcola l’importo in centesimi (token × prezzo per 1M token) e crea una fattura Stripe con una riga “Judge usage YYYY-MM”.
-4. Imposta `billed_at` sui record usati per evitare doppi addebiti.
+1. Reads from `judge_usage` all records for the period with `billed_at` null.
+2. Groups by workspace owner (the user with the Stripe subscription).
+3. For each owner with `stripe_customer_id`, computes the amount in cents (tokens × price per 1M tokens) and creates a Stripe invoice with one line “Judge usage YYYY-MM”.
+4. Sets `billed_at` on the records used to avoid double billing.
 
-Prezzi (centesimi per 1M token), configurabili in env:
+Prices (cents per 1M tokens), configurable via env:
 
-- `JUDGE_BILLING_INPUT_CENTS_PER_1M` (default 840, ~8,40 €/1M input, 3× costo Anthropic).
-- `JUDGE_BILLING_OUTPUT_CENTS_PER_1M` (default 4200, ~42 €/1M output, 3× costo Anthropic).
+- `JUDGE_BILLING_INPUT_CENTS_PER_1M` (default 840, ~$8.40/1M input, 3× Anthropic cost).
+- `JUDGE_BILLING_OUTPUT_CENTS_PER_1M` (default 4200, ~$42/1M output, 3× Anthropic cost).
 
-Esempio di chiamata (es. da cron il 1° del mese):
+Example call (e.g. from cron on the 1st of the month):
 
 ```bash
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" \
   "https://your-app.vercel.app/api/cron/bill-judge-usage"
 ```
 
-## Sicurezza e protezione costi (Judge)
+## Security and cost protection (Judge)
 
-Per evitare abusi e perdite economiche sono attive le seguenti misure:
+To prevent abuse and cost overruns the following measures are in place:
 
-| Misura | Descrizione |
+| Measure | Description |
 |--------|-------------|
-| **Rate limit** | Massimo N richieste per workspace per minuto (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Oltre il limite: `200` con `allowed: false`, `reason: "Rate limit exceeded. Try again later."` senza chiamare l’LLM. |
-| **Billing obbligatorio** | Il workspace deve avere un owner con `stripe_customer_id` (pagamento configurato). Altrimenti: `allowed: false`, `reason: "Billing not set up. Add a payment method to use the Judge."`. |
-| **Piano Team+** | Solo piani Team, Business, Enterprise o Governance possono usare il Judge. Piano Free: `allowed: false`, `reason: "Judge is available on Team plan and above."`. |
-| **Billing idempotente** | Il cron di billing imposta `billed_at` solo per i workspace degli owner effettivamente fatturati con successo. Una seconda esecuzione per lo stesso periodo non crea doppie fatture. |
-| **Pagamento fallito** | In caso di `invoice.payment_failed` su una fattura Judge (descrizione "Judge usage YYYY-MM"), il webhook Stripe resetta `billed_at` per quel customer/periodo così il cron può ritentare l’addebito. |
+| **Rate limit (workspace)** | Maximum N requests per workspace per minute (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Above the limit: `200` with `allowed: false`, `reason: "Rate limit exceeded. Try again later."` without calling the LLM. |
+| **Rate limit (owner)** | Maximum M requests per owner (account) per minute across all workspaces (default 120, env `JUDGE_RATE_LIMIT_PER_MINUTE_OWNER`). Same response when exceeded. Prevents circumventing the workspace limit by using multiple workspaces. |
+| **Billing required** | The workspace must have an owner with `stripe_customer_id` (payment configured). Otherwise: `allowed: false`, `reason: "Billing not set up. Add a payment method to use the Judge."`. |
+| **Team+ plan** | Only Team, Business, Enterprise or Governance plans can use the Judge. Free plan: `allowed: false`, `reason: "Judge is available on Team plan and above."`. |
+| **Idempotent billing** | The billing cron sets `billed_at` only for workspaces whose owners were successfully billed. A second run for the same period does not create duplicate invoices. |
+| **Failed payment** | On `invoice.payment_failed` for a Judge invoice (description “Judge usage YYYY-MM”), the Stripe webhook resets `billed_at` for that customer/period so the cron can retry billing. |

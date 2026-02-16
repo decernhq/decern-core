@@ -4,6 +4,13 @@ import { NextRequest } from "next/server";
 const VALID_TOKEN = "ci-token-secret";
 const WORKSPACE_ID = "ws-1";
 
+/** Default LLM config sent by decern-gate (user's choice). We never store keys. */
+const DEFAULT_LLM = {
+  baseUrl: "https://api.openai.com/v1",
+  apiKey: "sk-test-key",
+  model: "gpt-4o-mini",
+};
+
 function createJudgeRequest(
   body: {
     diff: string;
@@ -12,16 +19,18 @@ function createJudgeRequest(
     headSha?: string;
     adrRef?: string;
     decisionId?: string;
+    llm?: { baseUrl: string; apiKey: string; model: string };
   },
   auth?: string
 ): NextRequest {
   const url = "http://localhost/api/decision-gate/judge";
   const headers = new Headers({ "Content-Type": "application/json" });
   if (auth !== undefined) headers.set("Authorization", auth);
+  const fullBody = { ...body, llm: body.llm ?? DEFAULT_LLM };
   return new NextRequest(url, {
     method: "POST",
     headers,
-    body: JSON.stringify(body),
+    body: JSON.stringify(fullBody),
   });
 }
 
@@ -45,7 +54,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
           table === "decisions"
             ? chainEqMaybe(mockDecisionMaybeSingle)
             : table === "subscriptions"
-              ? { maybeSingle: mockSubscriptionMaybeSingle }
+              ? { eq: () => ({ maybeSingle: mockSubscriptionMaybeSingle }) }
               : {
                   maybeSingle:
                     table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
@@ -63,7 +72,6 @@ vi.mock("@/lib/ci-token", () => ({
 describe("POST /api/decision-gate/judge", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ANTHROPIC_API_KEY = "sk-ant-test-key";
     mockRpc.mockResolvedValue({ data: true });
     mockSubscriptionMaybeSingle.mockResolvedValue({
       data: { stripe_customer_id: "cus_test123", plan_id: "team" },
@@ -93,7 +101,8 @@ describe("POST /api/decision-gate/judge", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          content: [{ type: "text", text: '{"allowed": true, "reason": "Change aligns with ADR."}' }],
+          choices: [{ message: { content: '{"allowed": true, "reason": "Change aligns with ADR."}' } }],
+          usage: { prompt_tokens: 100, completion_tokens: 20 },
         }),
     });
     global.fetch = mockFetch;
@@ -229,8 +238,22 @@ describe("POST /api/decision-gate/judge", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it("rate limit exceeded => 200 allowed: false", async () => {
+  it("workspace rate limit exceeded => 200 allowed: false", async () => {
     mockRpc.mockResolvedValueOnce({ data: false });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({ allowed: false, reason: "Rate limit exceeded. Try again later." });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("owner rate limit exceeded => 200 allowed: false", async () => {
+    mockRpc.mockResolvedValueOnce({ data: true }).mockResolvedValueOnce({ data: false });
     const req = createJudgeRequest(
       { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
       `Bearer ${VALID_TOKEN}`
@@ -286,19 +309,22 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({ allowed: false, reason: "Decision not found." });
   });
 
-  it("ANTHROPIC_API_KEY missing => 200 allowed: false, Judge unavailable", async () => {
-    const orig = process.env.ANTHROPIC_API_KEY;
-    delete process.env.ANTHROPIC_API_KEY;
-    const req = createJudgeRequest(
-      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
-      `Bearer ${VALID_TOKEN}`
-    );
+  it("missing llm config => 200 allowed: false", async () => {
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${VALID_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        diff: "d",
+        decisionId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    });
     const { POST } = await import("./route");
     const res = await POST(req);
-    process.env.ANTHROPIC_API_KEY = orig;
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: false, reason: "Judge unavailable." });
+    expect(data.allowed).toBe(false);
+    expect(data.reason).toContain("LLM configuration");
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("LLM returns allowed: true => 200 allowed: true", async () => {
@@ -312,10 +338,10 @@ describe("POST /api/decision-gate/judge", () => {
     expect(res.status).toBe(200);
     expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://api.anthropic.com/v1/messages",
+      "https://api.openai.com/v1/chat/completions",
       expect.objectContaining({
         method: "POST",
-        headers: expect.objectContaining({ "x-api-key": "sk-ant-test-key" }),
+        headers: expect.objectContaining({ Authorization: "Bearer sk-test-key" }),
       })
     );
   });
@@ -325,10 +351,12 @@ describe("POST /api/decision-gate/judge", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          content: [
+          choices: [
             {
-              type: "text",
-              text: '{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}',
+              message: {
+                content:
+                  '{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}',
+              },
             },
           ],
         }),
@@ -365,7 +393,7 @@ describe("POST /api/decision-gate/judge", () => {
       ok: true,
       json: () =>
         Promise.resolve({
-          content: [{ type: "text", text: "This is not JSON at all" }],
+          choices: [{ message: { content: "This is not JSON at all" } }],
         }),
     });
     const req = createJudgeRequest(
@@ -403,5 +431,43 @@ describe("POST /api/decision-gate/judge", () => {
     expect(res.status).toBe(200);
     expect(data.allowed).toBe(true);
     expect(mockProjectMaybeSingle).not.toHaveBeenCalled();
+  });
+
+  it("Anthropic baseUrl => calls native Messages API and returns allowed: true", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          content: [{ type: "text", text: '{"allowed": true, "reason": "Change aligns with the decision."}' }],
+          usage: { input_tokens: 100, output_tokens: 20 },
+        }),
+    });
+    const req = createJudgeRequest(
+      {
+        diff: "d",
+        decisionId: "550e8400-e29b-41d4-a716-446655440000",
+        llm: {
+          baseUrl: "https://api.anthropic.com",
+          apiKey: "sk-ant-secret",
+          model: "claude-3-5-sonnet-20241022",
+        },
+      },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with the decision." });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.anthropic.com/v1/messages",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({
+          "x-api-key": "sk-ant-secret",
+          "anthropic-version": "2023-06-01",
+        }),
+      })
+    );
   });
 });

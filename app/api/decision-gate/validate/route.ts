@@ -109,12 +109,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     }
 
     // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace
-    const query = supabase
+    let query = supabase
       .from("decisions")
       .select("id, status, project_id, adr_ref, pull_request_urls")
       .eq(isAdrRefLookup ? "workspace_id" : "id", isAdrRefLookup ? workspace.id : validated.id);
     if (isAdrRefLookup) {
-      query.eq("adr_ref", validated.id);
+      query = query.eq("adr_ref", validated.id);
     }
     const { data: decision, error: decError } = await query.maybeSingle();
 

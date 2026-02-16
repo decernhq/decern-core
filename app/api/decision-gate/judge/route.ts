@@ -3,17 +3,33 @@ import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { hashCiToken } from "@/lib/ci-token";
 import { recordJudgeUsage } from "@/lib/judge-usage";
 
-const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const ANTHROPIC_MODEL = "claude-3-5-sonnet-20241022";
-const ANTHROPIC_VERSION = "2023-06-01";
 const DECISION_ID_MAX_LENGTH = 128;
 const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 /** Max diff length to send to LLM (~25k tokens if 4 chars/token). Backend truncation if client sent more. */
 const MAX_DIFF_CHARS = 120_000;
+/** Max lengths for user-provided LLM config (no keys stored, only used in-memory for the request). */
+const MAX_LLM_BASE_URL_LEN = 512;
+const MAX_LLM_MODEL_LEN = 256;
+const MAX_LLM_API_KEY_LEN = 2048;
 
 /** Judge is only available on paid plans (Team and above). */
 const JUDGE_ALLOWED_PLANS = new Set(["team", "business", "enterprise", "governance"]);
+
+/** Anthropic Messages API base host (native support, no gateway). */
+const ANTHROPIC_API_HOST = "api.anthropic.com";
+
+/**
+ * User-provided LLM config for judge (sent by decern-gate from user settings).
+ * We use it only for this request; we never store or log apiKey.
+ * - If baseUrl is Anthropic (api.anthropic.com), we call the native Messages API.
+ * - Otherwise we use OpenAI-compatible: POST {baseUrl}/chat/completions with Bearer apiKey.
+ */
+export type JudgeLlmConfig = {
+  baseUrl: string;
+  apiKey: string;
+  model: string;
+};
 
 export type JudgeRequestBody = {
   diff: string;
@@ -22,6 +38,8 @@ export type JudgeRequestBody = {
   headSha?: string;
   adrRef?: string;
   decisionId?: string;
+  /** Required: LLM config from user (decern-gate sends it). We never store keys. */
+  llm: JudgeLlmConfig;
 };
 
 export type JudgeResponse = {
@@ -41,6 +59,34 @@ function validateDecisionId(id: string | null): { ok: true; id: string } | { ok:
   if (trimmed.length === 0 || trimmed.length > DECISION_ID_MAX_LENGTH) return { ok: false };
   if (!DECISION_ID_REGEX.test(trimmed)) return { ok: false };
   return { ok: true, id: trimmed };
+}
+
+/**
+ * Validates user-provided LLM config. baseUrl must be HTTPS (or http for localhost).
+ * We never log or store apiKey.
+ */
+function validateLlmConfig(llm: unknown): { ok: true; config: JudgeLlmConfig } | { ok: false } {
+  if (llm == null || typeof llm !== "object") return { ok: false };
+  const o = llm as Record<string, unknown>;
+  const baseUrl = typeof o.baseUrl === "string" ? o.baseUrl.trim() : "";
+  const apiKey = typeof o.apiKey === "string" ? o.apiKey : "";
+  const model = typeof o.model === "string" ? o.model.trim() : "";
+  if (!baseUrl || !apiKey || !model) return { ok: false };
+  if (baseUrl.length > MAX_LLM_BASE_URL_LEN || model.length > MAX_LLM_MODEL_LEN || apiKey.length > MAX_LLM_API_KEY_LEN) {
+    return { ok: false };
+  }
+  let parsed: URL;
+  try {
+    parsed = new URL(baseUrl);
+  } catch {
+    return { ok: false };
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return { ok: false };
+  if (parsed.protocol === "http:") {
+    const host = parsed.hostname.toLowerCase();
+    if (host !== "localhost" && host !== "127.0.0.1") return { ok: false };
+  }
+  return { ok: true, config: { baseUrl, apiKey, model } };
 }
 
 function judgeJson(allowed: boolean, reason: string): NextResponse {
@@ -78,6 +124,59 @@ function parseJudgeResponse(raw: string): JudgeResponse {
   }
 }
 
+function isAnthropicApi(baseUrl: string): boolean {
+  try {
+    const parsed = new URL(baseUrl);
+    return parsed.hostname.toLowerCase() === ANTHROPIC_API_HOST;
+  } catch {
+    return false;
+  }
+}
+
+type JudgeLlmResult = { rawContent: string; inputTokens: number; outputTokens: number };
+
+/**
+ * Call Anthropic Messages API (native). Uses x-api-key and anthropic-version header.
+ * Returns content from first text block and usage for billing.
+ */
+async function callAnthropicMessages(
+  llmConfig: JudgeLlmConfig,
+  systemPrompt: string,
+  userPrompt: string,
+  signal: AbortSignal
+): Promise<JudgeLlmResult> {
+  const url = "https://api.anthropic.com/v1/messages";
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": llmConfig.apiKey,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: llmConfig.model,
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: "user", content: userPrompt }],
+    }),
+    signal,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    console.error("Judge Anthropic API error:", res.status, err.slice(0, 200));
+    throw new Error("Judge unavailable.");
+  }
+  const data = (await res.json()) as {
+    content?: { type: string; text?: string }[];
+    usage?: { input_tokens?: number; output_tokens?: number };
+  };
+  const textBlock = data.content?.find((b) => b.type === "text");
+  const rawContent = (textBlock?.text ?? "").trim();
+  const inputTokens = data.usage?.input_tokens ?? 0;
+  const outputTokens = data.usage?.output_tokens ?? 0;
+  return { rawContent, inputTokens, outputTokens };
+}
+
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const token = getBearerToken(request);
   if (!token) {
@@ -95,6 +194,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!diff.trim()) {
     return judgeJson(false, "Missing or empty diff.");
   }
+
+  const llmValidation = validateLlmConfig(body.llm);
+  if (!llmValidation.ok) {
+    return judgeJson(false, "Missing or invalid LLM configuration. Provide llm: { baseUrl, apiKey, model } (OpenAI-compatible).");
+  }
+  const llmConfig = llmValidation.config;
 
   const adrRefTrimmed = typeof body.adrRef === "string" ? body.adrRef.trim() : "";
   const decisionIdParam = typeof body.decisionId === "string" ? body.decisionId : null;
@@ -140,11 +245,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       1000,
       Math.max(1, parseInt(process.env.JUDGE_RATE_LIMIT_PER_MINUTE ?? "60", 10) || 60)
     );
-    const { data: underLimit } = await supabase.rpc("check_and_increment_judge_rate_limit", {
+    const { data: underWorkspaceLimit } = await supabase.rpc("check_and_increment_judge_rate_limit", {
       p_workspace_id: workspace.id,
       p_limit_per_minute: rateLimitPerMinute,
     });
-    if (!underLimit) {
+    if (!underWorkspaceLimit) {
+      return judgeJson(false, "Rate limit exceeded. Try again later.");
+    }
+
+    const rateLimitPerMinuteOwner = Math.min(
+      2000,
+      Math.max(1, parseInt(process.env.JUDGE_RATE_LIMIT_PER_MINUTE_OWNER ?? "120", 10) || 120)
+    );
+    const { data: underOwnerLimit } = await supabase.rpc("check_and_increment_judge_rate_limit_by_owner", {
+      p_owner_id: workspace.owner_id,
+      p_limit_per_minute: rateLimitPerMinuteOwner,
+    });
+    if (!underOwnerLimit) {
       return judgeJson(false, "Rate limit exceeded. Try again later.");
     }
 
@@ -152,6 +269,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .from("subscriptions")
       .select("stripe_customer_id, plan_id")
       .eq("user_id", workspace.owner_id)
+      .eq("status", "active")
       .maybeSingle();
     const planId = (subscription?.plan_id ?? "free") as string;
     if (!JUDGE_ALLOWED_PLANS.has(planId)) {
@@ -205,11 +323,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       diffForPrompt = diff.slice(0, MAX_DIFF_CHARS) + "\n\n[... diff truncated by server ...]";
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-      return judgeJson(false, "Judge unavailable.");
-    }
-
     const systemPrompt = `You are a technical gate judge. You receive:
 1) A decision record (ADR): title, context, options considered, the decision taken, and consequences.
 2) A git diff (unified diff) of code changes.
@@ -224,41 +337,57 @@ Respond only with a valid JSON object: {"allowed": true|false, "reason": "brief 
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 60_000);
+    let rawContent = "";
+    let inputTokens = 0;
+    let outputTokens = 0;
 
-    let rawContent: string;
     try {
-      const res = await fetch(ANTHROPIC_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": ANTHROPIC_VERSION,
-        },
-        body: JSON.stringify({
-          model: ANTHROPIC_MODEL,
-          max_tokens: 1024,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-        }),
-        signal: controller.signal,
-      });
+      if (isAnthropicApi(llmConfig.baseUrl)) {
+        const result = await callAnthropicMessages(
+          llmConfig,
+          systemPrompt,
+          userPrompt,
+          controller.signal
+        );
+        rawContent = result.rawContent;
+        inputTokens = result.inputTokens;
+        outputTokens = result.outputTokens;
+      } else {
+        const baseUrlNormalized = llmConfig.baseUrl.replace(/\/+$/, "");
+        const chatUrl = `${baseUrlNormalized}/chat/completions`;
+        const res = await fetch(chatUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${llmConfig.apiKey}`,
+          },
+          body: JSON.stringify({
+            model: llmConfig.model,
+            max_tokens: 1024,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+          }),
+          signal: controller.signal,
+        });
+
+        if (!res.ok) {
+          const err = await res.text();
+          console.error("Judge LLM API error:", res.status, err.slice(0, 200));
+          return judgeJson(false, "Judge unavailable.");
+        }
+
+        const data = (await res.json()) as {
+          choices?: { message?: { content?: string } }[];
+          usage?: { prompt_tokens?: number; completion_tokens?: number };
+        };
+        rawContent = data.choices?.[0]?.message?.content?.trim() ?? "";
+        inputTokens = data.usage?.prompt_tokens ?? 0;
+        outputTokens = data.usage?.completion_tokens ?? 0;
+      }
       clearTimeout(timeout);
 
-      if (!res.ok) {
-        const err = await res.text();
-        console.error("Judge Anthropic API error:", res.status, err);
-        return judgeJson(false, "Judge unavailable.");
-      }
-
-      const data = (await res.json()) as {
-        content?: { type: string; text?: string }[];
-        usage?: { input_tokens?: number; output_tokens?: number };
-      };
-      const firstBlock = data.content?.find((b) => b.type === "text");
-      rawContent = firstBlock?.text?.trim() ?? "";
-
-      const inputTokens = data.usage?.input_tokens ?? 0;
-      const outputTokens = data.usage?.output_tokens ?? 0;
       if (workspace.id && (inputTokens > 0 || outputTokens > 0)) {
         recordJudgeUsage(supabase, workspace.id, inputTokens, outputTokens).catch((err) =>
           console.error("Judge usage recording failed:", err)
