@@ -68,7 +68,7 @@ export function DecisionsListWithFilters({
       { value: "" as const, label: tStatus("allStatuses") },
       ...DECISION_STATUS_VALUES.map((value) => ({ value, label: tStatus(value) })),
     ],
-    [t, tStatus]
+    [tStatus]
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<DecisionStatus | "">("");
