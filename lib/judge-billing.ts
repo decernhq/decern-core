@@ -58,7 +58,7 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
     return { period, billedOwners: 0, totalAmountCents: 0, errors: [] };
   }
 
-  const workspaceIds = [...new Set(rows.map((r) => r.workspace_id))];
+  const workspaceIds = Array.from(new Set(rows.map((r) => r.workspace_id)));
   const { data: workspaces } = await supabase
     .from("workspaces")
     .select("id, owner_id")
@@ -75,7 +75,7 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
     workspaceByOwner.set(key, cur);
   }
 
-  const ownerIds = [...workspaceByOwner.keys()];
+  const ownerIds = Array.from(workspaceByOwner.keys());
   const { data: subs } = await supabase
     .from("subscriptions")
     .select("user_id, stripe_customer_id")
@@ -91,7 +91,7 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
   const outputCentsPer1M = getOutputCentsPer1M();
   const billedOwnerIds: string[] = [];
 
-  for (const [ownerId, tokens] of workspaceByOwner) {
+  for (const [ownerId, tokens] of Array.from(workspaceByOwner.entries())) {
     const customerId = customerByOwner.get(ownerId);
     if (!customerId) {
       errors.push(`Owner ${ownerId} has no Stripe customer; skip billing`);
