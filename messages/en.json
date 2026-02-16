@@ -208,23 +208,24 @@
     "questions": "Have questions?",
     "free": "Free",
     "custom": "Custom",
-    "active": "Active"
+    "active": "Active",
+    "byoLLM": "BYO LLM"
   },
   "plans": {
     "free": {
       "name": "Free",
       "description": "To get started",
-      "features": ["1 workspace", "1 project", "Unlimited decisions", "CI Observation Only", "10 AI Assist Generation"]
+      "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)*", "CI Observation (no blocking)"]
     },
     "team": {
       "name": "Team",
       "description": "For growing teams",
-      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "Full CI Enforcement Integration", "500 AI Assist Generation"]
+      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)*", "CI Blocking for rule-based High Impact changes"]
     },
     "business": {
       "name": "Business",
       "description": "For organizations",
-      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "Full CI Enforcement Integration", "1500 AI Assist Generation"]
+      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "Full CI Blocking", "Advanced Policies", "Roles"]
     },
     "enterprise": {
       "name": "Enterprise",

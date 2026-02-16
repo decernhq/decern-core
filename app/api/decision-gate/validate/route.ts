@@ -7,8 +7,13 @@ const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 /** Short ref format: ADR-1, ADR-01, ADR-001, etc. (lookup by workspace + adr_ref) */
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
-/** Free plan = observation only: always 200, no status in body; paid = 422 if not approved and include status "approved" when valid */
-const OBSERVATION_ONLY_PLANS = ["free"] as const;
+/** Free = always observation. Team = enforcement only when highImpact=true. Business+ = enforcement by default, overridable with enforce=false. */
+function isObservationMode(planId: string, highImpact: boolean, enforce: boolean): boolean {
+  if (planId === "free") return true;
+  if (planId === "team") return !highImpact; // Team: blocking only when highImpact=true
+  if (["business", "enterprise", "governance"].includes(planId)) return !enforce; // Business+: enforcement by default
+  return true; // unknown plan: safe default
+}
 
 type ValidateResponse =
   | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPR?: boolean; status?: "approved" }
@@ -65,6 +70,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const decisionIdParam = request.nextUrl.searchParams.get("decisionId");
   const adrRefTrimmed = request.nextUrl.searchParams.get("adrRef")?.trim() ?? "";
   const useAdrRef = adrRefTrimmed.length > 0;
+  const highImpact = /^(true|1)$/i.test(request.nextUrl.searchParams.get("highImpact") ?? "");
+  const enforceParam = request.nextUrl.searchParams.get("enforce");
+  const enforce =
+    enforceParam === undefined || enforceParam === null || enforceParam === ""
+      ? true
+      : /^(true|1)$/i.test(enforceParam);
   const validated = useAdrRef
     ? ADR_REF_REGEX.test(adrRefTrimmed) && adrRefTrimmed.length <= DECISION_ID_MAX_LENGTH
       ? { ok: true as const, id: adrRefTrimmed }
@@ -95,8 +106,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return json({ valid: false, reason: "unauthorized" }, 401);
     }
 
-    // Free plan: observation only (always 200, no status); paid: 422 if not approved, include status when valid
-    let isObservationOnlyPlan = false;
+    // Free: always observation. Team: enforcement only when highImpact=true. Business+: enforcement by default, enforce=false → observation
+    let isObservationOnlyPlan = true;
     if (workspace.owner_id) {
       const { data: sub } = await supabase
         .from("subscriptions")
@@ -105,7 +116,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .eq("status", "active")
         .maybeSingle();
       const planId = (sub as { plan_id?: string } | null)?.plan_id ?? "free";
-      isObservationOnlyPlan = OBSERVATION_ONLY_PLANS.includes(planId as (typeof OBSERVATION_ONLY_PLANS)[number]);
+      isObservationOnlyPlan = isObservationMode(planId, highImpact, enforce);
     }
 
     // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace

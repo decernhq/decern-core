@@ -1,17 +1,21 @@
 # Decision Gate API (MVP)
 
-CI/CD validation endpoint: it checks whether a decision exists and is in **approved** status. On the **Free** plan the CI runs in observation-only mode: the gate always returns `200` (the pipeline does not fail); the response body does not include `status`.
+CI/CD validation endpoint: it checks whether a decision exists and is in **approved** status. Behaviour depends on plan and optional query params.
 
-## Plan and behaviour
+## Plan and behaviour (validate)
 
 - **Free plan:** observation only — response is always `200` with `valid`, `decisionId`, `adrRef`. Neither `hasLinkedPR` nor `status` are included; the CI must not fail the pipeline.
-- **Team / Business / Enterprise / Governance plans:** enforcement — if the decision is not approved the response is `422`; when it is approved the body also includes `status: "approved"`.
+- **Team plan:** observation by default. Enforcement (422 if decision not approved) only when the client sends `highImpact=true` (e.g. for rule-based High Impact changes). Without `highImpact=true`, response is always `200` (observation).
+- **Business / Enterprise / Governance:** enforcement by default — if the decision is not approved the response is `422`; when approved the body includes `status: "approved"`. Enforcement can be disabled per request with `enforce=false` (response then always `200`, observation style).
 
 ## Endpoint
 
 - **Method:** `GET`
 - **URL:** `/api/decision-gate/validate`
-- **Query params:** `decisionId` (decision UUID) or `adrRef` (e.g. `ADR-001`) — at least one required. With `adrRef` the decision is looked up by workspace + ADR reference.
+- **Query params:**
+  - `decisionId` (decision UUID) or `adrRef` (e.g. `ADR-001`) — at least one required. With `adrRef` the decision is looked up by workspace + ADR reference.
+  - **Optional:** `highImpact` — set to `true` or `1` so that on **Team** plan the gate uses enforcement (422 if not approved). Ignored on other plans.
+  - **Optional:** `enforce` — set to `false` or `0` to disable enforcement on **Business** (and Enterprise/Governance): response is always `200` (observation). Default when omitted is `true` (enforcement on).
 
 ## Authentication
 
@@ -23,12 +27,12 @@ CI/CD validation endpoint: it checks whether a decision exists and is in **appro
 
 | Status | Body | Meaning |
 |--------|------|---------|
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decision found and approved (paid plan). |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Free plan (observation only); no `hasLinkedPR` or `status`, CI must not fail. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decision found and approved (enforcement mode). |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Observation mode (Free, or Team without highImpact, or Business with enforce=false); no `hasLinkedPR` or `status`, CI must not fail. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |
-| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decision found but not approved (paid plan: enforcement). |
+| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decision found but not approved (enforcement mode: Team with highImpact=true, or Business+ with enforce not false). |
 | 500 | `{ "valid": false, "reason": "server_error" }` | Server error (e.g. DB). |
 
 ## `decisionId` validation
@@ -75,7 +79,7 @@ After validation (validate), the **decern-gate** CLI can call the **judge** endp
 - **Method:** `POST`
 - **URL:** `/api/decision-gate/judge` (path configurable client-side via `DECERN_JUDGE_PATH`).
 - **Authentication:** same as validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
-- **Required plan:** Judge is available only on **Team** and higher plans (Business, Enterprise, Governance). The Free plan cannot use the Judge; in that case the response is `200` with `allowed: false` and `reason: "Judge is available on Team plan and above."`.
+- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`. On Free, no billing is required; on Team and above, a payment method must be configured.
 
 ## Request body (JSON)
 
@@ -190,7 +194,7 @@ To prevent abuse and cost overruns the following measures are in place:
 |--------|-------------|
 | **Rate limit (workspace)** | Maximum N requests per workspace per minute (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Above the limit: `200` with `allowed: false`, `reason: "Rate limit exceeded. Try again later."` without calling the LLM. |
 | **Rate limit (owner)** | Maximum M requests per owner (account) per minute across all workspaces (default 120, env `JUDGE_RATE_LIMIT_PER_MINUTE_OWNER`). Same response when exceeded. Prevents circumventing the workspace limit by using multiple workspaces. |
-| **Billing required** | The workspace must have an owner with `stripe_customer_id` (payment configured). Otherwise: `allowed: false`, `reason: "Billing not set up. Add a payment method to use the Judge."`. |
-| **Team+ plan** | Only Team, Business, Enterprise or Governance plans can use the Judge. Free plan: `allowed: false`, `reason: "Judge is available on Team plan and above."`. |
+| **Billing required** | On **Team** and above, the workspace owner must have `stripe_customer_id` (payment configured). On **Free**, Judge is available without billing (BYO LLM, advisory). |
+| **Plans** | Judge is available on Free (advisory), Team (advisory), and Business/Enterprise/Governance (can block). Unsupported plan: `allowed: false`, `reason: "Judge is not available for this plan."`. |
 | **Idempotent billing** | The billing cron sets `billed_at` only for workspaces whose owners were successfully billed. A second run for the same period does not create duplicate invoices. |
 | **Failed payment** | On `invoice.payment_failed` for a Judge invoice (description “Judge usage YYYY-MM”), the Stripe webhook resets `billed_at` for that customer/period so the cron can retry billing. |

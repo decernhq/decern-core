@@ -13,8 +13,8 @@ const MAX_LLM_BASE_URL_LEN = 512;
 const MAX_LLM_MODEL_LEN = 256;
 const MAX_LLM_API_KEY_LEN = 2048;
 
-/** Judge is only available on paid plans (Team and above). */
-const JUDGE_ALLOWED_PLANS = new Set(["team", "business", "enterprise", "governance"]);
+/** Judge available on all plans: Free/Team advisory (BYO LLM), Business+ can block. */
+const JUDGE_ALLOWED_PLANS = new Set(["free", "team", "business", "enterprise", "governance"]);
 
 /** Anthropic Messages API base host (native support, no gateway). */
 const ANTHROPIC_API_HOST = "api.anthropic.com";
@@ -273,9 +273,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .maybeSingle();
     const planId = (subscription?.plan_id ?? "free") as string;
     if (!JUDGE_ALLOWED_PLANS.has(planId)) {
-      return judgeJson(false, "Judge is available on Team plan and above.");
+      return judgeJson(false, "Judge is not available for this plan.");
     }
-    if (!subscription?.stripe_customer_id) {
+    if (planId !== "free" && !subscription?.stripe_customer_id) {
       return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
     }
 

@@ -4,10 +4,18 @@ import { NextRequest } from "next/server";
 const VALID_TOKEN = "ci-token-secret";
 const WORKSPACE_ID = "ws-1";
 
-function createRequest(options: { decisionId?: string; adrRef?: string; auth?: string }): NextRequest {
+function createRequest(options: {
+  decisionId?: string;
+  adrRef?: string;
+  auth?: string;
+  highImpact?: boolean;
+  enforce?: boolean;
+}): NextRequest {
   const search = new URLSearchParams();
   if (options.decisionId != null) search.set("decisionId", options.decisionId);
   if (options.adrRef != null) search.set("adrRef", options.adrRef);
+  if (options.highImpact === true) search.set("highImpact", "true");
+  if (options.enforce === false) search.set("enforce", "false");
   const params = search.toString() ? `?${search.toString()}` : "";
   const url = `http://localhost/api/decision-gate/validate${params}`;
   const headers = new Headers();
@@ -129,7 +137,7 @@ describe("GET /api/decision-gate/validate", () => {
     expect(mockDecisionMaybeSingle).toHaveBeenCalled();
   });
 
-  it("5) decision found ma non approved => 422", async () => {
+  it("5) Team + highImpact=true + decision not approved => 422", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "proposed", project_id: "proj-1" },
@@ -139,7 +147,7 @@ describe("GET /api/decision-gate/validate", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, highImpact: true });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -147,7 +155,7 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: false, reason: "not_approved", status: "proposed" });
   });
 
-  it("6) decision approved => 200", async () => {
+  it("6) Team + highImpact=true + decision approved => 200 with status", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -157,7 +165,7 @@ describe("GET /api/decision-gate/validate", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, highImpact: true });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -165,7 +173,7 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042", hasLinkedPR: false, status: "approved" });
   });
 
-  it("6b) adrRef=ADR-001 => lookup by workspace + adr_ref, 200 con decisionId (uuid) e adrRef", async () => {
+  it("6b) Team + highImpact + adrRef=ADR-001 => lookup by workspace + adr_ref, 200 con status", async () => {
     const uuid = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: {
@@ -176,7 +184,7 @@ describe("GET /api/decision-gate/validate", () => {
       },
       error: null,
     });
-    const req = createRequest({ adrRef: "ADR-001", auth: `Bearer ${VALID_TOKEN}` });
+    const req = createRequest({ adrRef: "ADR-001", auth: `Bearer ${VALID_TOKEN}`, highImpact: true });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -256,5 +264,83 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-001" });
     expect(body).not.toHaveProperty("status");
     expect(body).not.toHaveProperty("hasLinkedPR");
+  });
+
+  it("Team without highImpact + decision not approved => 200 observation (no 422)", async () => {
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
+    expect(body).not.toHaveProperty("status");
+  });
+
+  it("Team without highImpact + decision approved => 200 observation body", async () => {
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
+    expect(body).not.toHaveProperty("hasLinkedPR");
+    expect(body).not.toHaveProperty("status");
+  });
+
+  it("Business + enforce=false + decision not approved => 200 observation", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, enforce: false });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
+    expect(body).not.toHaveProperty("status");
+  });
+
+  it("Business default (enforce) + decision not approved => 422", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "rejected", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(422);
+    expect(body).toEqual({ valid: false, reason: "not_approved", status: "rejected" });
   });
 });

@@ -181,7 +181,7 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({ allowed: false, reason: "Invalid adrRef or decisionId." });
   });
 
-  it("owner has no subscription (free) => 200 allowed: false, Judge Team and above", async () => {
+  it("owner has no subscription (treated as free) => Judge allowed, no billing check, LLM called", async () => {
     mockSubscriptionMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
     const req = createJudgeRequest(
       { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
@@ -191,11 +191,8 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({
-      allowed: false,
-      reason: "Judge is available on Team plan and above.",
-    });
-    expect(mockFetch).not.toHaveBeenCalled();
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
+    expect(mockFetch).toHaveBeenCalled();
   });
 
   it("owner on Team plan but no Stripe customer => 200 allowed: false, Billing not set up", async () => {
@@ -218,9 +215,9 @@ describe("POST /api/decision-gate/judge", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it("owner on free plan => 200 allowed: false, Judge Team and above", async () => {
+  it("owner on free plan => Judge allowed without billing, LLM called", async () => {
     mockSubscriptionMaybeSingle.mockResolvedValueOnce({
-      data: { stripe_customer_id: "cus_xxx", plan_id: "free" },
+      data: { stripe_customer_id: null, plan_id: "free" },
       error: null,
     });
     const req = createJudgeRequest(
@@ -231,10 +228,24 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({
-      allowed: false,
-      reason: "Judge is available on Team plan and above.",
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
+    expect(mockFetch).toHaveBeenCalled();
+  });
+
+  it("unsupported plan => 200 allowed: false, Judge not available for this plan", async () => {
+    mockSubscriptionMaybeSingle.mockResolvedValueOnce({
+      data: { stripe_customer_id: "cus_xxx", plan_id: "starter" },
+      error: null,
     });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({ allowed: false, reason: "Judge is not available for this plan." });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 

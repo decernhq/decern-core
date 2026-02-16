@@ -159,6 +159,9 @@ export default async function SettingsPage() {
             </li>
           ))}
         </ul>
+        {(effectivePlanId === "free" || effectivePlanId === "team" || effectivePlanId === "business") && (
+          <p className="mt-2 text-xs text-gray-400">* {tPricing("byoLLM")}</p>
+        )}
       </div>
     </div>
   );
