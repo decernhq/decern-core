@@ -392,6 +392,7 @@
     "pendingInvites": "Pending invites",
     "preparing": "Preparing your workspace",
     "retry": "Retry",
+    "loadingWorkspace": "Loading workspace…",
     "policiesSectionTitle": "Decision Gate policies",
     "policiesSectionSubtitle": "Validation and enforcement rules for CI (Business plan). Query params on the gate override these when provided.",
     "requireLinkedPR": "Require linked PR",

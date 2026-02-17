@@ -392,6 +392,7 @@
     "pendingInvites": "Inviti in sospeso",
     "preparing": "Preparando il tuo workspace",
     "retry": "Riprova",
+    "loadingWorkspace": "Caricamento workspace…",
     "policiesSectionTitle": "Policy Decision Gate",
     "policiesSectionSubtitle": "Regole di validazione e enforcement per la CI (piano Business). I parametri in query sul gate hanno priorità se forniti.",
     "requireLinkedPR": "Richiedi PR collegata",
