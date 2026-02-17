@@ -5,7 +5,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 ## Policies (validate) — order of evaluation
 
 1. **Enforcement** — Are we in blocking mode? If not (observation), the gate always returns `200` with minimal body; no further checks.
-2. **Linked PR** — (Business only, when `requireLinkedPR=true`.) Decision must have at least one linked PR in Decern; otherwise `422` `linked_pr_required`.
+2. **Linked PR** — **Free / Team:** linking a PR to a decision is never required. **Business+:** the workspace can require it via `requireLinkedPR=true`; if so, the decision must have at least one linked PR, otherwise `422` `linked_pr_required`.
 3. **Status** — (Team when `highImpact=true`; Business when `requireApproved=true`.) Decision must be **approved**; otherwise `422` `not_approved`.
 
 ### Per-plan summary
@@ -37,8 +37,8 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 | Status | Body | Meaning |
 |--------|------|---------|
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "hasLinkedPR": bool, "status": "approved" }` | Decision found and approved (enforcement mode). |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Observation mode (Free, or Team without highImpact, or Business with enforce=false); no `hasLinkedPR` or `status`, CI must not fail. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "status": "approved" }` | Decision found and approved (enforcement mode). |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Observation mode (Free, or Team without highImpact, or Business with enforce=false); no `status`, CI must not fail. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |

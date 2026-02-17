@@ -15,7 +15,7 @@ const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
 type ValidateResponse =
-  | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPR?: boolean; status?: "approved" }
+  | { valid: true; decisionId: string; adrRef: string | null; status?: "approved" }
   | {
       valid: false;
       reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "linked_pr_required" | "server_error";
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         valid: true,
         decisionId: decision.id,
         adrRef,
-        ...(blocking && { hasLinkedPR, status: "approved" as const }),
+        ...(blocking && { status: "approved" as const }),
       },
       200
     );
