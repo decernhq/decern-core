@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { hashCiToken } from "@/lib/ci-token";
 import { recordJudgeUsage } from "@/lib/judge-usage";
+import { JUDGE_ALLOWED_PLANS, isJudgeAdvisory, type PlanId } from "@/lib/decision-gate-policies";
 
 const DECISION_ID_MAX_LENGTH = 128;
 const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
@@ -12,9 +13,6 @@ const MAX_DIFF_CHARS = 120_000;
 const MAX_LLM_BASE_URL_LEN = 512;
 const MAX_LLM_MODEL_LEN = 256;
 const MAX_LLM_API_KEY_LEN = 2048;
-
-/** Judge available on all plans: Free/Team advisory (BYO LLM), Business+ can block. */
-const JUDGE_ALLOWED_PLANS = new Set(["free", "team", "business", "enterprise", "governance"]);
 
 /** Anthropic Messages API base host (native support, no gateway). */
 const ANTHROPIC_API_HOST = "api.anthropic.com";
@@ -45,7 +43,15 @@ export type JudgeRequestBody = {
 export type JudgeResponse = {
   allowed: boolean;
   reason?: string;
+  /** True when plan is Free/Team: client must not block CI on allowed: false (advisory only). */
+  advisory?: boolean;
 };
+
+function judgeJson(allowed: boolean, reason: string, advisory?: boolean): NextResponse {
+  const body: JudgeResponse = { allowed, reason };
+  if (advisory !== undefined) body.advisory = advisory;
+  return NextResponse.json(body, { status: 200 });
+}
 
 function getBearerToken(request: NextRequest): string | null {
   const auth = request.headers.get("Authorization");
@@ -87,10 +93,6 @@ function validateLlmConfig(llm: unknown): { ok: true; config: JudgeLlmConfig } |
     if (host !== "localhost" && host !== "127.0.0.1") return { ok: false };
   }
   return { ok: true, config: { baseUrl, apiKey, model } };
-}
-
-function judgeJson(allowed: boolean, reason: string): NextResponse {
-  return NextResponse.json({ allowed, reason } satisfies JudgeResponse, { status: 200 });
 }
 
 /** Build decision text for the LLM (title + context + options + decision + consequences). */
@@ -271,7 +273,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       .eq("user_id", workspace.owner_id)
       .eq("status", "active")
       .maybeSingle();
-    const planId = (subscription?.plan_id ?? "free") as string;
+    const planId = (subscription?.plan_id ?? "free") as PlanId;
     if (!JUDGE_ALLOWED_PLANS.has(planId)) {
       return judgeJson(false, "Judge is not available for this plan.");
     }
@@ -409,7 +411,7 @@ Respond only with a valid JSON object: {"allowed": true|false, "reason": "brief 
     }
 
     const result = parseJudgeResponse(rawContent);
-    return judgeJson(result.allowed, result.reason ?? "");
+    return judgeJson(result.allowed, result.reason ?? "", isJudgeAdvisory(planId));
   } catch {
     return judgeJson(false, "Judge unavailable.");
   }

@@ -191,7 +191,7 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
     expect(mockFetch).toHaveBeenCalled();
   });
 
@@ -228,7 +228,7 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
     expect(mockFetch).toHaveBeenCalled();
   });
 
@@ -347,7 +347,7 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR." });
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.openai.com/v1/chat/completions",
       expect.objectContaining({
@@ -383,6 +383,7 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({
       allowed: false,
       reason: "Diff introduces a new DB column not mentioned in the decision.",
+      advisory: true,
     });
   });
 
@@ -469,7 +470,7 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with the decision." });
+    expect(data).toEqual({ allowed: true, reason: "Change aligns with the decision.", advisory: true });
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.anthropic.com/v1/messages",
       expect.objectContaining({

@@ -1,12 +1,20 @@
 # Decision Gate API (MVP)
 
-CI/CD validation endpoint: it checks whether a decision exists and is in **approved** status. Behaviour depends on plan and optional query params.
+CI/CD validation endpoint: it checks whether a decision exists and meets policy. Behaviour depends on plan and optional query params. Policies are evaluated in a fixed order.
 
-## Plan and behaviour (validate)
+## Policies (validate) — order of evaluation
 
-- **Free plan:** observation only — response is always `200` with `valid`, `decisionId`, `adrRef`. Neither `hasLinkedPR` nor `status` are included; the CI must not fail the pipeline.
-- **Team plan:** observation by default. Enforcement (422 if decision not approved) only when the client sends `highImpact=true` (e.g. for rule-based High Impact changes). Without `highImpact=true`, response is always `200` (observation).
-- **Business / Enterprise / Governance:** enforcement by default — if the decision is not approved the response is `422`; when approved the body includes `status: "approved"`. Enforcement can be disabled per request with `enforce=false` (response then always `200`, observation style).
+1. **Enforcement** — Are we in blocking mode? If not (observation), the gate always returns `200` with minimal body; no further checks.
+2. **Linked PR** — (Business only, when `requireLinkedPR=true`.) Decision must have at least one linked PR in Decern; otherwise `422` `linked_pr_required`.
+3. **Status** — (Team when `highImpact=true`; Business when `requireApproved=true`.) Decision must be **approved**; otherwise `422` `not_approved`.
+
+### Per-plan summary
+
+| Plan   | Linked PR      | Status              | Enforcement                                      |
+|--------|----------------|---------------------|--------------------------------------------------|
+| **Free**   | Not checked    | Not checked         | Always observation (never block).                |
+| **Team**   | Not checked    | Checked only when `highImpact=true` | Blocking only for High Impact Changes (`highImpact=true`). |
+| **Business+** | Optional: require with `requireLinkedPR=true` | Optional: require with `requireApproved=true` (default) | Default on; disable with `enforce=false`.        |
 
 ## Endpoint
 
@@ -14,8 +22,10 @@ CI/CD validation endpoint: it checks whether a decision exists and is in **appro
 - **URL:** `/api/decision-gate/validate`
 - **Query params:**
   - `decisionId` (decision UUID) or `adrRef` (e.g. `ADR-001`) — at least one required. With `adrRef` the decision is looked up by workspace + ADR reference.
-  - **Optional:** `highImpact` — set to `true` or `1` so that on **Team** plan the gate uses enforcement (422 if not approved). Ignored on other plans.
-  - **Optional:** `enforce` — set to `false` or `0` to disable enforcement on **Business** (and Enterprise/Governance): response is always `200` (observation). Default when omitted is `true` (enforcement on).
+  - **Optional:** `highImpact` — `true` or `1`: on **Team**, enables blocking (require approved). Ignored on other plans.
+  - **Optional:** `enforce` — `false` or `0`: on **Business+**, disables enforcement (observation). Default when omitted: `true`.
+  - **Optional (Business+):** `requireLinkedPR` — `true` or `1`: decision must have at least one linked PR; otherwise `422` `linked_pr_required`. Default: `false`.
+  - **Optional (Business+):** `requireApproved` — `false` or `0`: do not require decision to be approved. Default: `true`.
 
 ## Authentication
 
@@ -32,7 +42,8 @@ CI/CD validation endpoint: it checks whether a decision exists and is in **appro
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |
-| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decision found but not approved (enforcement mode: Team with highImpact=true, or Business+ with enforce not false). |
+| 422 | `{ "valid": false, "reason": "linked_pr_required" }` | Business+ with `requireLinkedPR=true` and decision has no linked PR. |
+| 422 | `{ "valid": false, "reason": "not_approved", "status": "<status>" }` | Decision found but not approved when required (Team with highImpact=true, or Business+ with requireApproved=true). |
 | 500 | `{ "valid": false, "reason": "server_error" }` | Server error (e.g. DB). |
 
 ## `decisionId` validation
@@ -79,7 +90,7 @@ After validation (validate), the **decern-gate** CLI can call the **judge** endp
 - **Method:** `POST`
 - **URL:** `/api/decision-gate/judge` (path configurable client-side via `DECERN_JUDGE_PATH`).
 - **Authentication:** same as validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
-- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`. On Free, no billing is required; on Team and above, a payment method must be configured.
+- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`; the client may optionally apply a tolerance (e.g. block only when confidence is above a threshold). On Free, no billing is required; on Team and above, a payment method must be configured.
 
 ## Request body (JSON)
 
@@ -141,17 +152,18 @@ Example with UUID:
 
 Always **status 200 OK** (even when the gate blocks: blocking is indicated by `allowed: false`).
 
-| Field    | Type    | Description |
-|----------|---------|-------------|
-| `allowed`| boolean | `true` = the change is consistent with the decision, the gate can pass; `false` = block the CI. |
-| `reason` | string (optional) | Short explanation (for logs or CI output). |
+| Field     | Type    | Description |
+|-----------|---------|-------------|
+| `allowed` | boolean | `true` = the change is consistent with the decision; `false` = the LLM judged the diff not aligned. |
+| `reason`  | string (optional) | Short explanation (for logs or CI output). |
+| `advisory`| boolean (optional) | Present when the plan is Free or Team: **advisory only** — the client must not fail the pipeline on `allowed: false`. When absent (Business+), the client may block the CI on `allowed: false`. |
 
 Examples:
 
-- Pass: `{"allowed": true, "reason": "Change aligns with ADR-002."}`
-- Block: `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}`
+- Pass (Team): `{"allowed": true, "reason": "Change aligns with ADR-002.", "advisory": true}`
+- Block (Business): `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}` (no `advisory` → client can block CI)
 
-On error (invalid token, decision not found, LLM timeout, network error to the LLM): response **200** with `{"allowed": false, "reason": "<appropriate message>"}` (fail-closed). In all cases decern-gate treats the gate as blocked when `allowed` is `false`.
+On error (invalid token, decision not found, LLM timeout, network error to the LLM): response **200** with `{"allowed": false, "reason": "<appropriate message>"}` (fail-closed). When `advisory` is true, the client must not block the pipeline; when absent (Business+), the client may block on `allowed: false`.
 
 ## Environment variables (backend)
 

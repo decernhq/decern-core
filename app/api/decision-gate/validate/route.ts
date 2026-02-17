@@ -1,23 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { hashCiToken } from "@/lib/ci-token";
+import {
+  mergeValidateParams,
+  isBlockingMode,
+  shouldRequireLinkedPR,
+  shouldRequireApproved,
+  type PlanId,
+} from "@/lib/decision-gate-policies";
 
 const DECISION_ID_MAX_LENGTH = 128;
 const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 /** Short ref format: ADR-1, ADR-01, ADR-001, etc. (lookup by workspace + adr_ref) */
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
-/** Free = always observation. Team = enforcement only when highImpact=true. Business+ = enforcement by default, overridable with enforce=false. */
-function isObservationMode(planId: string, highImpact: boolean, enforce: boolean): boolean {
-  if (planId === "free") return true;
-  if (planId === "team") return !highImpact; // Team: blocking only when highImpact=true
-  if (["business", "enterprise", "governance"].includes(planId)) return !enforce; // Business+: enforcement by default
-  return true; // unknown plan: safe default
-}
-
 type ValidateResponse =
   | { valid: true; decisionId: string; adrRef: string | null; hasLinkedPR?: boolean; status?: "approved" }
-  | { valid: false; reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "server_error"; status?: string };
+  | {
+      valid: false;
+      reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "linked_pr_required" | "server_error";
+      status?: string;
+    };
 
 function json(body: ValidateResponse, status: number) {
   return NextResponse.json(body, { status });
@@ -70,12 +73,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const decisionIdParam = request.nextUrl.searchParams.get("decisionId");
   const adrRefTrimmed = request.nextUrl.searchParams.get("adrRef")?.trim() ?? "";
   const useAdrRef = adrRefTrimmed.length > 0;
-  const highImpact = /^(true|1)$/i.test(request.nextUrl.searchParams.get("highImpact") ?? "");
-  const enforceParam = request.nextUrl.searchParams.get("enforce");
-  const enforce =
-    enforceParam === undefined || enforceParam === null || enforceParam === ""
-      ? true
-      : /^(true|1)$/i.test(enforceParam);
   const validated = useAdrRef
     ? ADR_REF_REGEX.test(adrRefTrimmed) && adrRefTrimmed.length <= DECISION_ID_MAX_LENGTH
       ? { ok: true as const, id: adrRefTrimmed }
@@ -106,18 +103,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return json({ valid: false, reason: "unauthorized" }, 401);
     }
 
-    // Free: always observation. Team: enforcement only when highImpact=true. Business+: enforcement by default, enforce=false → observation
-    let isObservationOnlyPlan = true;
-    if (workspace.owner_id) {
-      const { data: sub } = await supabase
-        .from("subscriptions")
-        .select("plan_id")
-        .eq("user_id", workspace.owner_id)
-        .eq("status", "active")
-        .maybeSingle();
-      const planId = (sub as { plan_id?: string } | null)?.plan_id ?? "free";
-      isObservationOnlyPlan = isObservationMode(planId, highImpact, enforce);
-    }
+    const [{ data: sub }, { data: workspacePolicies }] = await Promise.all([
+      supabase.from("subscriptions").select("plan_id").eq("user_id", workspace.owner_id).eq("status", "active").maybeSingle(),
+      supabase.from("workspace_policies").select("require_linked_pr, require_approved, enforce").eq("workspace_id", workspace.id).maybeSingle(),
+    ]);
+    const planId = ((sub as { plan_id?: string } | null)?.plan_id ?? "free") as PlanId;
+    const policyParams = mergeValidateParams(workspacePolicies ?? null, request.nextUrl.searchParams);
+    const blocking = isBlockingMode(planId, policyParams);
 
     // Resolve decision: by id (UUID) or by adrRef (ADR-001) within this workspace
     let query = supabase
@@ -162,18 +154,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const pullRequestUrlsRaw = (decision as { pull_request_urls?: unknown }).pull_request_urls;
     const pullRequestUrls = normalizePullRequestUrls(pullRequestUrlsRaw);
     const hasLinkedPR = pullRequestUrls.length > 0;
-
     const status = decision.status as string;
-    if (status !== "approved" && !isObservationOnlyPlan) {
+
+    // Policies applied in order when in blocking mode:
+    // 1. Linked PR (Business + requireLinkedPR)
+    if (blocking && shouldRequireLinkedPR(planId, policyParams) && !hasLinkedPR) {
+      return json({ valid: false, reason: "linked_pr_required" }, 422);
+    }
+    // 2. Status (Team when highImpact, Business when requireApproved)
+    if (blocking && shouldRequireApproved(planId, policyParams) && status !== "approved") {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
-    // Free: valid, decisionId, adrRef only. Paid: also hasLinkedPR and status "approved"
+    // Success: observation = minimal body; blocking = full body
     return json(
       {
         valid: true,
         decisionId: decision.id,
         adrRef,
-        ...(!isObservationOnlyPlan && { hasLinkedPR, status: "approved" as const }),
+        ...(blocking && { hasLinkedPR, status: "approved" as const }),
       },
       200
     );

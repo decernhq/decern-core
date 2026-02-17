@@ -127,6 +127,38 @@ export interface Database {
           created_at?: string;
         };
       };
+      workspace_policies: {
+        Row: {
+          workspace_id: string;
+          require_linked_pr: boolean;
+          require_approved: boolean;
+          enforce: boolean;
+          judge_blocking: boolean;
+          judge_tolerance_percent: number | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          require_linked_pr?: boolean;
+          require_approved?: boolean;
+          enforce?: boolean;
+          judge_blocking?: boolean;
+          judge_tolerance_percent?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          workspace_id?: string;
+          require_linked_pr?: boolean;
+          require_approved?: boolean;
+          enforce?: boolean;
+          judge_blocking?: boolean;
+          judge_tolerance_percent?: number | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       projects: {
         Row: {
           id: string;
@@ -256,11 +288,14 @@ export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 export type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
 export type WorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Row"];
 export type WorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Row"];
+export type WorkspacePolicies = Database["public"]["Tables"]["workspace_policies"]["Row"];
 export type Project = Database["public"]["Tables"]["projects"]["Row"];
 export type DbDecision = Database["public"]["Tables"]["decisions"]["Row"];
 
 export type InsertWorkspace = Database["public"]["Tables"]["workspaces"]["Insert"];
 export type UpdateWorkspace = Database["public"]["Tables"]["workspaces"]["Update"];
+export type InsertWorkspacePolicies = Database["public"]["Tables"]["workspace_policies"]["Insert"];
+export type UpdateWorkspacePolicies = Database["public"]["Tables"]["workspace_policies"]["Update"];
 export type InsertWorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Insert"];
 export type InsertWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Insert"];
 export type UpdateWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Update"];

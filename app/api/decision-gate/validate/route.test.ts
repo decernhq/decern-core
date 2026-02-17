@@ -10,12 +10,16 @@ function createRequest(options: {
   auth?: string;
   highImpact?: boolean;
   enforce?: boolean;
+  requireLinkedPR?: boolean;
+  requireApproved?: boolean;
 }): NextRequest {
   const search = new URLSearchParams();
   if (options.decisionId != null) search.set("decisionId", options.decisionId);
   if (options.adrRef != null) search.set("adrRef", options.adrRef);
   if (options.highImpact === true) search.set("highImpact", "true");
   if (options.enforce === false) search.set("enforce", "false");
+  if (options.requireLinkedPR === true) search.set("requireLinkedPR", "true");
+  if (options.requireApproved === false) search.set("requireApproved", "false");
   const params = search.toString() ? `?${search.toString()}` : "";
   const url = `http://localhost/api/decision-gate/validate${params}`;
   const headers = new Headers();
@@ -27,28 +31,35 @@ const mockWorkspaceMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
 const mockSubMaybeSingle = vi.fn();
+const mockWorkspacePoliciesMaybeSingle = vi.fn();
 
-const chainEqMaybe = (maybeSingle: typeof mockDecisionMaybeSingle) => ({
-  maybeSingle,
-  eq: () => ({ maybeSingle }),
-});
+/** Builder that supports any number of .eq() then .maybeSingle(); maybeSingle is always a function. */
+function makeChain(maybeSingleFn: () => Promise<unknown>) {
+  return {
+    eq: () => makeChain(maybeSingleFn),
+    maybeSingle: maybeSingleFn,
+  };
+}
+
+function getMaybeSingleForTable(table: string) {
+  switch (table) {
+    case "workspaces":
+      return mockWorkspaceMaybeSingle;
+    case "subscriptions":
+      return () => Promise.resolve(mockSubMaybeSingle());
+    case "workspace_policies":
+      return mockWorkspacePoliciesMaybeSingle;
+    case "decisions":
+      return mockDecisionMaybeSingle;
+    default:
+      return mockProjectMaybeSingle;
+  }
+}
 
 vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
-      select: () => ({
-        eq: (_key: string, _val?: string) =>
-          table === "subscriptions"
-            ? { eq: () => ({ maybeSingle: mockSubMaybeSingle }) }
-            : table === "decisions"
-              ? chainEqMaybe(mockDecisionMaybeSingle)
-              : {
-                  maybeSingle:
-                    table === "workspaces"
-                      ? mockWorkspaceMaybeSingle
-                      : mockProjectMaybeSingle,
-                },
-      }),
+      select: () => makeChain(getMaybeSingleForTable(table)),
     }),
   }),
 }));
@@ -67,6 +78,7 @@ describe("GET /api/decision-gate/validate", () => {
       error: null,
     });
     mockSubMaybeSingle.mockResolvedValue({ data: { plan_id: "team" }, error: null });
+    mockWorkspacePoliciesMaybeSingle.mockResolvedValue({ data: null, error: null });
   });
 
   it("1) no auth => 401", async () => {
@@ -342,5 +354,49 @@ describe("GET /api/decision-gate/validate", () => {
     const body = await res.json();
     expect(res.status).toBe(422);
     expect(body).toEqual({ valid: false, reason: "not_approved", status: "rejected" });
+  });
+
+  it("Business + requireLinkedPR=true + no linked PR => 422 linked_pr_required", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: {
+        id: decisionId,
+        status: "approved",
+        project_id: "proj-1",
+        adr_ref: "ADR-042",
+        pull_request_urls: [],
+      },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, requireLinkedPR: true });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(422);
+    expect(body).toEqual({ valid: false, reason: "linked_pr_required" });
+  });
+
+  it("Business + requireApproved=false + decision not approved => 200", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, requireApproved: false });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042", hasLinkedPR: false, status: "approved" });
   });
 });
