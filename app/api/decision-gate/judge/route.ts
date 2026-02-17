@@ -267,12 +267,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return judgeJson(false, "Rate limit exceeded. Try again later.");
     }
 
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("stripe_customer_id, plan_id")
-      .eq("user_id", workspace.owner_id)
-      .eq("status", "active")
-      .maybeSingle();
+    const [{ data: subscription }, { data: workspacePolicies }] = await Promise.all([
+      supabase
+        .from("subscriptions")
+        .select("stripe_customer_id, plan_id")
+        .eq("user_id", workspace.owner_id)
+        .eq("status", "active")
+        .maybeSingle(),
+      supabase
+        .from("workspace_policies")
+        .select("judge_blocking")
+        .eq("workspace_id", workspace.id)
+        .maybeSingle(),
+    ]);
     const planId = (subscription?.plan_id ?? "free") as PlanId;
     if (!JUDGE_ALLOWED_PLANS.has(planId)) {
       return judgeJson(false, "Judge is not available for this plan.");
@@ -280,6 +287,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (planId !== "free" && !subscription?.stripe_customer_id) {
       return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
     }
+
+    const judgeBlockingFromDb = workspacePolicies?.judge_blocking ?? true;
+    const advisory =
+      isJudgeAdvisory(planId) || (planId !== "free" && planId !== "team" && !judgeBlockingFromDb);
 
     let query = supabase
       .from("decisions")
@@ -411,7 +422,7 @@ Respond only with a valid JSON object: {"allowed": true|false, "reason": "brief 
     }
 
     const result = parseJudgeResponse(rawContent);
-    return judgeJson(result.allowed, result.reason ?? "", isJudgeAdvisory(planId));
+    return judgeJson(result.allowed, result.reason ?? "", advisory);
   } catch {
     return judgeJson(false, "Judge unavailable.");
   }

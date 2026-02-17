@@ -194,3 +194,56 @@ export async function revokeWorkspaceCiTokenAction(
   revalidatePath("/dashboard/workspace");
   return { success: true };
 }
+
+export type UpdateWorkspacePoliciesResult = { error?: string; success?: boolean };
+
+/** Upsert workspace_policies for the given workspace. Only the owner can update. */
+export async function updateWorkspacePoliciesAction(
+  workspaceId: string,
+  data: {
+    require_linked_pr: boolean;
+    require_approved: boolean;
+    enforce: boolean;
+    judge_blocking: boolean;
+    judge_tolerance_percent: number | null;
+  }
+): Promise<UpdateWorkspacePoliciesResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Non autenticato" };
+
+  const { data: ws } = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (!ws || ws.owner_id !== user.id) {
+    return { error: "Solo il proprietario può modificare le policy" };
+  }
+
+  const tolerance =
+    data.judge_tolerance_percent != null && data.judge_tolerance_percent >= 0 && data.judge_tolerance_percent <= 100
+      ? data.judge_tolerance_percent
+      : null;
+
+  const { error } = await supabase.from("workspace_policies").upsert(
+    {
+      workspace_id: workspaceId,
+      require_linked_pr: data.require_linked_pr,
+      require_approved: data.require_approved,
+      enforce: data.enforce,
+      judge_blocking: data.judge_blocking,
+      judge_tolerance_percent: tolerance,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_id" }
+  );
+
+  if (error) {
+    console.error("Error updating workspace policies:", error);
+    return { error: "Errore durante il salvataggio delle policy" };
+  }
+
+  revalidatePath("/dashboard/workspace");
+  return { success: true };
+}

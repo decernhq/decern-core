@@ -26,8 +26,13 @@
     "projects": "Projects",
     "decisions": "Decisions",
     "workspace": "Workspace",
+    "policies": "Policies",
     "settings": "Settings",
     "logout": "Logout"
+  },
+  "policiesPage": {
+    "title": "Policies",
+    "subtitle": "Configure validation and enforcement rules for this workspace (Business plan)."
   },
   "home": {
     "tagline": "Your team's technical decision register.",
@@ -386,7 +391,21 @@
     "inviteHint": "Enter the email and share the link (valid 7 days). The invitee will see all projects in the workspace.",
     "pendingInvites": "Pending invites",
     "preparing": "Preparing your workspace",
-    "retry": "Retry"
+    "retry": "Retry",
+    "policiesSectionTitle": "Decision Gate policies",
+    "policiesSectionSubtitle": "Validation and enforcement rules for CI (Business plan). Query params on the gate override these when provided.",
+    "requireLinkedPR": "Require linked PR",
+    "requireLinkedPRHint": "Decision must have at least one linked PR to pass validation.",
+    "requireApproved": "Require approved status",
+    "requireApprovedHint": "Decision must be approved to pass validation.",
+    "enforce": "Enforce (blocking mode)",
+    "enforceHint": "When off, the gate reports only (observation).",
+    "judgeBlocking": "Judge blocking",
+    "judgeBlockingHint": "When on, the LLM judge can block the gate; when off, judge is advisory only.",
+    "judgeTolerancePercent": "Judge tolerance (%)",
+    "judgeToleranceHint": "Optional 0–100. Leave empty for default.",
+    "policiesSaved": "Policies saved.",
+    "policiesError": "Failed to save policies."
   },
   "settings": {
     "title": "Settings",

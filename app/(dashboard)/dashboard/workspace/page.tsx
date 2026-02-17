@@ -16,7 +16,10 @@ import { WorkspaceMembersSection } from "@/components/dashboard/workspace-member
 import { WorkspaceList } from "@/components/dashboard/workspace-list";
 import { CreateWorkspaceForm } from "@/components/dashboard/create-workspace-form";
 import { WorkspaceCiTokenSection } from "@/components/dashboard/workspace-ci-token-section";
+import { WorkspacePoliciesForm } from "@/components/dashboard/workspace-policies-form";
 import Link from "next/link";
+
+const BUSINESS_PLANS = ["business", "enterprise", "governance"];
 
 export default async function WorkspacePage() {
   const supabase = await createClient();
@@ -52,13 +55,27 @@ export default async function WorkspacePage() {
   const planId = getEffectivePlanId(subscription?.plan_id);
   const canCreateWorkspaces = PLANS[planId].limits.workspaces_limit === -1;
 
-  const [members, invitations, ownerProfile] = await Promise.all([
+  const [members, invitations, ownerProfile, policiesRow] = await Promise.all([
     getWorkspaceMembersWithProfiles(workspace.id),
     getWorkspaceInvitationsPending(workspace.id),
     getProfileById(workspace.owner_id),
+    supabase
+      .from("workspace_policies")
+      .select("require_linked_pr, require_approved, enforce, judge_blocking, judge_tolerance_percent")
+      .eq("workspace_id", workspace.id)
+      .maybeSingle(),
   ]);
 
   const isOwner = user.id === workspace.owner_id;
+  const showPolicies =
+    isOwner && BUSINESS_PLANS.includes(planId);
+  const policiesInitial = {
+    require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
+    require_approved: policiesRow?.data?.require_approved ?? true,
+    enforce: policiesRow?.data?.enforce ?? true,
+    judge_blocking: policiesRow?.data?.judge_blocking ?? true,
+    judge_tolerance_percent: policiesRow?.data?.judge_tolerance_percent ?? null,
+  };
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -98,6 +115,16 @@ export default async function WorkspacePage() {
             workspaceId={workspace.id}
             ciTokenCreatedAt={workspace.ci_token_created_at}
           />
+        </div>
+      )}
+
+      {showPolicies && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">{t("policiesSectionTitle")}</h2>
+          <p className="mt-1 text-sm text-gray-500">{t("policiesSectionSubtitle")}</p>
+          <div className="mt-4">
+            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} />
+          </div>
         </div>
       )}
 

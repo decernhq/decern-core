@@ -26,8 +26,13 @@
     "projects": "Progetti",
     "decisions": "Decisioni",
     "workspace": "Workspace",
+    "policies": "Policy",
     "settings": "Impostazioni",
     "logout": "Logout"
+  },
+  "policiesPage": {
+    "title": "Policy",
+    "subtitle": "Configura le regole di validazione e enforcement per questo workspace (piano Business)."
   },
   "home": {
     "tagline": "Il registro delle decisioni tecniche del tuo team.",
@@ -386,7 +391,21 @@
     "inviteHint": "Inserisci l'email e condividi il link (valido 7 giorni). L'invitato vedrà tutti i progetti del workspace.",
     "pendingInvites": "Inviti in sospeso",
     "preparing": "Preparando il tuo workspace",
-    "retry": "Riprova"
+    "retry": "Riprova",
+    "policiesSectionTitle": "Policy Decision Gate",
+    "policiesSectionSubtitle": "Regole di validazione e enforcement per la CI (piano Business). I parametri in query sul gate hanno priorità se forniti.",
+    "requireLinkedPR": "Richiedi PR collegata",
+    "requireLinkedPRHint": "La decisione deve avere almeno una PR collegata per passare la validazione.",
+    "requireApproved": "Richiedi status approvato",
+    "requireApprovedHint": "La decisione deve essere approvata per passare la validazione.",
+    "enforce": "Enforcement (modalità blocco)",
+    "enforceHint": "Se disattivato, il gate segnala solo (osservazione).",
+    "judgeBlocking": "Judge in blocco",
+    "judgeBlockingHint": "Se attivo, il judge LLM può bloccare il gate; se disattivo è solo advisory.",
+    "judgeTolerancePercent": "Tolleranza judge (%)",
+    "judgeToleranceHint": "Opzionale 0–100. Lascia vuoto per il default.",
+    "policiesSaved": "Policy salvate.",
+    "policiesError": "Salvataggio policy fallito."
   },
   "settings": {
     "title": "Impostazioni",

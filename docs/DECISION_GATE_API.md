@@ -90,7 +90,7 @@ After validation (validate), the **decern-gate** CLI can call the **judge** endp
 - **Method:** `POST`
 - **URL:** `/api/decision-gate/judge` (path configurable client-side via `DECERN_JUDGE_PATH`).
 - **Authentication:** same as validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
-- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`; the client may optionally apply a tolerance (e.g. block only when confidence is above a threshold). On Free, no billing is required; on Team and above, a payment method must be configured.
+- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`, unless the workspace policy has **Judge blocking** disabled (then it remains advisory). The `advisory` field in the response reflects plan and workspace policy. On Free, no billing is required; on Team and above, a payment method must be configured.
 
 ## Request body (JSON)
 
@@ -156,7 +156,7 @@ Always **status 200 OK** (even when the gate blocks: blocking is indicated by `a
 |-----------|---------|-------------|
 | `allowed` | boolean | `true` = the change is consistent with the decision; `false` = the LLM judged the diff not aligned. |
 | `reason`  | string (optional) | Short explanation (for logs or CI output). |
-| `advisory`| boolean (optional) | Present when the plan is Free or Team: **advisory only** — the client must not fail the pipeline on `allowed: false`. When absent (Business+), the client may block the CI on `allowed: false`. |
+| `advisory`| boolean (optional) | **Advisory only** when true: the client must not fail the pipeline on `allowed: false`. Set for Free/Team, or for Business+ when the workspace policy has **Judge blocking** disabled. When absent/false (Business+ with blocking), the client may block the CI on `allowed: false`. |
 
 Examples:
 
