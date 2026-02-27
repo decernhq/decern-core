@@ -56,14 +56,14 @@ export function NewDecisionFlow({
       });
       const data = await res.json();
       if (!res.ok) {
-        setAiError(data.error ?? "Errore durante la generazione");
+        setAiError(data.error ?? "Error during generation");
         setLoading(false);
         return;
       }
       setPrefillFromAi(data as GenerateFromTextResponse);
       setStep("form");
     } catch {
-      setAiError("Errore di connessione");
+      setAiError("Connection error");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export function NewDecisionFlow({
           onClick={() => setStep("form")}
           disabled={loading}
         >
-          Inserisci manualmente
+          Enter manually
         </Button>
       </div>
     </div>

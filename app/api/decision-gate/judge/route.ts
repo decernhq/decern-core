@@ -43,13 +43,31 @@ export type JudgeRequestBody = {
 export type JudgeResponse = {
   allowed: boolean;
   reason?: string;
-  /** True when plan is Free/Team: client must not block CI on allowed: false (advisory only). */
+  /** True when client must not block CI on allowed: false (Free always; Team/Business+ when Judge blocking is off). */
   advisory?: boolean;
+  /** Confidence score 0–1 from the judge. CLI can compare to DECERN_JUDGE_MIN_CONFIDENCE. */
+  confidence?: number;
+  /** When allowed but confidence < 100%, short note on what was not fully aligned (always present when applicable). */
+  advisoryMessage?: string;
 };
 
-function judgeJson(allowed: boolean, reason: string, advisory?: boolean): NextResponse {
+/** Parsed LLM output (score 0–100, optional advisoryNotes). */
+type ParsedJudgeResult = {
+  allowed: boolean;
+  reason: string;
+  score: number | null;
+  advisoryNotes: string | null;
+};
+
+function judgeJson(
+  allowed: boolean,
+  reason: string,
+  opts?: { advisory?: boolean; confidence?: number; advisoryMessage?: string }
+): NextResponse {
   const body: JudgeResponse = { allowed, reason };
-  if (advisory !== undefined) body.advisory = advisory;
+  if (opts?.advisory !== undefined) body.advisory = opts.advisory;
+  if (opts?.confidence !== undefined) body.confidence = opts.confidence;
+  if (opts?.advisoryMessage !== undefined) body.advisoryMessage = opts.advisoryMessage;
   return NextResponse.json(body, { status: 200 });
 }
 
@@ -113,16 +131,37 @@ function buildDecisionText(d: {
   return parts.filter(Boolean).join("\n\n");
 }
 
-/** Parse LLM response to { allowed, reason }. Defaults to allowed: false on invalid response. */
-function parseJudgeResponse(raw: string): JudgeResponse {
+/** Parse LLM response to { allowed, reason, score?, advisoryNotes? }. Defaults to allowed: false on invalid response. */
+function parseJudgeResponse(raw: string): ParsedJudgeResult {
   const trimmed = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
   try {
     const parsed = JSON.parse(trimmed) as Record<string, unknown>;
     const allowed = parsed.allowed === true;
-    const reason = typeof parsed.reason === "string" ? parsed.reason : allowed ? "Change aligns with the decision." : "Change does not align with the decision.";
-    return { allowed, reason };
+    const reason =
+      typeof parsed.reason === "string"
+        ? parsed.reason
+        : allowed
+          ? "Change aligns with the decision."
+          : "Change does not align with the decision.";
+    let score: number | null = null;
+    if (typeof parsed.score === "number" && !Number.isNaN(parsed.score)) {
+      score = Math.max(0, Math.min(100, parsed.score));
+    } else if (typeof parsed.score === "string") {
+      const n = parseFloat(parsed.score);
+      if (!Number.isNaN(n)) score = Math.max(0, Math.min(100, n));
+    }
+    const advisoryNotes =
+      typeof parsed.advisoryNotes === "string" && parsed.advisoryNotes.trim().length > 0
+        ? parsed.advisoryNotes.trim()
+        : null;
+    return { allowed, reason, score, advisoryNotes };
   } catch {
-    return { allowed: false, reason: "Judge response invalid." };
+    return {
+      allowed: false,
+      reason: "Judge response invalid.",
+      score: null,
+      advisoryNotes: null,
+    };
   }
 }
 
@@ -276,7 +315,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         .maybeSingle(),
       supabase
         .from("workspace_policies")
-        .select("judge_blocking")
+        .select("judge_blocking, judge_tolerance_percent")
         .eq("workspace_id", workspace.id)
         .maybeSingle(),
     ]);
@@ -289,8 +328,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const judgeBlockingFromDb = workspacePolicies?.judge_blocking ?? true;
-    const advisory =
-      isJudgeAdvisory(planId) || (planId !== "free" && planId !== "team" && !judgeBlockingFromDb);
+    /** Free: always advisory. Team and Business+: advisory only when Judge blocking is disabled. */
+    const advisory = isJudgeAdvisory(planId) || !judgeBlockingFromDb;
+
+    const DEFAULT_THRESHOLD = 80;
+    /** Threshold 0–100. Free: always 80. Team/Business+: workspace judge_tolerance_percent if set, else 80. */
+    const workspaceTolerance =
+      workspacePolicies?.judge_tolerance_percent != null &&
+      workspacePolicies.judge_tolerance_percent >= 0 &&
+      workspacePolicies.judge_tolerance_percent <= 100
+        ? workspacePolicies.judge_tolerance_percent
+        : null;
+    const thresholdPercent =
+      planId === "free" ? DEFAULT_THRESHOLD : (workspaceTolerance ?? DEFAULT_THRESHOLD);
 
     let query = supabase
       .from("decisions")
@@ -342,9 +392,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 Your task: determine if the diff is consistent with and justified by the decision. The code change should implement or respect what the decision describes; it should not introduce unrelated or conflicting changes.
 
-Respond only with a valid JSON object: {"allowed": true|false, "reason": "brief explanation"}.
-- allowed: true only if the diff aligns with the decision.
-- reason: one short sentence.`;
+Respond only with a valid JSON object with these fields:
+- allowed: true only if the diff aligns with the decision; false otherwise.
+- reason: one short sentence explaining the verdict.
+- score: number 0-100 indicating how well the diff aligns (100 = fully aligned, 0 = not at all). Use intermediate values when partly aligned.
+- advisoryNotes: (optional) when score < 100, a brief note on what aspects were not fully aligned or could be improved. Omit or empty string when score is 100.
+
+Example: {"allowed": true, "reason": "Change implements the chosen option.", "score": 85, "advisoryNotes": "Minor: error handling could better match the decision."}`;
 
     const userPrompt = `## Decision record\n\n${decisionText}\n\n## Git diff\n${truncated || diff.length > MAX_DIFF_CHARS ? "(The diff may be truncated.)\n\n" : ""}\n\`\`\`\n${diffForPrompt}\n\`\`\``;
 
@@ -421,8 +475,27 @@ Respond only with a valid JSON object: {"allowed": true|false, "reason": "brief 
       return judgeJson(false, "Judge unavailable.");
     }
 
-    const result = parseJudgeResponse(rawContent);
-    return judgeJson(result.allowed, result.reason ?? "", advisory);
+    const parsed = parseJudgeResponse(rawContent);
+    const finalAllowed =
+      parsed.score != null ? parsed.score >= thresholdPercent : parsed.allowed;
+    const confidence =
+      parsed.score != null ? parsed.score / 100 : parsed.allowed ? 1 : 0;
+    const advisoryMessage =
+      finalAllowed &&
+      parsed.score != null &&
+      parsed.score < 100 &&
+      (parsed.advisoryNotes ?? parsed.reason)
+        ? (parsed.advisoryNotes ?? parsed.reason)
+        : undefined;
+    const reason =
+      parsed.reason ||
+      (finalAllowed ? "Change aligns with the decision." : "Change does not align with the decision.");
+
+    return judgeJson(finalAllowed, reason, {
+      advisory,
+      confidence,
+      advisoryMessage,
+    });
   } catch {
     return judgeJson(false, "Judge unavailable.");
   }

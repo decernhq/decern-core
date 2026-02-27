@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     // Get subscription with Stripe customer ID
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
 
     if (!subscription?.stripe_customer_id) {
       return NextResponse.json(
-        { error: "Nessun abbonamento trovato" },
+        { error: "No subscription found" },
         { status: 400 }
       );
     }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Portal error:", error);
     return NextResponse.json(
-      { error: "Errore nell'apertura del portale" },
+      { error: "Error opening billing portal" },
       { status: 500 }
     );
   }

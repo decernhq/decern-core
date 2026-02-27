@@ -32,6 +32,7 @@ const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
 const mockSubMaybeSingle = vi.fn();
 const mockWorkspacePoliciesMaybeSingle = vi.fn();
+const mockRpc = vi.fn().mockResolvedValue({ data: 1, error: null });
 
 /** Builder that supports any number of .eq() then .maybeSingle(); maybeSingle is always a function. */
 function makeChain(maybeSingleFn: () => Promise<unknown>) {
@@ -61,6 +62,7 @@ vi.mock("@/lib/supabase/service-role", () => ({
     from: (table: string) => ({
       select: () => makeChain(getMaybeSingleForTable(table)),
     }),
+    rpc: mockRpc,
   }),
 }));
 
@@ -127,7 +129,7 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: false, reason: "invalid_input" });
   });
 
-  it("3c) decisionId mancante => 422", async () => {
+  it("3c) decisionId missing => 422", async () => {
     const req = createRequest({ auth: `Bearer ${VALID_TOKEN}` });
     const { GET } = await import("./route");
     const res = await GET(req);
@@ -182,7 +184,13 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042", status: "approved" });
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: false,
+      status: "approved",
+    });
   });
 
   it("6b) Team + highImpact + adrRef=ADR-001 => lookup by workspace + adr_ref, 200 con status", async () => {
@@ -201,7 +209,13 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId: uuid, adrRef: "ADR-001", status: "approved" });
+    expect(body).toEqual({
+      valid: true,
+      decisionId: uuid,
+      adrRef: "ADR-001",
+      observation: false,
+      status: "approved",
+    });
     expect(mockProjectMaybeSingle).not.toHaveBeenCalled();
   });
 
@@ -236,8 +250,9 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: false, reason: "server_error" });
   });
 
-  it("7) free plan + decision not approved => 200 solo valid, decisionId, adrRef (no status)", async () => {
+  it("7) free plan + decision not approved + count <= 7 => 200 con observation e status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
+    mockRpc.mockResolvedValueOnce({ data: 3, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -252,12 +267,21 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
-    expect(body).not.toHaveProperty("status");
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: true,
+      status: "proposed",
+    });
+    expect(mockRpc).toHaveBeenCalledWith("increment_validate_observation_count", {
+      p_workspace_id: WORKSPACE_ID,
+    });
   });
 
-  it("8) free plan + decision approved => 200 solo valid, decisionId, adrRef (no status)", async () => {
+  it("8) free plan + decision approved + count <= 7 => 200 con observation e status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
+    mockRpc.mockResolvedValueOnce({ data: 1, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-001" },
@@ -272,11 +296,18 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-001" });
-    expect(body).not.toHaveProperty("status");
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-001",
+      observation: true,
+      status: "approved",
+    });
   });
 
-  it("Team without highImpact + decision not approved => 200 observation (no 422)", async () => {
+  it("free plan + count > 7 => 200 con message, no status", async () => {
+    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
+    mockRpc.mockResolvedValueOnce({ data: 8, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -291,11 +322,42 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: true,
+      message: "CI Observation limit reached (7 calls). Upgrade to Team to continue using the Decision Gate.",
+    });
     expect(body).not.toHaveProperty("status");
   });
 
-  it("Team without highImpact + decision approved => 200 observation body", async () => {
+  it("Team without highImpact + decision not approved => 200 observation con status", async () => {
+    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
+    mockDecisionMaybeSingle.mockResolvedValueOnce({
+      data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
+      error: null,
+    });
+    mockProjectMaybeSingle.mockResolvedValueOnce({
+      data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const { GET } = await import("./route");
+    const res = await GET(req);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: true,
+      status: "proposed",
+    });
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("Team without highImpact + decision approved => 200 observation con status", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -310,11 +372,16 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
-    expect(body).not.toHaveProperty("status");
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: true,
+      status: "approved",
+    });
   });
 
-  it("Business + enforce=false + decision not approved => 200 observation", async () => {
+  it("Business + enforce=false + decision not approved => 200 observation con status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
@@ -330,8 +397,13 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042" });
-    expect(body).not.toHaveProperty("status");
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: true,
+      status: "proposed",
+    });
   });
 
   it("Business default (enforce) + decision not approved => 422", async () => {
@@ -394,6 +466,12 @@ describe("GET /api/decision-gate/validate", () => {
     const res = await GET(req);
     const body = await res.json();
     expect(res.status).toBe(200);
-    expect(body).toEqual({ valid: true, decisionId, adrRef: "ADR-042", status: "approved" });
+    expect(body).toEqual({
+      valid: true,
+      decisionId,
+      adrRef: "ADR-042",
+      observation: false,
+      status: "approved",
+    });
   });
 });

@@ -40,7 +40,7 @@ export async function createDecisionAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Non autenticato" };
+    return { error: "Not authenticated" };
   }
 
   const projectId = formData.get("project_id") as string;
@@ -56,20 +56,20 @@ export async function createDecisionAction(
   const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!projectId) {
-    return { error: "Seleziona un progetto" };
+    return { error: "Select a project" };
   }
 
   const project = await supabase.from("projects").select("workspace_id").eq("id", projectId).single();
-  if (project.error || !project.data) return { error: "Progetto non trovato" };
+  if (project.error || !project.data) return { error: "Project not found" };
   const workspaceId = project.data.workspace_id;
 
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
-  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
+  if (ws.error || !ws.data) return { error: "Workspace not found" };
   const canCreate = await checkCanCreateDecision(ws.data.owner_id, workspaceId);
   if (!canCreate.allowed) return { error: canCreate.error };
 
   if (!title || title.trim().length === 0) {
-    return { error: "Il titolo è obbligatorio" };
+    return { error: "Title is required" };
   }
 
   // Parse options (one per line)
@@ -112,7 +112,7 @@ export async function createDecisionAction(
 
   if (error) {
     console.error("Error creating decision:", error);
-    return { error: "Errore nella creazione della decisione" };
+    return { error: "Error creating decision" };
   }
 
   if (linked_decision_id) {
@@ -147,11 +147,11 @@ export async function updateDecisionAction(
   const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
 
   if (!id) {
-    return { error: "ID decisione mancante" };
+    return { error: "Missing decision ID" };
   }
 
   if (!title || title.trim().length === 0) {
-    return { error: "Il titolo è obbligatorio" };
+    return { error: "Title is required" };
   }
 
   const options = optionsRaw
@@ -192,7 +192,7 @@ export async function updateDecisionAction(
 
   if (error) {
     console.error("Error updating decision:", error);
-    return { error: "Errore nell'aggiornamento della decisione" };
+    return { error: "Error updating decision" };
   }
 
   if (linked_decision_id) {
@@ -217,10 +217,10 @@ export async function updateDecisionStatusAction(
   const supabase = await createClient();
 
   if (!decisionId) {
-    return { error: "ID decisione mancante" };
+    return { error: "Missing decision ID" };
   }
   if (!VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
-    return { error: "Stato non valido" };
+    return { error: "Invalid status" };
   }
 
   const { error } = await supabase
@@ -230,7 +230,7 @@ export async function updateDecisionStatusAction(
 
   if (error) {
     console.error("Error updating decision status:", error);
-    return { error: "Errore nell'aggiornamento dello stato" };
+    return { error: "Error updating status" };
   }
 
   revalidatePath("/dashboard/decisions");
@@ -252,7 +252,7 @@ export async function deleteDecisionAction(id: string): Promise<ActionState> {
 
   if (error) {
     console.error("Error deleting decision:", error);
-    return { error: "Errore nell'eliminazione della decisione" };
+    return { error: "Error deleting decision" };
   }
 
   revalidatePath("/dashboard/decisions");

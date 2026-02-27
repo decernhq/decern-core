@@ -38,14 +38,14 @@ export async function checkCanCreateWorkspace(userId: string): Promise<{
   error?: string;
 }> {
   const limits = await getPlanLimits(userId);
-  if (!limits) return { allowed: false, error: "Impossibile verificare i limiti del piano" };
+  if (!limits) return { allowed: false, error: "Unable to verify plan limits" };
 
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("workspaces")
     .select("id", { count: "exact", head: true })
     .eq("owner_id", userId);
-  if (error) return { allowed: false, error: "Errore di verifica" };
+  if (error) return { allowed: false, error: "Verification error" };
   const current = count ?? 0;
 
   if (!withinLimit(limits.workspaces_limit, current)) {
@@ -68,14 +68,14 @@ export async function checkCanCreateProject(
   workspaceId: string
 ): Promise<{ allowed: boolean; error?: string }> {
   const limits = await getPlanLimits(workspaceOwnerId);
-  if (!limits) return { allowed: false, error: "Impossibile verificare i limiti del piano" };
+  if (!limits) return { allowed: false, error: "Unable to verify plan limits" };
 
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("projects")
     .select("id", { count: "exact", head: true })
     .eq("workspace_id", workspaceId);
-  if (error) return { allowed: false, error: "Errore di verifica" };
+  if (error) return { allowed: false, error: "Verification error" };
   const current = count ?? 0;
 
   if (!withinLimit(limits.projects_limit, current)) {
@@ -112,7 +112,7 @@ export async function checkCanInviteToWorkspace(
   workspaceId: string
 ): Promise<{ allowed: boolean; error?: string }> {
   const limits = await getPlanLimits(workspaceOwnerId);
-  if (!limits) return { allowed: false, error: "Impossibile verificare i limiti del piano" };
+  if (!limits) return { allowed: false, error: "Unable to verify plan limits" };
 
   const current = await countWorkspaceMembers(workspaceId);
   if (!withinLimit(limits.users_per_workspace_limit, current)) {
@@ -152,7 +152,7 @@ export async function checkCanCreateDecision(
   workspaceId: string
 ): Promise<{ allowed: boolean; error?: string }> {
   const limits = await getPlanLimits(workspaceOwnerId);
-  if (!limits) return { allowed: false, error: "Impossibile verificare i limiti del piano" };
+  if (!limits) return { allowed: false, error: "Unable to verify plan limits" };
 
   const current = await countDecisionsInWorkspace(workspaceId);
   if (!withinLimit(limits.decisions_limit, current)) {
@@ -201,7 +201,7 @@ export async function checkCanUseAiGeneration(userId: string): Promise<{
   error?: string;
 }> {
   const limits = await getPlanLimits(userId);
-  if (!limits) return { allowed: false, error: "Impossibile verificare i limiti del piano" };
+  if (!limits) return { allowed: false, error: "Unable to verify plan limits" };
 
   const current = await getAiGenerationsUsageCount(userId);
   if (!withinLimit(limits.ai_generations_per_month, current)) {
@@ -231,7 +231,7 @@ export async function incrementAiUsage(userId: string): Promise<{ ok: boolean; e
   );
   if (error) {
     console.error("Error incrementing AI usage:", error);
-    return { ok: false, error: "Errore nell'aggiornamento dell'uso" };
+    return { ok: false, error: "Error updating usage" };
   }
   return { ok: true };
 }
@@ -251,7 +251,7 @@ export async function reserveAiUsageSlot(userId: string): Promise<{
   });
   if (error) {
     console.error("Error reserving AI usage slot:", error);
-    return { allowed: false, error: "Errore di verifica limite" };
+    return { allowed: false, error: "Limit verification error" };
   }
   const allowed = data === true || (Array.isArray(data) && data[0] === true);
   if (allowed) return { allowed: true };

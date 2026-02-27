@@ -32,7 +32,7 @@
   },
   "policiesPage": {
     "title": "Policies",
-    "subtitle": "Configure validation and enforcement rules for this workspace (Business plan)."
+    "subtitle": "Configure validation and enforcement rules for this workspace (Team and Business)."
   },
   "home": {
     "tagline": "Your team's technical decision register.",
@@ -225,7 +225,7 @@
     "team": {
       "name": "Team",
       "description": "For growing teams",
-      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)*", "CI Blocking for rule-based High Impact changes"]
+      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "CI Blocking for High Impact changes", "Judge tolerance"]
     },
     "business": {
       "name": "Business",
@@ -270,6 +270,12 @@
   "projects": {
     "title": "Projects",
     "subtitle": "Manage your projects and their decisions",
+    "backToProjects": "← Back to projects",
+    "totalLabel": "Total",
+    "proposedLabel": "Proposed",
+    "approvedLabel": "Approved",
+    "otherStatusLabel": "Other",
+    "firstDecisionHint": "Start by documenting the first technical decision for this project.",
     "newProject": "+ New project",
     "noProjects": "No projects",
     "noProjectsHint": "Start by creating your first project to organize decisions.",
@@ -394,7 +400,7 @@
     "retry": "Retry",
     "loadingWorkspace": "Loading workspace…",
     "policiesSectionTitle": "Decision Gate policies",
-    "policiesSectionSubtitle": "Validation and enforcement rules for CI (Business plan). Query params on the gate override these when provided.",
+    "policiesSectionSubtitle": "Decision Gate policies for CI. Query params on the gate override these when provided.",
     "requireLinkedPR": "Require linked PR",
     "requireLinkedPRHint": "Decision must have at least one linked PR to pass validation.",
     "requireApproved": "Require approved status",
@@ -402,7 +408,7 @@
     "enforce": "Enforce (blocking mode)",
     "enforceHint": "When off, the gate reports only (observation).",
     "judgeBlocking": "Judge blocking",
-    "judgeBlockingHint": "When on, the LLM judge can block the gate; when off, judge is advisory only.",
+    "judgeBlockingHint": "When on, the LLM judge can block the gate (Team and Business); when off, judge is advisory only.",
     "judgeTolerancePercent": "Judge tolerance (%)",
     "judgeToleranceHint": "Optional 0–100. Leave empty for default.",
     "policiesSaved": "Policies saved.",

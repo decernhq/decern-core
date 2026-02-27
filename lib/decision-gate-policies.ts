@@ -112,11 +112,11 @@ export function mergeValidateParams(
 
 /**
  * 4. LLM as judge
- * Free, Team: advisory only (client must not block CI on allowed: false).
- * Business+: can use Judge to block CI; optional tolerance is client-side.
+ * Free: always advisory (client must not block CI on allowed: false).
+ * Team and Business+: can block when workspace policy "Judge blocking" is on; otherwise advisory.
  */
 export function isJudgeAdvisory(planId: PlanId): boolean {
-  return planId === "free" || planId === "team";
+  return planId === "free";
 }
 
 export const JUDGE_ALLOWED_PLANS = new Set<PlanId>(["free", "team", "business", "enterprise", "governance"]);

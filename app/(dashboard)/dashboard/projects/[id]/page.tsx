@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations, getLocale } from "next-intl/server";
 import { getProjectById } from "@/lib/queries/projects";
 import { getDecisionsByProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,14 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
+  const [t, tDecisions, tDashboard, tCommon, locale] = await Promise.all([
+    getTranslations("projects"),
+    getTranslations("decisions"),
+    getTranslations("dashboard"),
+    getTranslations("common"),
+    getLocale(),
+  ]);
+  const dateLocale = locale === "it" ? "it-IT" : "en-US";
 
   const [project, decisions] = await Promise.all([
     getProjectById(id),
@@ -30,7 +39,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           href="/dashboard/projects"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Torna ai progetti
+          {t("backToProjects")}
         </Link>
         <div className="mt-2 flex items-start justify-between">
           <div>
@@ -41,10 +50,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           </div>
           <div className="flex gap-2">
             <Link href={`/dashboard/projects/${id}/edit`}>
-              <Button variant="outline">Modifica</Button>
+              <Button variant="outline">{tCommon("edit")}</Button>
             </Link>
             <Link href={`/dashboard/decisions/new?project=${id}`}>
-              <Button>+ Nuova decisione</Button>
+              <Button>{tDashboard("newDecision")}</Button>
             </Link>
           </div>
         </div>
@@ -53,25 +62,25 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       {/* Project stats */}
       <div className="mb-6 grid gap-4 sm:grid-cols-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-sm font-medium text-gray-500">Totale</p>
+          <p className="text-sm font-medium text-gray-500">{t("totalLabel")}</p>
           <p className="mt-1 text-2xl font-semibold text-gray-900">
             {decisions.length}
           </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-sm font-medium text-yellow-600">Proposte</p>
+          <p className="text-sm font-medium text-yellow-600">{t("proposedLabel")}</p>
           <p className="mt-1 text-2xl font-semibold text-gray-900">
             {decisions.filter((d) => d.status === "proposed").length}
           </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-sm font-medium text-green-600">Approvate</p>
+          <p className="text-sm font-medium text-green-600">{t("approvedLabel")}</p>
           <p className="mt-1 text-2xl font-semibold text-gray-900">
             {decisions.filter((d) => d.status === "approved").length}
           </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-sm font-medium text-gray-500">Altre</p>
+          <p className="text-sm font-medium text-gray-500">{t("otherStatusLabel")}</p>
           <p className="mt-1 text-2xl font-semibold text-gray-900">
             {
               decisions.filter(
@@ -92,16 +101,16 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   ADR REF
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Titolo
+                  {tDecisions("titleCol")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Stato
+                  {tDecisions("statusCol")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Tags
+                  {tDecisions("tags")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                  Data
+                  {tDecisions("dateCol")}
                 </th>
               </tr>
             </thead>
@@ -149,7 +158,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                    {new Date(decision.created_at).toLocaleDateString("it-IT")}
+                    {new Date(decision.created_at).toLocaleDateString(dateLocale)}
                   </td>
                 </tr>
               ))}
@@ -159,13 +168,13 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       ) : (
         <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
           <h3 className="text-sm font-medium text-gray-900">
-            Nessuna decisione
+            {tDecisions("noDecisionsInProject")}
           </h3>
           <p className="mt-1 text-sm text-gray-500">
-            Inizia documentando la prima decisione tecnica per questo progetto.
+            {t("firstDecisionHint")}
           </p>
           <Link href={`/dashboard/decisions/new?project=${id}`}>
-            <Button className="mt-6">Crea decisione</Button>
+            <Button className="mt-6">{tDecisions("createDecision")}</Button>
           </Link>
         </div>
       )}

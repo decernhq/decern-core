@@ -67,8 +67,9 @@ export default async function WorkspacePage() {
   ]);
 
   const isOwner = user.id === workspace.owner_id;
+  /** Team can set Judge tolerance; Business+ can set all policies (validate + judge). */
   const showPolicies =
-    isOwner && BUSINESS_PLANS.includes(planId);
+    isOwner && (planId === "team" || BUSINESS_PLANS.includes(planId));
   const policiesInitial = {
     require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
     require_approved: policiesRow?.data?.require_approved ?? true,
@@ -123,7 +124,7 @@ export default async function WorkspacePage() {
           <h2 className="text-lg font-semibold text-gray-900">{t("policiesSectionTitle")}</h2>
           <p className="mt-1 text-sm text-gray-500">{t("policiesSectionSubtitle")}</p>
           <div className="mt-4">
-            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} />
+            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} planId={planId} />
           </div>
         </div>
       )}

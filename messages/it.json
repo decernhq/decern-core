@@ -32,7 +32,7 @@
   },
   "policiesPage": {
     "title": "Policy",
-    "subtitle": "Configura le regole di validazione e enforcement per questo workspace (piano Business)."
+    "subtitle": "Configura le regole di validazione e enforcement per questo workspace (piano Team e Business)."
   },
   "home": {
     "tagline": "Il registro delle decisioni tecniche del tuo team.",
@@ -225,7 +225,7 @@
     "team": {
       "name": "Team",
       "description": "Per team in crescita",
-      "features": ["1 workspace", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (advisory)*", "CI Blocking per modifiche High Impact rule-based"]
+      "features": ["1 workspace", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (può bloccare)*", "CI Blocking per High Impact changes", "Judge tolerance"]
     },
     "business": {
       "name": "Business",
@@ -270,6 +270,12 @@
   "projects": {
     "title": "Progetti",
     "subtitle": "Gestisci i tuoi progetti e le relative decisioni",
+    "backToProjects": "← Torna ai progetti",
+    "totalLabel": "Totale",
+    "proposedLabel": "Proposte",
+    "approvedLabel": "Approvate",
+    "otherStatusLabel": "Altre",
+    "firstDecisionHint": "Inizia documentando la prima decisione tecnica per questo progetto.",
     "newProject": "+ Nuovo progetto",
     "noProjects": "Nessun progetto",
     "noProjectsHint": "Inizia creando il tuo primo progetto per organizzare le decisioni.",
@@ -394,7 +400,7 @@
     "retry": "Riprova",
     "loadingWorkspace": "Caricamento workspace…",
     "policiesSectionTitle": "Policy Decision Gate",
-    "policiesSectionSubtitle": "Regole di validazione e enforcement per la CI (piano Business). I parametri in query sul gate hanno priorità se forniti.",
+    "policiesSectionSubtitle": "Policy del Decision Gate per la CI. I parametri in query sul gate hanno priorità se forniti.",
     "requireLinkedPR": "Richiedi PR collegata",
     "requireLinkedPRHint": "La decisione deve avere almeno una PR collegata per passare la validazione.",
     "requireApproved": "Richiedi status approvato",
@@ -402,7 +408,7 @@
     "enforce": "Enforcement (modalità blocco)",
     "enforceHint": "Se disattivato, il gate segnala solo (osservazione).",
     "judgeBlocking": "Judge in blocco",
-    "judgeBlockingHint": "Se attivo, il judge LLM può bloccare il gate; se disattivo è solo advisory.",
+    "judgeBlockingHint": "Se attivo, il judge LLM può bloccare il gate (Team e Business); se disattivo è solo advisory.",
     "judgeTolerancePercent": "Tolleranza judge (%)",
     "judgeToleranceHint": "Opzionale 0–100. Lascia vuoto per il default.",
     "policiesSaved": "Policy salvate.",

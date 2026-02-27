@@ -18,9 +18,12 @@ export type WorkspacePoliciesInitial = {
 type Props = {
   workspaceId: string;
   initial: WorkspacePoliciesInitial;
+  /** When "team", only judge fields are shown. Business+ shows all policies. */
+  planId: string;
 };
 
-export function WorkspacePoliciesForm({ workspaceId, initial }: Props) {
+export function WorkspacePoliciesForm({ workspaceId, initial, planId }: Props) {
+  const showValidatePolicies = planId !== "team";
   const t = useTranslations("workspace");
   const tCommon = useTranslations("common");
   const [requireLinkedPR, setRequireLinkedPR] = useState(initial.require_linked_pr);
@@ -58,47 +61,51 @@ export function WorkspacePoliciesForm({ workspaceId, initial }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={requireLinkedPR}
-            onChange={(e) => setRequireLinkedPR(e.target.checked)}
-            disabled={isPending}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span className="text-sm font-medium text-gray-700">{t("requireLinkedPR")}</span>
-        </label>
-        <p className="w-full text-xs text-gray-500 sm:ml-6">{t("requireLinkedPRHint")}</p>
-      </div>
+      {showValidatePolicies && (
+        <>
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={requireLinkedPR}
+                onChange={(e) => setRequireLinkedPR(e.target.checked)}
+                disabled={isPending}
+                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm font-medium text-gray-700">{t("requireLinkedPR")}</span>
+            </label>
+            <p className="w-full text-xs text-gray-500 sm:ml-6">{t("requireLinkedPRHint")}</p>
+          </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={requireApproved}
-            onChange={(e) => setRequireApproved(e.target.checked)}
-            disabled={isPending}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span className="text-sm font-medium text-gray-700">{t("requireApproved")}</span>
-        </label>
-        <p className="w-full text-xs text-gray-500 sm:ml-6">{t("requireApprovedHint")}</p>
-      </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={requireApproved}
+                onChange={(e) => setRequireApproved(e.target.checked)}
+                disabled={isPending}
+                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm font-medium text-gray-700">{t("requireApproved")}</span>
+            </label>
+            <p className="w-full text-xs text-gray-500 sm:ml-6">{t("requireApprovedHint")}</p>
+          </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
-        <label className="flex cursor-pointer items-center gap-2">
-          <input
-            type="checkbox"
-            checked={enforce}
-            onChange={(e) => setEnforce(e.target.checked)}
-            disabled={isPending}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span className="text-sm font-medium text-gray-700">{t("enforce")}</span>
-        </label>
-        <p className="w-full text-xs text-gray-500 sm:ml-6">{t("enforceHint")}</p>
-      </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                checked={enforce}
+                onChange={(e) => setEnforce(e.target.checked)}
+                disabled={isPending}
+                className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+              />
+              <span className="text-sm font-medium text-gray-700">{t("enforce")}</span>
+            </label>
+            <p className="w-full text-xs text-gray-500 sm:ml-6">{t("enforceHint")}</p>
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap">
         <label className="flex cursor-pointer items-center gap-2">

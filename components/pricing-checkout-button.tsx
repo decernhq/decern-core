@@ -42,11 +42,11 @@ export function PricingCheckoutButton({
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || "Errore durante l'upgrade");
+        alert(data.error || "Error during upgrade");
       }
     } catch (error) {
       console.error("Checkout error:", error);
-      alert("Errore durante l'upgrade");
+      alert("Error during upgrade");
     } finally {
       setLoading(false);
     }

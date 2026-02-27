@@ -57,14 +57,14 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
   // Atomic reserve: consume one slot before calling OpenAI (attack-proof under concurrency)
   const usageCheck = await reserveAiUsageSlot(user.id);
   if (!usageCheck.allowed) {
     return NextResponse.json(
-      { error: usageCheck.error ?? "Limite generazioni AI raggiunto" },
+      { error: usageCheck.error ?? "AI generation limit reached" },
       { status: 403 }
     );
   }
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.OPEN_AI_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
-      { error: "OPEN_AI_API_KEY non configurata" },
+      { error: "OPEN_AI_API_KEY not configured" },
       { status: 500 }
     );
   }
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     body = await request.json();
   } catch {
     return NextResponse.json(
-      { error: "Body JSON non valido" },
+      { error: "Invalid JSON body" },
       { status: 400 }
     );
   }
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   const text = typeof body.text === "string" ? body.text.trim() : "";
   if (!text) {
     return NextResponse.json(
-      { error: "Campo 'text' obbligatorio" },
+      { error: "'text' field is required" },
       { status: 400 }
     );
   }
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       const err = await res.text();
       console.error("OpenAI API error:", res.status, err);
       return NextResponse.json(
-        { error: "Errore durante la generazione" },
+        { error: "Error during generation" },
         { status: 502 }
       );
     }
@@ -134,12 +134,12 @@ export async function POST(request: NextRequest) {
     const raw = data.choices?.[0]?.message?.content?.trim();
     if (!raw) {
       return NextResponse.json(
-        { error: "Risposta API vuota" },
+        { error: "Empty API response" },
         { status: 502 }
       );
     }
 
-    // Rimuovi eventuale markdown code block
+    // Strip markdown code block if present
     const jsonStr = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "");
     const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.error("Generate from text error:", e);
     return NextResponse.json(
-      { error: "Errore durante la generazione" },
+      { error: "Error during generation" },
       { status: 500 }
     );
   }

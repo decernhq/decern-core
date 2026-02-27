@@ -12,7 +12,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 | Plan   | Linked PR      | Status              | Enforcement                                      |
 |--------|----------------|---------------------|--------------------------------------------------|
-| **Free**   | Not checked    | Not checked         | Always observation (never block).                |
+| **Free**   | Not checked    | Not checked         | Always observation (never block). **Limit:** 7 observation calls per workspace (lifetime). After 7, `status` is omitted and `message` suggests upgrading. |
 | **Team**   | Not checked    | Checked only when `highImpact=true` | Blocking only for High Impact Changes (`highImpact=true`). |
 | **Business+** | Optional: require with `requireLinkedPR=true` | Optional: require with `requireApproved=true` (default) | Default on; disable with `enforce=false`.        |
 
@@ -37,8 +37,9 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 | Status | Body | Meaning |
 |--------|------|---------|
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "status": "approved" }` | Decision found and approved (enforcement mode). |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>" }` | Observation mode (Free, or Team without highImpact, or Business with enforce=false); no `status`, CI must not fail. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": false, "status": "approved" }` | Decision found and approved (blocking mode). CI may pass. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": true, "status": "<status>" }` | Observation mode; `status` included for decern-gate to show warning if not approved. CI must not fail. |
+| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": true, "message": "CI Observation limit reached..." }` | Free plan, observation limit (7) exceeded; `status` omitted. CI must not fail. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |
@@ -90,7 +91,7 @@ After validation (validate), the **decern-gate** CLI can call the **judge** endp
 - **Method:** `POST`
 - **URL:** `/api/decision-gate/judge` (path configurable client-side via `DECERN_JUDGE_PATH`).
 - **Authentication:** same as validate — header `Authorization: Bearer <DECERN_CI_TOKEN>`.
-- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** and **Team** the Judge is **advisory** (BYO LLM): the client may show the result but must not fail the pipeline on `allowed: false`. On **Business** (and Enterprise/Governance) the Judge can **block** the CI when `allowed: false`, unless the workspace policy has **Judge blocking** disabled (then it remains advisory). The `advisory` field in the response reflects plan and workspace policy. On Free, no billing is required; on Team and above, a payment method must be configured.
+- **Plans:** Judge is available on **all plans** (Free, Team, Business, Enterprise, Governance). On **Free** the Judge is always **advisory** (BYO LLM): the client must not fail the pipeline on `allowed: false`. On **Team** and **Business+** the Judge can **block** the CI when `allowed: false` if the workspace policy **Judge blocking** is on (default: on); when off, judge is advisory. Team can also configure **Judge tolerance (%)** from the Dashboard. The `advisory` field in the response reflects plan and workspace policy. On Free, no billing is required; on Team and above, a payment method must be configured.
 
 ## Request body (JSON)
 
@@ -152,18 +153,31 @@ Example with UUID:
 
 Always **status 200 OK** (even when the gate blocks: blocking is indicated by `allowed: false`).
 
-| Field     | Type    | Description |
-|-----------|---------|-------------|
-| `allowed` | boolean | `true` = the change is consistent with the decision; `false` = the LLM judged the diff not aligned. |
-| `reason`  | string (optional) | Short explanation (for logs or CI output). |
-| `advisory`| boolean (optional) | **Advisory only** when true: the client must not fail the pipeline on `allowed: false`. Set for Free/Team, or for Business+ when the workspace policy has **Judge blocking** disabled. When absent/false (Business+ with blocking), the client may block the CI on `allowed: false`. |
+| Field            | Type    | Description |
+|------------------|---------|-------------|
+| `allowed`        | boolean | `true` = the change meets the confidence threshold; `false` = below threshold or LLM judged not aligned. |
+| `reason`         | string (optional) | Short explanation (for logs or CI output). |
+| `advisory`       | boolean (optional) | **Advisory only** when true: the client must not fail the pipeline on `allowed: false`. Set for Free (always), or for Team/Business+ when the workspace policy has **Judge blocking** disabled. When absent/false (Team/Business+ with blocking on), the client may block the CI on `allowed: false`. |
+| `confidence`     | number (optional) | Score 0–1 from the judge (e.g. 0.85 = 85%). The CLI can compare to `DECERN_JUDGE_MIN_CONFIDENCE` or the workspace tolerance. |
+| `advisoryMessage`| string (optional) | When `allowed: true` but confidence &lt; 100%, a short note on what was not fully aligned. Always present in that case so the CLI can show “Passed at X%; advisory: …”. |
+
+### Confidence and threshold
+
+The LLM returns a **score** (0–100) and optional **advisoryNotes**. The backend applies a **threshold** to decide `allowed`:
+
+- **Free:** always 80% (not configurable).
+- **Team:** workspace **Judge tolerance (%)** if set (Dashboard → Workspace → Policies); otherwise 80%.
+- **Business+:** workspace **Judge tolerance (%)** if set; if unset, 80%.
+
+If score ≥ threshold → `allowed: true`. If score &lt; 100%, `advisoryMessage` is set from the LLM’s advisory notes so the CLI can show a “passed but consider…” message.
 
 Examples:
 
-- Pass (Team): `{"allowed": true, "reason": "Change aligns with ADR-002.", "advisory": true}`
-- Block (Business): `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision."}` (no `advisory` → client can block CI)
+- Pass (Team, blocking on): `{"allowed": true, "reason": "Change aligns with ADR-002.", "advisory": false, "confidence": 1}`
+- Pass with advisory (e.g. 85%): `{"allowed": true, "reason": "Change aligns.", "advisory": true, "confidence": 0.85, "advisoryMessage": "Error handling could better match the decision."}`
+- Block (Team/Business): `{"allowed": false, "reason": "Diff introduces a new DB column not mentioned in the decision.", "confidence": 0}` (no `advisory` or `advisory: false` → client can block CI)
 
-On error (invalid token, decision not found, LLM timeout, network error to the LLM): response **200** with `{"allowed": false, "reason": "<appropriate message>"}` (fail-closed). When `advisory` is true, the client must not block the pipeline; when absent (Business+), the client may block on `allowed: false`.
+On error (invalid token, decision not found, LLM timeout, network error to the LLM): response **200** with `{"allowed": false, "reason": "<appropriate message>"}` (fail-closed). When `advisory` is true, the client must not block the pipeline; when absent/false (Team/Business+ with Judge blocking on), the client may block on `allowed: false`.
 
 ## Environment variables (backend)
 
@@ -207,6 +221,6 @@ To prevent abuse and cost overruns the following measures are in place:
 | **Rate limit (workspace)** | Maximum N requests per workspace per minute (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Above the limit: `200` with `allowed: false`, `reason: "Rate limit exceeded. Try again later."` without calling the LLM. |
 | **Rate limit (owner)** | Maximum M requests per owner (account) per minute across all workspaces (default 120, env `JUDGE_RATE_LIMIT_PER_MINUTE_OWNER`). Same response when exceeded. Prevents circumventing the workspace limit by using multiple workspaces. |
 | **Billing required** | On **Team** and above, the workspace owner must have `stripe_customer_id` (payment configured). On **Free**, Judge is available without billing (BYO LLM, advisory). |
-| **Plans** | Judge is available on Free (advisory), Team (advisory), and Business/Enterprise/Governance (can block). Unsupported plan: `allowed: false`, `reason: "Judge is not available for this plan."`. |
+| **Plans** | Judge is available on Free (always advisory), Team and Business/Enterprise/Governance (can block when workspace **Judge blocking** is on). Unsupported plan: `allowed: false`, `reason: "Judge is not available for this plan."`. |
 | **Idempotent billing** | The billing cron sets `billed_at` only for workspaces whose owners were successfully billed. A second run for the same period does not create duplicate invoices. |
 | **Failed payment** | On `invoice.payment_failed` for a Judge invoice (description “Judge usage YYYY-MM”), the Stripe webhook resets `billed_at` for that customer/period so the cron can retry billing. |

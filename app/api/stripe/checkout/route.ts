@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: "Non autenticato" }, { status: 401 });
+      return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const body = await request.json().catch(() => ({}));
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Checkout error:", error);
     return NextResponse.json(
-      { error: "Errore nella creazione del checkout" },
+      { error: "Error creating checkout session" },
       { status: 500 }
     );
   }

@@ -36,6 +36,7 @@ function createJudgeRequest(
 
 const mockWorkspaceMaybeSingle = vi.fn();
 const mockSubscriptionMaybeSingle = vi.fn();
+const mockWorkspacePoliciesMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
 const mockFetch = vi.fn();
@@ -55,10 +56,12 @@ vi.mock("@/lib/supabase/service-role", () => ({
             ? chainEqMaybe(mockDecisionMaybeSingle)
             : table === "subscriptions"
               ? { eq: () => ({ maybeSingle: mockSubscriptionMaybeSingle }) }
-              : {
-                  maybeSingle:
-                    table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
-                },
+              : table === "workspace_policies"
+                ? { maybeSingle: mockWorkspacePoliciesMaybeSingle }
+                : {
+                    maybeSingle:
+                      table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
+                  },
       }),
     }),
     rpc: (_name: string, _args: unknown) => mockRpc(),
@@ -91,6 +94,10 @@ describe("POST /api/decision-gate/judge", () => {
         decision: "We choose PostgreSQL.",
         consequences: "We get ACID.",
       },
+      error: null,
+    });
+    mockWorkspacePoliciesMaybeSingle.mockResolvedValue({
+      data: { judge_blocking: true, judge_tolerance_percent: null },
       error: null,
     });
     mockProjectMaybeSingle.mockResolvedValue({
@@ -191,7 +198,12 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with ADR.",
+      advisory: true,
+      confidence: 1,
+    });
     expect(mockFetch).toHaveBeenCalled();
   });
 
@@ -228,7 +240,12 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with ADR.",
+      advisory: true,
+      confidence: 1,
+    });
     expect(mockFetch).toHaveBeenCalled();
   });
 
@@ -338,6 +355,27 @@ describe("POST /api/decision-gate/judge", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it("Team with Judge blocking off => 200 allowed: true, advisory: true", async () => {
+    mockWorkspacePoliciesMaybeSingle.mockResolvedValueOnce({
+      data: { judge_blocking: false, judge_tolerance_percent: null },
+      error: null,
+    });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with ADR.",
+      advisory: true,
+      confidence: 1,
+    });
+  });
+
   it("LLM returns allowed: true => 200 allowed: true", async () => {
     const req = createJudgeRequest(
       { diff: "diff --git a/db b/db\n--- a/db\n+++ b/db\n@@ -0,0 +1 @@\n+postgres", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
@@ -347,7 +385,12 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with ADR.", advisory: true });
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with ADR.",
+      advisory: false,
+      confidence: 1,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.openai.com/v1/chat/completions",
       expect.objectContaining({
@@ -355,6 +398,39 @@ describe("POST /api/decision-gate/judge", () => {
         headers: expect.objectContaining({ Authorization: "Bearer sk-test-key" }),
       })
     );
+  });
+
+  it("LLM returns score 85 and advisoryNotes => 200 allowed: true with confidence and advisoryMessage", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          choices: [
+            {
+              message: {
+                content:
+                  '{"allowed": true, "reason": "Change aligns.", "score": 85, "advisoryNotes": "Error handling could better match the decision."}',
+              },
+            },
+          ],
+          usage: { prompt_tokens: 100, completion_tokens: 30 },
+        }),
+    });
+    const req = createJudgeRequest(
+      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
+      `Bearer ${VALID_TOKEN}`
+    );
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns.",
+      advisory: false,
+      confidence: 0.85,
+      advisoryMessage: "Error handling could better match the decision.",
+    });
   });
 
   it("LLM returns allowed: false => 200 allowed: false", async () => {
@@ -383,7 +459,8 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({
       allowed: false,
       reason: "Diff introduces a new DB column not mentioned in the decision.",
-      advisory: true,
+      advisory: false,
+      confidence: 0,
     });
   });
 
@@ -470,7 +547,12 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({ allowed: true, reason: "Change aligns with the decision.", advisory: true });
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with the decision.",
+      advisory: false,
+      confidence: 1,
+    });
     expect(mockFetch).toHaveBeenCalledWith(
       "https://api.anthropic.com/v1/messages",
       expect.objectContaining({

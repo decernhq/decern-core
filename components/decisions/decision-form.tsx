@@ -359,7 +359,7 @@ export function DecisionForm({
             required
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
-            <option value="">Seleziona un progetto...</option>
+            <option value="">Select a project...</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
@@ -479,7 +479,7 @@ export function DecisionForm({
           ))}
           {options.length === 0 && (
             <p className="text-sm text-gray-500">
-              Nessuna opzione. Clicca &quot;Aggiungi opzione&quot; per elencare le alternative valutate.
+              No options. Click &quot;Add option&quot; to list the alternatives considered.
             </p>
           )}
         </div>
@@ -601,7 +601,7 @@ export function DecisionForm({
           ))}
           {pullRequestUrls.length === 0 && (
             <p className="text-sm text-gray-500">
-              Nessuna pull request. Clicca &quot;Aggiungi PR&quot; per collegare una o più PR a questa decisione.
+              No pull requests. Click &quot;Add PR&quot; to link one or more PRs to this decision.
             </p>
           )}
         </div>
@@ -654,7 +654,7 @@ export function DecisionForm({
           ))}
           {externalLinks.length === 0 && (
             <p className="text-sm text-gray-500">
-              Nessun link. Clicca &quot;Aggiungi link&quot; per inserire riferimenti esterni (RFC, documentazione, ecc.).
+              No links. Click &quot;Add link&quot; to add external references (RFC, documentation, etc.).
             </p>
           )}
         </div>
@@ -697,12 +697,12 @@ export function DecisionForm({
             disabled={!currentProjectId}
             className="w-full justify-center sm:w-auto"
           >
-            Seleziona decisione da sostituire
+            Select decision to supersede
           </Button>
         )}
         {!currentProjectId && !decision && (
           <p className="mt-1 text-xs text-gray-500">
-            Seleziona prima un progetto per cercare la decisione che questa sostituirà.
+            Select a project first to search for the decision this will supersede.
           </p>
         )}
         {currentProjectId && (
@@ -726,7 +726,7 @@ export function DecisionForm({
           >
             <div className="border-b border-gray-200 p-4">
               <h2 id="linked-modal-title" className="text-lg font-semibold text-gray-900">
-                Seleziona la decisione che questa sostituisce
+                Select the decision this supersedes
               </h2>
               {currentProjectId && (
                 <p className="mt-0.5 text-sm text-gray-500">
@@ -746,8 +746,8 @@ export function DecisionForm({
               {filteredLinkedDecisions.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-500">
                   {projectDecisions.length === 0
-                    ? "Nessuna decisione in questo progetto."
-                    : "Nessun risultato per la ricerca."}
+                    ? "No decisions in this project."
+                    : "No search results."}
                 </p>
               ) : (
                 <ul className="space-y-1">

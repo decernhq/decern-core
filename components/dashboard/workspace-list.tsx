@@ -56,7 +56,7 @@ export function WorkspaceList({
     <div className="rounded-xl border border-gray-200 bg-white p-6">
       <h2 className="text-lg font-semibold text-gray-900">I tuoi workspace</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Seleziona un workspace dalla sidebar per vedere i suoi progetti. Puoi rinominare quelli di cui sei proprietario.
+        Select a workspace from the sidebar to see its projects. You can rename the ones you own.
       </p>
       <ul className="mt-4 space-y-2">
         {workspaces.map((w) => {

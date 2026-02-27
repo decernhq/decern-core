@@ -64,7 +64,7 @@ export function WorkspaceMembersSection({
           <div className="mt-6 border-t border-gray-200 pt-6">
             <h3 className="text-sm font-medium text-gray-700">Invita un utente al workspace</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Inserisci l&apos;email e condividi il link (valido 7 giorni). L&apos;invitato vedrà tutti i progetti del workspace.
+              Enter the email and share the link (valid 7 days). The invitee will see all workspace projects.
             </p>
             <div className="mt-3">
               <InviteWorkspaceForm workspaceId={workspaceId} />

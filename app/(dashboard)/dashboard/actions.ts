@@ -9,16 +9,16 @@ import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { generateCiToken, hashCiToken } from "@/lib/ci-token";
 
 /**
- * Crea il workspace di default (se mancante), imposta il cookie e revalida.
- * Usato dalla vista "Preparando il tuo workspace" al primo accesso.
+ * Create the default workspace (if missing), set the cookie and revalidate.
+ * Used by the "Preparing your workspace" view on first access.
  */
 export async function prepareWorkspaceAction(): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const defaultWs = await getOrCreateDefaultWorkspace();
-  if (!defaultWs) return { error: "Impossibile creare il workspace" };
+  if (!defaultWs) return { error: "Unable to create workspace" };
 
   const cookieStore = await cookies();
   cookieStore.set(WORKSPACE_COOKIE_NAME, defaultWs.id, WORKSPACE_COOKIE_OPTIONS);
@@ -27,18 +27,18 @@ export async function prepareWorkspaceAction(): Promise<{ error?: string }> {
 }
 
 /**
- * Imposta il workspace selezionato (cookie) e revalida.
- * È consentito solo se il workspace è tra quelli accessibili (primi N per creazione, in base al piano).
+ * Set the selected workspace (cookie) and revalidate.
+ * Allowed only if the workspace is among those accessible (first N by creation, based on plan).
  */
 export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ error?: string }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const workspaces = await getWorkspacesForCurrentUser();
   const canAccess = workspaces.some((w) => w.id === workspaceId);
   if (!canAccess) {
-    return { error: "Non hai il piano per accedere a questo workspace." };
+    return { error: "Your plan does not include access to this workspace." };
   }
 
   const cookieStore = await cookies();
@@ -56,12 +56,12 @@ export async function createWorkspaceAction(
 ): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const canCreate = await checkCanCreateWorkspace(user.id);
   if (!canCreate.allowed) return { error: canCreate.error };
 
-  const name = (formData.get("name") as string)?.trim() || "Nuovo workspace";
+  const name = (formData.get("name") as string)?.trim() || "New workspace";
   const { data, error } = await supabase
     .from("workspaces")
     .insert({ owner_id: user.id, name })
@@ -70,7 +70,7 @@ export async function createWorkspaceAction(
 
   if (error) {
     console.error("Error creating workspace:", error);
-    return { error: "Errore nella creazione del workspace" };
+    return { error: "Error creating workspace" };
   }
 
   const cookieStore = await cookies();
@@ -83,7 +83,7 @@ export async function createWorkspaceAction(
 }
 
 /**
- * Rinomina un workspace. Solo il proprietario può farlo.
+ * Rename a workspace. Only the owner can do this.
  */
 export async function renameWorkspaceAction(
   workspaceId: string,
@@ -91,10 +91,10 @@ export async function renameWorkspaceAction(
 ): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const trimmed = name?.trim();
-  if (!trimmed) return { error: "Il nome non può essere vuoto" };
+  if (!trimmed) return { error: "Name cannot be empty" };
 
   const { data: ws } = await supabase
     .from("workspaces")
@@ -102,7 +102,7 @@ export async function renameWorkspaceAction(
     .eq("id", workspaceId)
     .single();
   if (!ws || ws.owner_id !== user.id) {
-    return { error: "Solo il proprietario può rinominare il workspace" };
+    return { error: "Only the owner can rename the workspace" };
   }
 
   const { error } = await supabase
@@ -112,7 +112,7 @@ export async function renameWorkspaceAction(
 
   if (error) {
     console.error("Error renaming workspace:", error);
-    return { error: "Errore durante la modifica del nome" };
+    return { error: "Error renaming workspace" };
   }
 
   revalidatePath("/dashboard", "layout");
@@ -126,15 +126,15 @@ export type WorkspaceCiTokenResult =
   | { success: true; revoked: true };
 
 /**
- * Genera un nuovo token CI per il workspace (Decision Gate). Solo il proprietario.
- * Il token in chiaro viene restituito una sola volta; in DB si salva solo l'hash.
+ * Generate a new CI token for the workspace (Decision Gate). Owner only.
+ * The plain token is returned once; only the hash is stored in DB.
  */
 export async function generateWorkspaceCiTokenAction(
   workspaceId: string
 ): Promise<WorkspaceCiTokenResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const { data: ws } = await supabase
     .from("workspaces")
@@ -142,7 +142,7 @@ export async function generateWorkspaceCiTokenAction(
     .eq("id", workspaceId)
     .single();
   if (!ws || ws.owner_id !== user.id) {
-    return { error: "Solo il proprietario può generare il token CI" };
+    return { error: "Only the owner can generate the CI token" };
   }
 
   const token = generateCiToken();
@@ -156,7 +156,7 @@ export async function generateWorkspaceCiTokenAction(
     .eq("id", workspaceId);
 
   if (error) {
-    return { error: "Errore durante la generazione del token" };
+    return { error: "Error generating CI token" };
   }
 
   revalidatePath("/dashboard/workspace");
@@ -164,14 +164,14 @@ export async function generateWorkspaceCiTokenAction(
 }
 
 /**
- * Revoca il token CI del workspace. Solo il proprietario.
+ * Revoke the workspace CI token. Owner only.
  */
 export async function revokeWorkspaceCiTokenAction(
   workspaceId: string
 ): Promise<{ error?: string; success?: boolean }> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const { data: ws } = await supabase
     .from("workspaces")
@@ -179,7 +179,7 @@ export async function revokeWorkspaceCiTokenAction(
     .eq("id", workspaceId)
     .single();
   if (!ws || ws.owner_id !== user.id) {
-    return { error: "Solo il proprietario può revocare il token CI" };
+    return { error: "Only the owner can revoke the CI token" };
   }
 
   const { error } = await supabase
@@ -188,7 +188,7 @@ export async function revokeWorkspaceCiTokenAction(
     .eq("id", workspaceId);
 
   if (error) {
-    return { error: "Errore durante la revoca del token" };
+    return { error: "Error revoking CI token" };
   }
 
   revalidatePath("/dashboard/workspace");
@@ -210,7 +210,7 @@ export async function updateWorkspacePoliciesAction(
 ): Promise<UpdateWorkspacePoliciesResult> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const { data: ws } = await supabase
     .from("workspaces")
@@ -218,7 +218,7 @@ export async function updateWorkspacePoliciesAction(
     .eq("id", workspaceId)
     .single();
   if (!ws || ws.owner_id !== user.id) {
-    return { error: "Solo il proprietario può modificare le policy" };
+    return { error: "Only the owner can update policies" };
   }
 
   const tolerance =
@@ -241,7 +241,7 @@ export async function updateWorkspacePoliciesAction(
 
   if (error) {
     console.error("Error updating workspace policies:", error);
-    return { error: "Errore durante il salvataggio delle policy" };
+    return { error: "Error saving policies" };
   }
 
   revalidatePath("/dashboard/workspace");

@@ -88,21 +88,21 @@ export async function updateProfileRoleAction(
   return { success: true };
 }
 
-/** Invita un utente al workspace per email. Restituisce il link invito. */
+/** Invite a user to the workspace by email. Returns the invite link. */
 export async function inviteUserToWorkspaceAction(
   workspaceId: string,
   email: string
 ): Promise<WorkspaceActionState> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const emailTrimmed = email?.trim().toLowerCase();
-  if (!emailTrimmed) return { error: "Inserisci un indirizzo email" };
+  if (!emailTrimmed) return { error: "Enter an email address" };
 
   const ws = await supabase.from("workspaces").select("id, owner_id").eq("id", workspaceId).single();
-  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
-  if (ws.data.owner_id !== user.id) return { error: "Solo il proprietario del workspace può invitare" };
+  if (ws.error || !ws.data) return { error: "Workspace not found" };
+  if (ws.data.owner_id !== user.id) return { error: "Only the workspace owner can invite members" };
 
   const canInvite = await checkCanInviteToWorkspace(ws.data.owner_id, workspaceId);
   if (!canInvite.allowed) return { error: canInvite.error };
@@ -121,9 +121,9 @@ export async function inviteUserToWorkspaceAction(
   });
 
   if (error) {
-    if (error.code === "23505") return { error: "Esiste già un invito in sospeso per questa email" };
+    if (error.code === "23505") return { error: "A pending invitation already exists for this email" };
     console.error("Error creating workspace invitation:", error);
-    return { error: "Errore durante l'invito" };
+    return { error: "Error sending invitation" };
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
@@ -132,19 +132,19 @@ export async function inviteUserToWorkspaceAction(
   return { success: true, inviteLink };
 }
 
-/** Accetta un invito al workspace. */
+/** Accept a workspace invitation. */
 export async function acceptWorkspaceInvitationAction(token: string): Promise<WorkspaceActionState> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Accedi per accettare l'invito" };
+  if (!user) return { error: "Sign in to accept the invitation" };
 
   const invite = await getWorkspaceInvitationByToken(token);
-  if (!invite) return { error: "Invito non valido o scaduto" };
+  if (!invite) return { error: "Invalid or expired invitation" };
 
   const profile = await supabase.from("profiles").select("email").eq("id", user.id).single();
   const userEmail = profile.data?.email?.toLowerCase();
   if (userEmail !== invite.email.toLowerCase()) {
-    return { error: "Questo invito è stato inviato a un altro indirizzo email. Accedi con l'account corretto." };
+    return { error: "This invitation was sent to a different email address. Sign in with the correct account." };
   }
 
   const { error: insertError } = await supabase.from("workspace_members").insert({
@@ -152,9 +152,9 @@ export async function acceptWorkspaceInvitationAction(token: string): Promise<Wo
     user_id: user.id,
   });
   if (insertError) {
-    if (insertError.code === "23505") return { error: "Sei già membro di questo workspace" };
+    if (insertError.code === "23505") return { error: "You are already a member of this workspace" };
     console.error("Error joining workspace:", insertError);
-    return { error: "Errore durante l'accettazione" };
+    return { error: "Error accepting invitation" };
   }
 
   await supabase.from("workspace_invitations").update({ status: "accepted" }).eq("id", invite.id);
@@ -164,20 +164,20 @@ export async function acceptWorkspaceInvitationAction(token: string): Promise<Wo
   redirect("/dashboard");
 }
 
-/** Rimuovi un membro dal workspace (solo owner) o esci (self). */
+/** Remove a member from the workspace (owner only) or leave (self). */
 export async function removeWorkspaceMemberAction(
   workspaceId: string,
   userId: string
 ): Promise<WorkspaceActionState> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
-  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
+  if (ws.error || !ws.data) return { error: "Workspace not found" };
   const isOwner = ws.data.owner_id === user.id;
   const isSelf = userId === user.id;
-  if (!isOwner && !isSelf) return { error: "Non puoi rimuovere questo membro" };
+  if (!isOwner && !isSelf) return { error: "You cannot remove this member" };
 
   const { error } = await supabase
     .from("workspace_members")
@@ -187,7 +187,7 @@ export async function removeWorkspaceMemberAction(
 
   if (error) {
     console.error("Error removing workspace member:", error);
-    return { error: "Errore durante la rimozione" };
+    return { error: "Error removing member" };
   }
 
   revalidatePath("/dashboard/settings");
@@ -196,18 +196,18 @@ export async function removeWorkspaceMemberAction(
   return { success: true };
 }
 
-/** Revoca un invito workspace pendente. */
+/** Revoke a pending workspace invitation. */
 export async function revokeWorkspaceInvitationAction(invitationId: string): Promise<WorkspaceActionState> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { error: "Non autenticato" };
+  if (!user) return { error: "Not authenticated" };
 
   const inv = await supabase.from("workspace_invitations").select("workspace_id").eq("id", invitationId).single();
-  if (inv.error || !inv.data) return { error: "Invito non trovato" };
+  if (inv.error || !inv.data) return { error: "Invitation not found" };
 
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", inv.data.workspace_id).single();
   if (ws.error || !ws.data || ws.data.owner_id !== user.id) {
-    return { error: "Solo il proprietario può revocare un invito" };
+    return { error: "Only the owner can revoke an invitation" };
   }
 
   const { error } = await supabase
@@ -217,7 +217,7 @@ export async function revokeWorkspaceInvitationAction(invitationId: string): Pro
 
   if (error) {
     console.error("Error revoking invitation:", error);
-    return { error: "Errore durante la revoca" };
+    return { error: "Error revoking invitation" };
   }
 
   revalidatePath("/dashboard/settings");

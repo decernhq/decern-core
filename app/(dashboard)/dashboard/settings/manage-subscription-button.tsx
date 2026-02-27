@@ -18,11 +18,11 @@ export function ManageSubscriptionButton() {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert(data.error || "Errore nell'apertura del portale");
+        alert(data.error || "Error opening billing portal");
       }
     } catch (error) {
       console.error("Portal error:", error);
-      alert("Errore nell'apertura del portale");
+      alert("Error opening billing portal");
     } finally {
       setLoading(false);
     }

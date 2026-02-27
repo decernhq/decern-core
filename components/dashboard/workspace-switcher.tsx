@@ -48,7 +48,7 @@ export function WorkspaceSwitcher({
             className={cn(
               "w-full appearance-none rounded-lg border border-app-border bg-app-input-bg py-2 pl-3 pr-8 text-sm font-medium text-app-text focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:opacity-60"
             )}
-            aria-label="Seleziona workspace"
+            aria-label="Select workspace"
           >
             {workspaces.map((w) => (
               <option key={w.id} value={w.id}>

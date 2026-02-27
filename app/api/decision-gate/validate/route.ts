@@ -15,7 +15,14 @@ const DECISION_ID_REGEX = /^[a-zA-Z0-9_-]+$/;
 const ADR_REF_REGEX = /^ADR-\d+$/i;
 
 type ValidateResponse =
-  | { valid: true; decisionId: string; adrRef: string | null; status?: "approved" }
+  | {
+      valid: true;
+      decisionId: string;
+      adrRef: string | null;
+      observation?: boolean;
+      status?: string;
+      message?: string;
+    }
   | {
       valid: false;
       reason: "unauthorized" | "invalid_input" | "not_found" | "not_approved" | "linked_pr_required" | "server_error";
@@ -165,13 +172,40 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (blocking && shouldRequireApproved(planId, policyParams) && status !== "approved") {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
-    // Success: observation = minimal body; blocking = full body
+
+    // Success: build response
+    const observation = !blocking;
+    let includeStatus = false;
+    let message: string | undefined;
+
+    if (blocking) {
+      includeStatus = true; // always "approved" when we reach here
+    } else if (planId === "free") {
+      const { data: freeCount, error: countErr } = await supabase.rpc("increment_validate_observation_count", {
+        p_workspace_id: workspace.id,
+      });
+      if (countErr) {
+        return json({ valid: false, reason: "server_error" }, 500);
+      }
+      const count = (freeCount as number) ?? 0;
+      if (count <= 7) {
+        includeStatus = true;
+      } else {
+        message =
+          "CI Observation limit reached (7 calls). Upgrade to Team to continue using the Decision Gate.";
+      }
+    } else {
+      includeStatus = true; // Team/Business observation: always include status for warning
+    }
+
     return json(
       {
         valid: true,
         decisionId: decision.id,
         adrRef,
-        ...(blocking && { status: "approved" as const }),
+        observation,
+        ...(includeStatus && { status: blocking ? ("approved" as const) : status }),
+        ...(message && { message }),
       },
       200
     );

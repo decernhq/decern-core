@@ -23,14 +23,14 @@ export async function createProjectAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Non autenticato" };
+    return { error: "Not authenticated" };
   }
 
   const name = formData.get("name") as string;
   const description = formData.get("description") as string;
 
   if (!name || name.trim().length === 0) {
-    return { error: "Il nome del progetto è obbligatorio" };
+    return { error: "Project name is required" };
   }
 
   let workspaceId = await getSelectedWorkspaceId();
@@ -38,10 +38,10 @@ export async function createProjectAction(
     const w = await getOrCreateDefaultWorkspace();
     workspaceId = w?.id ?? null;
   }
-  if (!workspaceId) return { error: "Workspace non disponibile" };
+  if (!workspaceId) return { error: "Workspace not available" };
 
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
-  if (ws.error || !ws.data) return { error: "Workspace non trovato" };
+  if (ws.error || !ws.data) return { error: "Workspace not found" };
   const canCreate = await checkCanCreateProject(ws.data.owner_id, workspaceId);
   if (!canCreate.allowed) return { error: canCreate.error };
 
@@ -54,7 +54,7 @@ export async function createProjectAction(
 
   if (error) {
     console.error("Error creating project:", error);
-    return { error: "Errore nella creazione del progetto" };
+    return { error: "Error creating project" };
   }
 
   revalidatePath("/dashboard/projects");
@@ -72,11 +72,11 @@ export async function updateProjectAction(
   const description = formData.get("description") as string;
 
   if (!id) {
-    return { error: "ID progetto mancante" };
+    return { error: "Missing project ID" };
   }
 
   if (!name || name.trim().length === 0) {
-    return { error: "Il nome del progetto è obbligatorio" };
+    return { error: "Project name is required" };
   }
 
   const { error } = await supabase
@@ -89,7 +89,7 @@ export async function updateProjectAction(
 
   if (error) {
     console.error("Error updating project:", error);
-    return { error: "Errore nell'aggiornamento del progetto" };
+    return { error: "Error updating project" };
   }
 
   revalidatePath("/dashboard/projects");
@@ -104,7 +104,7 @@ export async function deleteProjectAction(id: string): Promise<ActionState> {
 
   if (error) {
     console.error("Error deleting project:", error);
-    return { error: "Errore nell'eliminazione del progetto" };
+    return { error: "Error deleting project" };
   }
 
   revalidatePath("/dashboard/projects");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getProjects } from "@/lib/queries/projects";
 import { getDecisions, getDecisionById, getSuggestedTags } from "@/lib/queries/decisions";
 import { NewDecisionFlow } from "@/components/decisions/new-decision-flow";
@@ -11,6 +12,7 @@ interface NewDecisionPageProps {
 
 export default async function NewDecisionPage({ searchParams }: NewDecisionPageProps) {
   const { project: projectId, duplicate: duplicateId } = await searchParams;
+  const t = await getTranslations("decisions");
   const [projects, decisions, suggestedTags, duplicateFrom] = await Promise.all([
     getProjects(),
     getDecisions(),
@@ -38,15 +40,15 @@ export default async function NewDecisionPage({ searchParams }: NewDecisionPageP
           href="/dashboard/decisions"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Torna alle decisioni
+          {t("backToList")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">
-          {duplicateFrom ? "Nuova decisione (da copia)" : "Nuova decisione"}
+          {duplicateFrom ? t("newDecisionFromCopy") : t("newDecision")}
         </h1>
         <p className="mt-1 text-sm text-gray-600">
           {duplicateFrom
-            ? "Campi precompilati dalla decisione selezionata. Modifica e salva per creare la nuova decisione."
-            : "Genera la decisione con l’AI incollando il testo oppure inseriscila manualmente."}
+            ? t("copySubtitle")
+            : t("newSubtitle")}
         </p>
       </div>
 
