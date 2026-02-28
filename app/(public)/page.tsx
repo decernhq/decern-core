@@ -5,8 +5,8 @@ import {
   HiDocumentText,
   HiLink,
   HiCommandLine,
-  HiTag,
-  HiChartBarSquare,
+  HiShieldCheck,
+  HiEye,
   HiUserGroup,
 } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
@@ -67,18 +67,7 @@ export default async function LandingPage() {
           </FadeIn>
 
           <FadeIn delay={280} duration={600}>
-            <ul className="mx-auto mt-10 max-w-lg space-y-2.5 text-left">
-              {(["bullet1", "bullet2", "bullet3"] as const).map((k, i) => (
-                <li key={k} className="flex items-start gap-3">
-                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-brand-500" aria-hidden />
-                  <span className="text-gray-700 dark:text-gray-300">{t(`hero.${k}`)}</span>
-                </li>
-              ))}
-            </ul>
-          </FadeIn>
-
-          <FadeIn delay={400} duration={600}>
-            <div className="mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
               {user ? (
                 <Link href="/dashboard">
                   <Button size="lg">Dashboard</Button>
@@ -98,7 +87,7 @@ export default async function LandingPage() {
             </div>
           </FadeIn>
 
-          <FadeIn delay={550} duration={800}>
+          <FadeIn delay={400} duration={800}>
             <div className="landing-terminal mx-auto mt-16 max-w-2xl overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700/60 bg-gray-950 shadow-xl">
               <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-gray-900 px-4 py-2.5">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
@@ -208,47 +197,15 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ WHY AI — two-column ═══════════ */}
-      <section id="ai" className="scroll-mt-20 bg-gray-50 dark:bg-gray-900 px-4 py-24 sm:py-28">
-        <div className="mx-auto max-w-5xl lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
-          <FadeIn direction="left" distance={20}>
-            <div>
-              <Eyebrow>{t("ai.eyebrow")}</Eyebrow>
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
-                {t("ai.title")}
-              </h2>
-              <p className="mt-6 text-lg leading-relaxed text-gray-600 dark:text-gray-400">
-                {t.rich("ai.intro", bold)}
-              </p>
-            </div>
-          </FadeIn>
-
-          <FadeIn direction="right" distance={20} delay={200}>
-            <div className="mt-10 space-y-5 lg:mt-0">
-              {(["point1", "point2"] as const).map((k) => (
-                <div
-                  key={k}
-                  className="rounded-2xl border border-brand-200 dark:border-brand-700/50 bg-brand-50/40 dark:bg-brand-950/30 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
-                >
-                  <p className="text-lg font-medium leading-relaxed text-gray-900 dark:text-gray-100">
-                    {t.rich(`ai.${k}`, bold)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* ═══════════ YOUR MODEL, YOUR KEYS — Judge / LLM (inverted: cards left, copy right) ═══════════ */}
-      <section id="judge" className="scroll-mt-20 border-t border-gray-200 dark:border-gray-800 bg-violet-50/40 dark:bg-violet-950/20 px-4 py-24 sm:py-28">
+      {/* ═══════════ YOUR MODEL — Judge / LLM ═══════════ */}
+      <section id="judge" className="scroll-mt-20 bg-gray-50 dark:bg-gray-900 px-4 py-24 sm:py-28">
         <div className="mx-auto max-w-5xl lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
           <FadeIn direction="left" distance={20}>
             <div className="mt-10 space-y-5 lg:mt-0">
               {(["point1", "point2"] as const).map((k) => (
                 <div
                   key={k}
-                  className="rounded-2xl border border-violet-200 dark:border-violet-700/50 bg-white/80 dark:bg-gray-900/80 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+                  className="rounded-2xl border border-gray-200 dark:border-gray-700/50 bg-white dark:bg-gray-800/60 p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
                 >
                   <p className="text-lg font-medium leading-relaxed text-gray-900 dark:text-gray-100">
                     {t(`judge.${k}`)}
@@ -292,9 +249,9 @@ export default async function LandingPage() {
                 ["f1Title", "f1Desc", 1, "border-brand-200 dark:border-brand-700/50", "bg-brand-50/50 dark:bg-brand-950/30", "bg-brand-600 dark:bg-brand-500", "text-brand-700 dark:text-brand-300", HiDocumentText],
                 ["f2Title", "f2Desc", 2, "border-sky-200 dark:border-sky-800/50", "bg-sky-50/60 dark:bg-sky-950/30", "bg-sky-600 dark:bg-sky-500", "text-sky-700 dark:text-sky-300", HiLink],
                 ["f3Title", "f3Desc", 3, "border-amber-200 dark:border-amber-800/50", "bg-amber-50/50 dark:bg-amber-950/30", "bg-amber-600 dark:bg-amber-500", "text-amber-700 dark:text-amber-300", HiCommandLine],
-                ["f4Title", "f4Desc", 4, "border-emerald-200 dark:border-emerald-800/50", "bg-emerald-50/50 dark:bg-emerald-950/30", "bg-emerald-600 dark:bg-emerald-500", "text-emerald-700 dark:text-emerald-300", HiTag],
-                ["f5Title", "f5Desc", 5, "border-indigo-200 dark:border-indigo-800/50", "bg-indigo-50/50 dark:bg-indigo-950/30", "bg-indigo-600 dark:bg-indigo-500", "text-indigo-700 dark:text-indigo-300", HiUserGroup],
-                ["f6Title", "f6Desc", 6, "border-rose-200 dark:border-rose-800/50", "bg-rose-50/50 dark:bg-rose-950/30", "bg-rose-600 dark:bg-rose-500", "text-rose-700 dark:text-rose-300", HiChartBarSquare],
+                ["f4Title", "f4Desc", 4, "border-emerald-200 dark:border-emerald-800/50", "bg-emerald-50/50 dark:bg-emerald-950/30", "bg-emerald-600 dark:bg-emerald-500", "text-emerald-700 dark:text-emerald-300", HiShieldCheck],
+                ["f5Title", "f5Desc", 5, "border-indigo-200 dark:border-indigo-800/50", "bg-indigo-50/50 dark:bg-indigo-950/30", "bg-indigo-600 dark:bg-indigo-500", "text-indigo-700 dark:text-indigo-300", HiEye],
+                ["f6Title", "f6Desc", 6, "border-rose-200 dark:border-rose-800/50", "bg-rose-50/50 dark:bg-rose-950/30", "bg-rose-600 dark:bg-rose-500", "text-rose-700 dark:text-rose-300", HiUserGroup],
               ] as const
             ).map(([titleKey, descKey, num, borderCls, bgCls, badgeCls, numTextCls, Icon], i) => (
               <FadeIn key={titleKey} delay={80 * i}>
@@ -347,21 +304,8 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ TRUST ═══════════ */}
-      <section className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-24 sm:py-28">
-        <FadeIn className="mx-auto max-w-2xl text-center">
-          <Eyebrow>{t("trust.eyebrow")}</Eyebrow>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl">
-            {t("trust.title")}
-          </h2>
-          <p className="mt-8 text-lg leading-relaxed text-gray-600 dark:text-gray-400">{t("trust.claim1")}</p>
-          <p className="mt-3 text-lg leading-relaxed text-gray-600 dark:text-gray-400">{t("trust.claim2")}</p>
-          <p className="mt-12 text-sm text-gray-400 dark:text-gray-500">{t("trust.testimonialPlaceholder")}</p>
-        </FadeIn>
-      </section>
-
       {/* ═══════════ FAQ ═══════════ */}
-      <section id="faq" className="scroll-mt-20 bg-gray-50 dark:bg-gray-900 px-4 py-24 sm:py-28">
+      <section id="faq" className="scroll-mt-20 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-24 sm:py-28">
         <div className="mx-auto max-w-2xl">
           <FadeIn>
             <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
@@ -369,7 +313,7 @@ export default async function LandingPage() {
             </h2>
           </FadeIn>
           <dl className="mt-12 divide-y divide-gray-200 dark:divide-gray-700/60">
-            {(["q1", "q2", "q3", "q4", "q5"] as const).map((qKey, i) => (
+            {(["q1", "q2", "q3", "q4", "q5", "q6"] as const).map((qKey, i) => (
               <FadeIn key={qKey} delay={i * 80}>
                 <div className="py-8 first:pt-0">
                   <dt className="text-base font-semibold text-gray-900 dark:text-gray-100">{t(`faq.${qKey}`)}</dt>

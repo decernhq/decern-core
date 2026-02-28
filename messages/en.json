@@ -47,92 +47,75 @@
   },
   "landing": {
     "hero": {
-      "eyebrow": "Technical decision log for modern teams",
-      "headline": "Keep AI-generated code aligned with your technical decisions",
-      "subheadline": "You write down what you decided. Decern links it to every pull request and <b>checks the code change against it</b>. If the change goes beyond what was approved (Terraform, dependencies, scope creep), <b>the gate blocks</b> before merge.",
-      "bullet1": "One place for every decision. One gate in CI. No more drift between docs and code.",
-      "bullet2": "First we check: is there a decision, and is it approved? Then we check: does this code change fit that decision?",
-      "bullet3": "When the change doesn't fit, the gate blocks. You get a clear reason. Only what you approved gets through.",
-      "ctaPrimary": "Try Decern free",
+      "eyebrow": "CI gate for technical decisions",
+      "headline": "Your decisions. Enforced in every PR.",
+      "subheadline": "Document what your team decided. Link it to a PR. Decern checks the code change against the decision — and <b>blocks when it doesn't fit</b>.",
+      "ctaPrimary": "Start free",
       "ctaSecondary": "See how it works"
     },
     "problem": {
       "eyebrow": "The problem",
       "title": "Decisions on paper. Code that drifts.",
-      "intro": "Your team's decisions live in Confluence, Notion, a doc, or meeting notes. When a PR lands, <b>nobody checks</b> if the code still matches what you decided. That means rework, bugs, and risk. With more AI-generated code, it gets worse: the AI <b>doesn't know your rules</b>. So you lose control just when you need it most.",
-      "example1": "A PR adds a new layer and bypasses the pattern you agreed on. Who catches it?",
-      "example2": "You refactor to remove an old approach. The next PR brings it back. Nobody was checking.",
-      "example3": "AI writes a lot of code fast. Zero memory of your decisions. The cost of drift goes up."
+      "intro": "Your team's decisions live in Confluence, Notion, or meeting notes. When a PR lands, <b>nobody checks</b> if the code still matches what you decided. With AI writing more code every day, the gap grows faster than ever.",
+      "example1": "A PR adds a service layer nobody agreed on. Review misses it. It ships.",
+      "example2": "You deprecate an old pattern. Next sprint, AI brings it back. Nobody was checking.",
+      "example3": "Three teams, three interpretations of the same decision. Drift compounds quietly."
     },
     "solution": {
       "eyebrow": "The Solution",
       "adrIntro": "Decern uses <b>Architecture Decision Records (ADRs)</b>: short notes that say what you decided and why. Each record follows a simple structure: context, decision, consequences. So everyone can read and update it. This format was proposed by Michael Nygard. Read the <a>original article</a> to learn more.",
       "adrLinkUrl": "https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions",
       "adrLinkLabel": "Documenting Architecture Decisions (Nygard, 2011)",
-      "title": "Four simple steps",
-      "step1Title": "Record a technical decision",
-      "step1Body": "Generate your decision with AI from meeting notes or a short brief. You review and approve. The thinking stays human. Context, options, what you chose, why. One place for everything.",
+      "title": "Four steps. Two minutes to set up.",
+      "step1Title": "Record the decision",
+      "step1Body": "Document context, options, and the decision. Generate it from meeting notes with AI or write it manually.",
       "step2Title": "Link it to the PR",
-      "step2Body": "In the PR title or description, point to that decision (e.g. ADR-001). The PR <b>carries the decision</b>. Your pipeline knows which rules apply.",
-      "step3Title": "Run the gate in CI",
-      "step3Body": "decern-gate runs in CI (npx decern-gate). First it checks that the decision exists and is approved. Then <b>AI compares the diff to the decision text</b>. If the change is out of scope or contradicts what you decided, the gate blocks.",
-      "step4Title": "Block when the change doesn't fit",
+      "step2Body": "Reference the decision in your PR (e.g. ADR-001). The pipeline knows which rules apply.",
+      "step3Title": "Gate checks in CI",
+      "step3Body": "decern-gate runs in your pipeline (npx decern-gate). It verifies the decision exists and is approved.",
+      "step4Title": "Judge checks alignment",
       "flowJudgeLabel": "LLM as a Judge",
       "flowOutcome": "Gate blocks or allows",
-      "flowStep1Desc": "Generate with AI from notes or a brief. You review and approve. One place for everything.",
-      "flowStep2Desc": "Point to the decision in the PR. The pipeline knows which rules apply.",
-      "flowStep3Desc": "Gate runs in CI. Checks decision exists and is approved, then compares diff to decision.",
-      "flowStep4Desc": "The LLM as a Judge compares the diff to the decision. Change out of scope? Gate blocks with a clear reason. Only what matches gets through.",
-      "step4Body": "The decision can be approved and the gate can still block. Example: \"ADR-001 approves only the new API. The diff changes Terraform and package.json. Out of scope.\" So <b>only changes that match the decision</b> get through."
-    },
-    "ai": {
-      "eyebrow": "Why it works",
-      "title": "We check the code against your decision",
-      "intro": "Decern doesn't just ask \"is there a decision?\". We take the decision text and the PR diff and ask: <b>does this change fit what you decided?</b> If the code goes beyond scope or conflicts with the decision, we block it.",
-      "point1": "The decision can be approved and linked. We still block when the <b>change doesn't fit</b> the decision.",
-      "point2": "We tell you why. Example: \"ADR-001 approves only the new API. The diff changes Terraform and package.json. Out of scope.\""
+      "flowStep1Desc": "Document context, options, and the decision. Generate from notes with AI or write manually.",
+      "flowStep2Desc": "Reference the decision in the PR. The pipeline knows which rules apply.",
+      "flowStep3Desc": "Gate runs in CI. Checks the decision exists and is approved.",
+      "flowStep4Desc": "The LLM Judge compares the diff to the decision text. Change out of scope? Gate blocks with a clear reason.",
+      "step4Body": "An LLM reads the decision text and the PR diff. If the change goes beyond scope or contradicts the decision, the gate blocks — even if the decision is approved. You get a clear reason and a confidence score."
     },
     "judge": {
-      "eyebrow": "The Judge",
-      "title": "Your model. Your control.",
-      "intro": "The Judge that compares your diff to the decision runs on the LLM you configure—OpenAI, Claude, or any OpenAI-compatible API. You choose the provider and the model.",
-      "point1": "You choose the provider and model. OpenAI, Claude, or any OpenAI-compatible endpoint. The Judge uses your configuration for that request only.",
-      "point2": "We never store or log your API key. It is sent only for the Judge request and never retained."
+      "eyebrow": "BYO LLM",
+      "title": "Your model. Your keys. Your threshold.",
+      "intro": "The Judge runs on the LLM you choose — OpenAI, Claude, or any compatible API. You set the confidence threshold. We never store your keys.",
+      "point1": "Pick any OpenAI-compatible provider and model. Your API key is used for that single request and never stored or logged.",
+      "point2": "Set a confidence threshold (default 80%). Changes above the threshold pass; below, the gate blocks. When it passes but isn't 100%, you get an advisory note on what to watch."
     },
     "features": {
       "eyebrow": "What you get",
       "title": "Built for clarity and control",
-      "f1Title": "One place for decisions",
-      "f1Desc": "Context, options, what you chose, why. One source of truth. No more scattered docs or threads.",
+      "f1Title": "Structured decision log",
+      "f1Desc": "Context, options, decision, consequences. One source of truth your whole team can search and reference.",
       "f2Title": "Decisions linked to PRs",
-      "f2Desc": "Point to a decision in the PR title or description. Your pipeline knows which rules apply to each change.",
-      "f3Title": "LLM as a Judge in CI",
-      "f3Desc": "The Judge compares the code change to the decision text. Out of scope or scope creep (e.g. \"new API only\" but the PR touches Terraform)? The gate blocks with a clear reason. No regex, just reasoning.",
-      "f4Title": "Rules by area (payments, security, etc.)",
-      "f4Desc": "Organize decisions by topic. The right rules apply to each PR.",
-      "f5Title": "Teams and workspaces",
-      "f5Desc": "Workspaces, projects, roles. The right people own and approve decisions.",
-      "f6Title": "See when rules are broken",
-      "f6Desc": "Over time you see where and when decisions were broken. Fix drift before it becomes a mess."
+      "f2Desc": "Reference a decision in the PR title or description. Your CI pipeline knows which rules apply.",
+      "f3Title": "LLM Judge in CI",
+      "f3Desc": "The Judge compares the code change to the decision. Out of scope? Gate blocks with a clear reason. No regex, just reasoning.",
+      "f4Title": "Confidence scoring",
+      "f4Desc": "The Judge returns a score (0–100%) and an advisory note. Set your threshold per workspace. Know exactly how well each change aligns.",
+      "f5Title": "Free unlimited observation",
+      "f5Desc": "On Free, the gate reports but never blocks. Try it on real PRs with zero risk to your pipeline.",
+      "f6Title": "Teams and workspaces",
+      "f6Desc": "Organize decisions by project and workspace. The right people own and approve decisions."
     },
     "useCases": {
       "eyebrow": "Who it's for",
       "title": "Use cases",
       "uc1Title": "Tech leads who want to scale without losing control",
-      "uc1Desc": "You write down the rules. The gate enforces them. So you can move fast without becoming the bottleneck.",
+      "uc1Desc": "Write down the rules. The gate enforces them. You move fast without becoming the bottleneck.",
       "uc2Title": "Teams that use AI to write code",
-      "uc2Desc": "Generated code goes through the same checks as the rest. You trust it because it's checked against your decisions.",
+      "uc2Desc": "AI-generated code goes through the same checks. The Judge reads the diff and the decision — no blind spots.",
       "uc3Title": "Big refactors and cleanup",
-      "uc3Desc": "New PRs can't bring back patterns you're removing. The gate keeps everyone on the same direction.",
+      "uc3Desc": "New PRs can't bring back patterns you're removing. The gate keeps the whole team on the same direction.",
       "uc4Title": "Audits and compliance",
-      "uc4Desc": "Show what was decided and how it was enforced in CI. Clear evidence when you need it."
-    },
-    "trust": {
-      "eyebrow": "Why Decern",
-      "title": "For tech leads who care about control",
-      "claim1": "You already write down decisions. Decern connects them to your code and enforces them in CI. No extra paperwork.",
-      "claim2": "We're the only gate that checks the actual code change against the decision. Not just \"is there a decision?\" but \"does this change fit it?\"",
-      "testimonialPlaceholder": "Space for future testimonials."
+      "uc4Desc": "Show what was decided, when, and how it was enforced in CI. Clear evidence when you need it."
     },
     "faq": {
       "title": "Frequently asked questions",
@@ -143,14 +126,16 @@
       "q3": "Does the AI write the decisions for us?",
       "a3": "You can use AI to draft a decision (e.g. from meeting notes). A human reviews and approves. Decern enforces what humans decided. It doesn't replace decision-making.",
       "q4": "Won't this add bureaucracy or block us too often?",
-      "a4": "Almost no change to your workflow: one link in the PR, one step in CI. You choose: the gate can block (strict) or only report (observation). On Free we only report, so you can try it without blocking releases.",
+      "a4": "Almost no change to your workflow: one link in the PR, one step in CI. You choose: the gate can block (strict) or only report (observation). On Free we only report, so you can try it risk-free.",
       "q5": "Do we need to change our GitHub or GitLab workflow?",
-      "a5": "No. Add a link to the decision in the PR and one step in CI (e.g. npx decern-gate). Your process stays the same."
+      "a5": "No. Add a link to the decision in the PR and one step in CI (npx decern-gate). Your process stays the same.",
+      "q6": "What does the Free plan include?",
+      "a6": "Unlimited decisions, unlimited CI checks in observation mode, AI decision generation, and LLM Judge (advisory). The gate reports but never blocks. Upgrade to Team to enable blocking and set your confidence threshold."
     },
     "cta": {
-      "title": "Connect your decisions to your code. <b>Enforce them in CI.</b>",
-      "subline": "One decision log. Linked to PRs. Gate that checks every change.",
-      "ctaPrimary": "Try Decern free with your team",
+      "title": "Stop drift before it ships. <b>Start in two minutes.</b>",
+      "subline": "One decision log. One gate in CI. Every change checked against what you decided.",
+      "ctaPrimary": "Start free",
       "ctaSecondary": "See pricing"
     },
     "footer": {
@@ -230,7 +215,7 @@
     "business": {
       "name": "Business",
       "description": "For organizations",
-      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "Full CI Blocking", "Advanced Policies", "Roles"]
+      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "CI Blocking for High Impact changes", "Judge tolerance", "Advanced Policies", "Roles"]
     },
     "enterprise": {
       "name": "Enterprise",

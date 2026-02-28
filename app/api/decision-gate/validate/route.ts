@@ -173,31 +173,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
 
-    // Success: build response
+    // Success: build response (all plans in observation mode include status)
     const observation = !blocking;
-    let includeStatus = false;
-    let message: string | undefined;
-
-    if (blocking) {
-      includeStatus = true; // always "approved" when we reach here
-    } else if (planId === "free") {
-      const { data: freeCount, error: countErr } = await supabase.rpc("increment_validate_observation_count", {
-        p_workspace_id: workspace.id,
-      });
-      if (countErr) {
-        return json({ valid: false, reason: "server_error" }, 500);
-      }
-      const count = (freeCount as number) ?? 0;
-      if (count <= 7) {
-        includeStatus = true;
-      } else {
-        message =
-          "CI Observation limit reached (7 calls). Upgrade to Team to continue using the Decision Gate.";
-      }
-    } else {
-      includeStatus = true; // Team/Business observation: always include status for warning
-    }
-
+    const includeStatus = true;
     return json(
       {
         valid: true,
@@ -205,7 +183,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         adrRef,
         observation,
         ...(includeStatus && { status: blocking ? ("approved" as const) : status }),
-        ...(message && { message }),
       },
       200
     );

@@ -250,9 +250,8 @@ describe("GET /api/decision-gate/validate", () => {
     expect(body).toEqual({ valid: false, reason: "server_error" });
   });
 
-  it("7) free plan + decision not approved + count <= 7 => 200 con observation e status", async () => {
+  it("7) free plan + decision not approved => 200 con observation e status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
-    mockRpc.mockResolvedValueOnce({ data: 3, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -274,14 +273,10 @@ describe("GET /api/decision-gate/validate", () => {
       observation: true,
       status: "proposed",
     });
-    expect(mockRpc).toHaveBeenCalledWith("increment_validate_observation_count", {
-      p_workspace_id: WORKSPACE_ID,
-    });
   });
 
-  it("8) free plan + decision approved + count <= 7 => 200 con observation e status", async () => {
+  it("8) free plan + decision approved => 200 con observation e status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
-    mockRpc.mockResolvedValueOnce({ data: 1, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-001" },
@@ -303,33 +298,6 @@ describe("GET /api/decision-gate/validate", () => {
       observation: true,
       status: "approved",
     });
-  });
-
-  it("free plan + count > 7 => 200 con message, no status", async () => {
-    mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "free" }, error: null });
-    mockRpc.mockResolvedValueOnce({ data: 8, error: null });
-    const decisionId = "550e8400-e29b-41d4-a716-446655440000";
-    mockDecisionMaybeSingle.mockResolvedValueOnce({
-      data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
-      error: null,
-    });
-    mockProjectMaybeSingle.mockResolvedValueOnce({
-      data: { workspace_id: WORKSPACE_ID },
-      error: null,
-    });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
-    const { GET } = await import("./route");
-    const res = await GET(req);
-    const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body).toEqual({
-      valid: true,
-      decisionId,
-      adrRef: "ADR-042",
-      observation: true,
-      message: "CI Observation limit reached (7 calls). Upgrade to Team to continue using the Decision Gate.",
-    });
-    expect(body).not.toHaveProperty("status");
   });
 
   it("Team without highImpact + decision not approved => 200 observation con status", async () => {
@@ -354,7 +322,6 @@ describe("GET /api/decision-gate/validate", () => {
       observation: true,
       status: "proposed",
     });
-    expect(mockRpc).not.toHaveBeenCalled();
   });
 
   it("Team without highImpact + decision approved => 200 observation con status", async () => {

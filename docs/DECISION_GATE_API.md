@@ -12,7 +12,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 | Plan   | Linked PR      | Status              | Enforcement                                      |
 |--------|----------------|---------------------|--------------------------------------------------|
-| **Free**   | Not checked    | Not checked         | Always observation (never block). **Limit:** 7 observation calls per workspace (lifetime). After 7, `status` is omitted and `message` suggests upgrading. |
+| **Free**   | Not checked    | Not checked         | Always observation (never block). |
 | **Team**   | Not checked    | Checked only when `highImpact=true` | Blocking only for High Impact Changes (`highImpact=true`). |
 | **Business+** | Optional: require with `requireLinkedPR=true` | Optional: require with `requireApproved=true` (default) | Default on; disable with `enforce=false`.        |
 
@@ -39,7 +39,6 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 |--------|------|---------|
 | 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": false, "status": "approved" }` | Decision found and approved (blocking mode). CI may pass. |
 | 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": true, "status": "<status>" }` | Observation mode; `status` included for decern-gate to show warning if not approved. CI must not fail. |
-| 200 | `{ "valid": true, "decisionId": "<uuid>", "adrRef": "<adr_ref>", "observation": true, "message": "CI Observation limit reached..." }` | Free plan, observation limit (7) exceeded; `status` omitted. CI must not fail. |
 | 401 | `{ "valid": false, "reason": "unauthorized" }` | Token missing or invalid. |
 | 404 | `{ "valid": false, "reason": "not_found" }` | No decision with that id. |
 | 422 | `{ "valid": false, "reason": "invalid_input" }` | `decisionId` empty, too long (>128) or invalid characters. |
