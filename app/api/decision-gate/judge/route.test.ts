@@ -39,7 +39,8 @@ const mockSubscriptionMaybeSingle = vi.fn();
 const mockWorkspacePoliciesMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
-const mockJudgeUsageMaybeSingle = vi.fn();
+const mockOwnerWorkspacesEq = vi.fn();
+const mockJudgeUsageEq = vi.fn();
 const mockFetch = vi.fn();
 
 const chainEqMaybe = (maybeSingle: typeof mockDecisionMaybeSingle) => {
@@ -56,9 +57,11 @@ vi.mock("@/lib/supabase/service-role", () => ({
           if (table === "decisions") return chainEqMaybe(mockDecisionMaybeSingle);
           if (table === "subscriptions") return { eq: () => ({ maybeSingle: mockSubscriptionMaybeSingle }) };
           if (table === "workspace_policies") return { maybeSingle: mockWorkspacePoliciesMaybeSingle };
-          if (table === "judge_usage") {
-            const chain = { maybeSingle: mockJudgeUsageMaybeSingle, eq: () => chain };
-            return chain;
+          if (table === "judge_usage" && _key === "period") {
+            return mockJudgeUsageEq(_val);
+          }
+          if (table === "workspaces" && _key === "owner_id") {
+            return mockOwnerWorkspacesEq(_val);
           }
           return {
             maybeSingle:
@@ -109,8 +112,12 @@ describe("POST /api/decision-gate/judge", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    mockJudgeUsageMaybeSingle.mockResolvedValue({
-      data: { input_tokens: 0, output_tokens: 0 },
+    mockOwnerWorkspacesEq.mockResolvedValue({
+      data: [{ id: WORKSPACE_ID }],
+      error: null,
+    });
+    mockJudgeUsageEq.mockResolvedValue({
+      data: [],
       error: null,
     });
     mockFetch.mockResolvedValue({
@@ -401,8 +408,41 @@ describe("POST /api/decision-gate/judge", () => {
       data: { stripe_customer_id: "cus_test123", plan_id: "team" },
       error: null,
     });
-    mockJudgeUsageMaybeSingle.mockResolvedValueOnce({
-      data: { input_tokens: 0, output_tokens: 500000 },
+    mockJudgeUsageEq.mockResolvedValueOnce({
+      data: [{ workspace_id: WORKSPACE_ID, input_tokens: 0, output_tokens: 500000 }],
+      error: null,
+    });
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${VALID_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        diff: "d",
+        decisionId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    });
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "Fair-use monthly budget reached for Team (€20). Configure BYO LLM to continue.",
+      advisory: true,
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("fair-use counts all owner workspaces (global owner/month cap)", async () => {
+    mockOwnerWorkspacesEq.mockResolvedValueOnce({
+      data: [{ id: WORKSPACE_ID }, { id: "ws-2" }],
+      error: null,
+    });
+    mockJudgeUsageEq.mockResolvedValueOnce({
+      data: [
+        { workspace_id: WORKSPACE_ID, input_tokens: 100000, output_tokens: 100000 },
+        { workspace_id: "ws-2", input_tokens: 100000, output_tokens: 450000 },
+        { workspace_id: "ws-other-owner", input_tokens: 0, output_tokens: 900000 },
+      ],
       error: null,
     });
     const req = new NextRequest("http://localhost/api/decision-gate/judge", {

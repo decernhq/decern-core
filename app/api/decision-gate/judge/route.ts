@@ -374,27 +374,43 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       const fairUseCapCents = getFairUseMonthlyCapCents(planId);
       if (fairUseCapCents != null) {
         const period = getJudgeUsagePeriod();
-        const { data: usageRow, error: usageError } = await supabase
-          .from("judge_usage")
-          .select("input_tokens, output_tokens")
-          .eq("workspace_id", workspace.id)
-          .eq("period", period)
-          .maybeSingle();
-        if (usageError) {
+        const { data: ownerWorkspaces, error: ownerWorkspacesError } = await supabase
+          .from("workspaces")
+          .select("id")
+          .eq("owner_id", workspace.owner_id);
+        if (ownerWorkspacesError) {
           return judgeJson(false, "Judge unavailable.");
         }
-        const spentCents = estimateJudgeUsageCents(
-          Number(usageRow?.input_tokens ?? 0),
-          Number(usageRow?.output_tokens ?? 0)
-        );
-        if (spentCents >= fairUseCapCents) {
-          const capEuro = (fairUseCapCents / 100).toFixed(0);
-          const planLabel = planId === "team" ? "Team" : "Business";
-          return judgeJson(
-            false,
-            `Fair-use monthly budget reached for ${planLabel} (€${capEuro}). Configure BYO LLM to continue.`,
-            { advisory: true }
+        const ownerWorkspaceIds = new Set((ownerWorkspaces ?? []).map((w) => w.id));
+        if (ownerWorkspaceIds.size > 0) {
+          const { data: usageRows, error: usageError } = await supabase
+            .from("judge_usage")
+            .select("workspace_id, input_tokens, output_tokens")
+            .eq("period", period);
+          if (usageError) {
+            return judgeJson(false, "Judge unavailable.");
+          }
+          const totals = (usageRows ?? []).reduce(
+            (acc, row) => {
+              if (!ownerWorkspaceIds.has(row.workspace_id)) return acc;
+              acc.input += Number(row.input_tokens ?? 0);
+              acc.output += Number(row.output_tokens ?? 0);
+              return acc;
+            },
+            { input: 0, output: 0 }
           );
+          const spentCents = estimateJudgeUsageCents(totals.input, totals.output);
+          if (spentCents >= fairUseCapCents) {
+            const capEuro = (fairUseCapCents / 100).toFixed(0);
+            const planLabel = planId === "team" ? "Team" : "Business";
+            return judgeJson(
+              false,
+              `Fair-use monthly budget reached for ${planLabel} (€${capEuro}). Configure BYO LLM to continue.`,
+              { advisory: true }
+            );
+          }
+        } else {
+          return judgeJson(false, "Judge unavailable.");
         }
       }
     }
