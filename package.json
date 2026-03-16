@@ -9,7 +9,12 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "sync-plan": "tsx scripts/sync-plan-from-stripe.ts"
+    "sync-plan": "tsx scripts/sync-plan-from-stripe.ts",
+    "qa:seed": "tsx decern-gate-demo/qa-demo/seed-prereqs.ts",
+    "qa:run": "tsx decern-gate-demo/qa-demo/run-all-qa.ts",
+    "qa:all": "npm run qa:seed && npm run qa:run",
+    "qa:validate": "bash decern-gate-demo/qa-demo/run-validate.sh",
+    "qa:judge": "bash decern-gate-demo/qa-demo/run-judge.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
