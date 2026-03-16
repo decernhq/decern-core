@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getDecisionById, getDecisions, getSuggestedTags } from "@/lib/queries/decisions";
 import { getProjects } from "@/lib/queries/projects";
 import { DecisionForm } from "@/components/decisions/decision-form";
@@ -12,11 +13,13 @@ interface EditDecisionPageProps {
 
 export default async function EditDecisionPage({ params }: EditDecisionPageProps) {
   const { id } = await params;
-  const [decision, projects, allDecisions, suggestedTags] = await Promise.all([
+  const [decision, projects, allDecisions, suggestedTags, t, tc] = await Promise.all([
     getDecisionById(id),
     getProjects(),
     getDecisions(),
     getSuggestedTags(),
+    getTranslations("decisions"),
+    getTranslations("common"),
   ]);
   const otherDecisions = allDecisions
     .filter((d) => d.id !== id)
@@ -33,10 +36,10 @@ export default async function EditDecisionPage({ params }: EditDecisionPageProps
           href={`/dashboard/decisions/${id}`}
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Torna alla decisione
+          {t("backToDecision")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-gray-900">
-          Modifica decisione
+          {t("editDecision")}
         </h1>
       </div>
 
@@ -47,16 +50,14 @@ export default async function EditDecisionPage({ params }: EditDecisionPageProps
           otherDecisions={otherDecisions}
           suggestedTags={suggestedTags}
           action={updateDecisionAction}
-          submitLabel="Salva modifiche"
+          submitLabel={t("saveChanges")}
         />
       </div>
 
-      {/* Danger zone */}
       <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-6">
-        <h3 className="text-lg font-medium text-red-800">Zona pericolosa</h3>
+        <h3 className="text-lg font-medium text-red-800">{tc("dangerZone")}</h3>
         <p className="mt-1 text-sm text-red-600">
-          Eliminando questa decisione, tutti i dati associati verranno persi
-          definitivamente.
+          {t("deleteDecisionWarning")}
         </p>
         <DeleteDecisionButton decisionId={id} decisionTitle={decision.title} />
       </div>

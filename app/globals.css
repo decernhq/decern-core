@@ -127,7 +127,7 @@
 
 /* ========== Landing page ========== */
 
-/* Hero gradient text */
+/* Hero gradient headline — themed */
 .landing-gradient-text {
   background: linear-gradient(135deg, #111827 0%, #374151 40%, #0284c7 100%);
   -webkit-background-clip: text;
@@ -135,13 +135,13 @@
   -webkit-text-fill-color: transparent;
 }
 .dark .landing-gradient-text {
-  background: linear-gradient(135deg, #ffffff 0%, #e5e7eb 40%, #38bdf8 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 45%, #60a5fa 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-/* Hero grid pattern — light & dark */
+/* Hero grid pattern — themed */
 .landing-grid-pattern {
   background-image:
     linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px),
@@ -150,16 +150,14 @@
 }
 .dark .landing-grid-pattern {
   background-image:
-    linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
 }
 
 /* Hero: grid fades out toward the bottom */
 .landing-hero-grid-fade {
-  mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 70%);
-  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 70%);
-  mask-size: 100% 100%;
-  -webkit-mask-size: 100% 100%;
+  mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 65%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 10%, transparent 65%);
 }
 
 /* Judge card pulsing glow */
@@ -180,7 +178,7 @@
   animation: terminal-float 5s ease-in-out infinite;
 }
 
-/* FAQ accordion */
+/* FAQ accordion — hide native marker */
 .landing-faq summary::-webkit-details-marker {
   display: none;
 }

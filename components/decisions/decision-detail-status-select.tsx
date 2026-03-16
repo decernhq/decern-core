@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { DecisionStatus } from "@/types/decision";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,8 @@ export function DecisionDetailStatusSelect({
   currentStatus,
 }: DecisionDetailStatusSelectProps) {
   const router = useRouter();
+  const t = useTranslations("decisions");
+  const tc = useTranslations("common");
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,10 +54,10 @@ export function DecisionDetailStatusSelect({
         )}
       >
         {updating
-          ? "Salvataggio..."
+          ? tc("saving")
           : isApproved
-            ? "Rimuovi da approvato"
-            : "Sposta in approvato"}
+            ? t("removeFromApproved")
+            : t("moveToApproved")}
       </Button>
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>

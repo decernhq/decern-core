@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
@@ -14,6 +15,8 @@ interface ProjectFormProps {
 }
 
 export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) {
+  const t = useTranslations("projects");
+  const tc = useTranslations("common");
   const [state, setState] = useState<ActionState>({});
   const [isPending, startTransition] = useTransition();
 
@@ -33,8 +36,8 @@ export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) 
       <Input
         id="name"
         name="name"
-        label="Nome progetto"
-        placeholder="Es. API Backend, Mobile App..."
+        label={t("name")}
+        placeholder={t("namePlaceholder")}
         defaultValue={project?.name}
         required
       />
@@ -44,13 +47,13 @@ export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) 
           htmlFor="description"
           className="mb-1.5 block text-sm font-medium text-gray-700"
         >
-          Descrizione
+          {t("description")}
         </label>
         <textarea
           id="description"
           name="description"
           rows={3}
-          placeholder="Descrizione opzionale del progetto..."
+          placeholder={t("descriptionPlaceholder")}
           defaultValue={project?.description || ""}
           className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
@@ -62,13 +65,13 @@ export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) 
 
       {state?.success && (
         <FormMessage
-          message={{ type: "success", text: "Progetto salvato con successo!" }}
+          message={{ type: "success", text: t("saved") }}
         />
       )}
 
       <div className="flex justify-end gap-3">
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Salvataggio..." : submitLabel}
+          {isPending ? tc("saving") : submitLabel}
         </Button>
       </div>
     </form>

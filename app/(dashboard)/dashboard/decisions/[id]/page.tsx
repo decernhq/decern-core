@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { getDecisionWithProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
 import { CopyDecisionMarkdown } from "@/components/decisions/copy-decision-markdown";
 import { DecisionDetailStatusSelect } from "@/components/decisions/decision-detail-status-select";
 import { DecisionStatus } from "@/types/decision";
 import { cn } from "@/lib/utils";
-import { getDecisionStatusLabel, STATUS_COLORS } from "@/lib/constants/decision-status";
+import { STATUS_COLORS } from "@/lib/constants/decision-status";
 
 interface DecisionPageProps {
   params: Promise<{ id: string }>;
@@ -14,7 +15,12 @@ interface DecisionPageProps {
 
 export default async function DecisionPage({ params }: DecisionPageProps) {
   const { id } = await params;
-  const decision = await getDecisionWithProject(id);
+  const [decision, t, ts, tc] = await Promise.all([
+    getDecisionWithProject(id),
+    getTranslations("decisions"),
+    getTranslations("decisionStatus"),
+    getTranslations("common"),
+  ]);
 
   if (!decision) {
     notFound();
@@ -32,7 +38,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           href="/dashboard/decisions"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Torna alle decisioni
+          {t("backToList")}
         </Link>
         <div className="mt-2 flex flex-wrap items-center justify-end gap-3">
           <DecisionDetailStatusSelect
@@ -56,7 +62,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             }}
           />
           <Link href={`/dashboard/decisions/${id}/edit`}>
-            <Button variant="outline">Modifica</Button>
+            <Button variant="outline">{tc("edit")}</Button>
           </Link>
         </div>
         <div className="mt-4">
@@ -75,7 +81,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
                 STATUS_COLORS[decision.status as DecisionStatus]
               )}
             >
-              {getDecisionStatusLabel(decision.status)}
+              {ts(decision.status as "proposed" | "approved" | "superseded" | "rejected")}
             </span>
           </div>
           {project && (
@@ -83,12 +89,12 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
               href={`/dashboard/projects/${project.id}`}
               className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
             >
-              Progetto: {project.name}
+              {t("projectLabel")} {project.name}
             </Link>
           )}
           {author && (
             <p className="mt-0.5 text-sm text-gray-500">
-              Autore: {author.full_name?.trim() || author.email || "—"}
+              {t("authorLabel")} {author.full_name?.trim() || author.email || "—"}
             </p>
           )}
           {linkedDecision && (
@@ -96,12 +102,12 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
               href={`/dashboard/decisions/${linkedDecision.id}`}
               className="mt-1 block text-sm text-gray-500 hover:text-brand-600"
             >
-              Sostituisce: {linkedDecision.title}
+              {t("supersedesLabel")} {linkedDecision.title}
             </Link>
           )}
           {supersededBy.length > 0 && (
             <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
-              <p className="text-sm font-medium text-red-800">Sostituita da:</p>
+              <p className="text-sm font-medium text-red-800">{t("supersededByLabel")}</p>
               <div className="mt-1 flex flex-wrap gap-x-1 gap-y-0.5 text-sm text-red-700">
                 {supersededBy.map((d, i) => (
                   <span key={d.id}>
@@ -121,21 +127,19 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
       </div>
 
       <div className="space-y-6">
-        {/* Context */}
         {decision.context && (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Contesto</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("context")}</h2>
             <p className="mt-2 whitespace-pre-wrap text-gray-600">
               {decision.context}
             </p>
           </div>
         )}
 
-        {/* Options */}
         {decision.options.length > 0 && (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
             <h2 className="text-lg font-semibold text-gray-900">
-              Opzioni considerate
+              {t("optionsConsidered")}
             </h2>
             <ul className="mt-3 space-y-2">
               {decision.options.map((option: string, index: number) => (
@@ -148,30 +152,27 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           </div>
         )}
 
-        {/* Decision */}
         {decision.decision && (
           <div className="rounded-xl border border-green-200 bg-green-50 p-6">
-            <h2 className="text-lg font-semibold text-green-900">Decisione</h2>
+            <h2 className="text-lg font-semibold text-green-900">{t("mdDecision")}</h2>
             <p className="mt-2 whitespace-pre-wrap text-green-800">
               {decision.decision}
             </p>
           </div>
         )}
 
-        {/* Consequences */}
         {decision.consequences && (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Conseguenze</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("consequences")}</h2>
             <p className="mt-2 whitespace-pre-wrap text-gray-600">
               {decision.consequences}
             </p>
           </div>
         )}
 
-        {/* Pull Request */}
         {(decision.pull_request_urls?.length ?? 0) > 0 && (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Pull Request</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("pullRequest")}</h2>
             <ul className="mt-3 space-y-2">
               {(decision.pull_request_urls ?? []).map((url: string, index: number) => (
                 <li key={index}>
@@ -190,10 +191,9 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           </div>
         )}
 
-        {/* External links */}
         {(decision.external_links?.length ?? 0) > 0 && (
           <div className="rounded-xl border border-gray-200 bg-white p-6">
-            <h2 className="text-lg font-semibold text-gray-900">Link esterni</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t("externalLinks")}</h2>
             <ul className="mt-3 space-y-2">
               {(decision.external_links ?? []).map((link: { url: string; label?: string }, index: number) => (
                 <li key={index}>
@@ -211,7 +211,6 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           </div>
         )}
 
-        {/* Tags and metadata */}
         <div className="rounded-xl border border-gray-200 bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -230,8 +229,8 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
             </div>
             <div className="text-right text-sm text-gray-500">
               <p>
-                Creata:{" "}
-                {new Date(decision.created_at).toLocaleDateString("it-IT", {
+                {t("createdLabel")}{" "}
+                {new Date(decision.created_at).toLocaleDateString(undefined, {
                   day: "numeric",
                   month: "long",
                   year: "numeric",
@@ -239,8 +238,8 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
               </p>
               {decision.updated_at !== decision.created_at && (
                 <p>
-                  Aggiornata:{" "}
-                  {new Date(decision.updated_at).toLocaleDateString("it-IT", {
+                  {t("updatedLabel")}{" "}
+                  {new Date(decision.updated_at).toLocaleDateString(undefined, {
                     day: "numeric",
                     month: "long",
                     year: "numeric",

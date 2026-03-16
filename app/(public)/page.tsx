@@ -34,51 +34,15 @@ function BoldWhite({ children }: { children: React.ReactNode }) {
   return <strong className="font-bold text-white">{children}</strong>;
 }
 
-/* ---------- feature data ---------- */
+/* ---------- feature config ---------- */
 
 const featureRows = [
-  {
-    titleKey: "f1Title",
-    descKey: "f1Desc",
-    Icon: HiDocumentText,
-    iconBg: "bg-brand-100 dark:bg-brand-900/40",
-    iconText: "text-brand-600 dark:text-brand-400",
-  },
-  {
-    titleKey: "f2Title",
-    descKey: "f2Desc",
-    Icon: HiLink,
-    iconBg: "bg-sky-100 dark:bg-sky-900/40",
-    iconText: "text-sky-600 dark:text-sky-400",
-  },
-  {
-    titleKey: "f3Title",
-    descKey: "f3Desc",
-    Icon: HiCommandLine,
-    iconBg: "bg-amber-100 dark:bg-amber-900/40",
-    iconText: "text-amber-600 dark:text-amber-400",
-  },
-  {
-    titleKey: "f4Title",
-    descKey: "f4Desc",
-    Icon: HiShieldCheck,
-    iconBg: "bg-emerald-100 dark:bg-emerald-900/40",
-    iconText: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    titleKey: "f5Title",
-    descKey: "f5Desc",
-    Icon: HiEye,
-    iconBg: "bg-indigo-100 dark:bg-indigo-900/40",
-    iconText: "text-indigo-600 dark:text-indigo-400",
-  },
-  {
-    titleKey: "f6Title",
-    descKey: "f6Desc",
-    Icon: HiUserGroup,
-    iconBg: "bg-rose-100 dark:bg-rose-900/40",
-    iconText: "text-rose-600 dark:text-rose-400",
-  },
+  ["f1Title", "f1Desc", HiDocumentText, "bg-brand-100 dark:bg-brand-900/40", "text-brand-600 dark:text-brand-400"],
+  ["f2Title", "f2Desc", HiLink, "bg-sky-100 dark:bg-sky-900/40", "text-sky-600 dark:text-sky-400"],
+  ["f3Title", "f3Desc", HiCommandLine, "bg-amber-100 dark:bg-amber-900/40", "text-amber-600 dark:text-amber-400"],
+  ["f4Title", "f4Desc", HiShieldCheck, "bg-emerald-100 dark:bg-emerald-900/40", "text-emerald-600 dark:text-emerald-400"],
+  ["f5Title", "f5Desc", HiEye, "bg-indigo-100 dark:bg-indigo-900/40", "text-indigo-600 dark:text-indigo-400"],
+  ["f6Title", "f6Desc", HiUserGroup, "bg-rose-100 dark:bg-rose-900/40", "text-rose-600 dark:text-rose-400"],
 ] as const;
 
 const problemAccents = ["bg-brand-500", "bg-amber-500", "bg-rose-500"];
@@ -100,140 +64,153 @@ export default async function LandingPage() {
   return (
     <main className="overflow-x-hidden">
       {/* ═══════════ HERO ═══════════ */}
-      <section className="relative overflow-hidden bg-white dark:bg-gray-950 px-4 pb-24 pt-20 sm:pb-32 sm:pt-28 lg:pb-40 lg:pt-36">
+      <section className="relative overflow-hidden bg-white dark:bg-gray-950 px-4 pb-24 pt-16 sm:pb-28 sm:pt-20 lg:min-h-[85vh] lg:flex lg:items-center lg:pb-0 lg:pt-0">
+        {/* Gradient orbs */}
+        <div
+          className="pointer-events-none absolute top-[10%] -left-[15%] h-[500px] w-[500px] rounded-full bg-brand-500/[0.06] dark:bg-brand-500/20 blur-[120px]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute bottom-[15%] -right-[10%] h-[400px] w-[400px] rounded-full bg-violet-500/[0.04] dark:bg-violet-500/15 blur-[120px]"
+          aria-hidden
+        />
+
+        {/* Grid */}
         <div
           className="pointer-events-none absolute inset-0 landing-grid-pattern landing-hero-grid-fade"
           aria-hidden
         />
-        <div
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(14,165,233,0.06),transparent)] dark:bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(14,165,233,0.12),transparent)]"
-          aria-hidden
-        />
 
-        <div className="relative mx-auto max-w-4xl text-center">
-          <FadeIn delay={0} duration={600}>
-            <Eyebrow>{t("hero.eyebrow")}</Eyebrow>
-          </FadeIn>
+        <div className="relative mx-auto w-full max-w-6xl">
+          <div className="lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
+            {/* Copy */}
+            <div className="text-center lg:text-left">
+              <FadeIn delay={0} duration={600}>
+                <Eyebrow>{t("hero.eyebrow")}</Eyebrow>
+              </FadeIn>
 
-          <FadeIn delay={80} duration={700}>
-            <h1 className="mt-4 text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl lg:leading-[1.05]">
-              <span className="landing-gradient-text">
-                {t("hero.headline")}
-              </span>
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={180} duration={700}>
-            <p className="mx-auto mt-8 max-w-xl text-lg leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl">
-              {t.rich("hero.subheadline", bold)}
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={280} duration={600}>
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              {user ? (
-                <Link href="/dashboard">
-                  <Button
-                    size="lg"
-                    className="shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-shadow"
-                  >
-                    Dashboard
-                  </Button>
-                </Link>
-              ) : (
-                <>
-                  <Link href="/signup">
-                    <Button
-                      size="lg"
-                      className="shadow-lg shadow-brand-500/20 hover:shadow-brand-500/30 transition-shadow"
-                    >
-                      {t("hero.ctaPrimary")}
-                    </Button>
-                  </Link>
-                  <Link href="#solution">
-                    <Button variant="outline" size="lg">
-                      {t("hero.ctaSecondary")}
-                    </Button>
-                  </Link>
-                </>
-              )}
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={400} duration={800}>
-            <div className="relative mx-auto mt-20 max-w-2xl">
-              <div
-                className="pointer-events-none absolute -inset-8 rounded-3xl bg-brand-500/[0.04] blur-2xl dark:bg-brand-400/[0.07]"
-                aria-hidden
-              />
-              <div className="landing-terminal relative overflow-hidden rounded-xl border border-gray-800/80 bg-gray-950 shadow-2xl ring-1 ring-white/[0.05]">
-                <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-gray-900/80 px-4 py-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                  <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-                  <span className="ml-3 font-mono text-[11px] text-gray-500">
-                    terminal
+              <FadeIn delay={80} duration={700}>
+                <h1 className="mt-4 text-5xl font-extrabold tracking-tight sm:text-6xl lg:text-[4.25rem] lg:leading-[1.08]">
+                  <span className="landing-gradient-text">
+                    {t("hero.headline")}
                   </span>
+                </h1>
+              </FadeIn>
+
+              <FadeIn delay={180} duration={700}>
+                <p className="mx-auto mt-6 max-w-lg text-lg leading-relaxed text-gray-500 dark:text-gray-400 sm:text-xl lg:mx-0">
+                  {t.rich("hero.subheadline", bold)}
+                </p>
+              </FadeIn>
+
+              <FadeIn delay={280} duration={600}>
+                <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+                  {user ? (
+                    <Link href="/dashboard">
+                      <Button
+                        size="lg"
+                        className="shadow-lg shadow-brand-500/20"
+                      >
+                        Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <>
+                      <Link href="/signup">
+                        <Button
+                          size="lg"
+                          className="shadow-lg shadow-brand-500/20"
+                        >
+                          {t("hero.ctaPrimary")}
+                        </Button>
+                      </Link>
+                      <Link href="#solution">
+                        <Button variant="outline" size="lg">
+                          {t("hero.ctaSecondary")}
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
-                <div className="px-6 py-5 text-left font-mono text-[13px] leading-7 text-gray-400">
-                  <p>
-                    <span className="text-gray-500">$</span>{" "}
-                    <span className="text-white">npx decern-gate</span>
-                  </p>
-                  <p className="mt-2 text-amber-400">
-                    Policy: decision required —{" "}
-                    <span className="text-amber-300 font-medium">YES</span>
-                  </p>
-                  <p className="text-gray-400">
-                    Reason: High-impact patterns matched:{" "}
-                    <span className="text-gray-300">
-                      package.json, terraform/main.tf
+              </FadeIn>
+            </div>
+
+            {/* Terminal */}
+            <FadeIn delay={350} duration={800} direction="right" distance={30}>
+              <div className="relative mt-16 lg:mt-0">
+                <div
+                  className="pointer-events-none absolute -inset-4 rounded-2xl bg-gradient-to-br from-brand-200/30 to-violet-200/20 dark:from-brand-500/[0.08] dark:to-violet-500/[0.05] blur-xl"
+                  aria-hidden
+                />
+                <div className="landing-terminal relative overflow-hidden rounded-xl bg-gray-950 shadow-2xl ring-1 ring-gray-900/10 dark:ring-white/[0.06]">
+                  <div className="flex items-center gap-1.5 border-b border-white/[0.06] bg-gray-900/80 px-4 py-2.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+                    <span className="ml-3 font-mono text-[11px] text-gray-500">
+                      terminal
                     </span>
-                  </p>
-                  <p className="text-gray-400">
-                    Matched (high-impact):{" "}
-                    <span className="text-gray-300">
-                      package.json, terraform/main.tf
-                    </span>
-                  </p>
-                  <p className="mt-2 text-gray-400">
-                    References: found 1 ref(s) (decision ID or ADR) —{" "}
-                    <span className="text-gray-300">ADR-001</span>
-                  </p>
-                  <p className="mt-2 text-emerald-400">
-                    Decision ADR-001: status Approved.
-                  </p>
-                  <p className="text-gray-400">Linked PR: yes</p>
-                  <p className="mt-2 text-gray-500">
-                    Judge: checking diff against decision ADR-001...
-                  </p>
-                  <p className="text-gray-500">Judge: building diff...</p>
-                  <p className="text-gray-500">
-                    Judge: analyzing diff (this may take a moment)...
-                  </p>
-                  <p className="mt-2 text-red-400 font-medium">
-                    Gate: blocked — judge: The diff modifies Terraform
-                    infrastructure and package.json dependencies; ADR-001 only
-                    approves the new API contract. These changes are out of
-                    scope.
-                  </p>
+                  </div>
+                  <div className="px-5 py-4 text-left font-mono text-[13px] leading-7 text-gray-400 sm:px-6 sm:py-5">
+                    <p>
+                      <span className="text-gray-600">$</span>{" "}
+                      <span className="text-white">npx decern-gate</span>
+                    </p>
+                    <p className="mt-2 text-amber-400">
+                      Policy: decision required —{" "}
+                      <span className="text-amber-300 font-medium">YES</span>
+                    </p>
+                    <p>
+                      Reason: High-impact patterns matched:{" "}
+                      <span className="text-gray-300">
+                        package.json, terraform/main.tf
+                      </span>
+                    </p>
+                    <p>
+                      Matched (high-impact):{" "}
+                      <span className="text-gray-300">
+                        package.json, terraform/main.tf
+                      </span>
+                    </p>
+                    <p className="mt-2">
+                      References: found 1 ref(s) (decision ID or ADR) —{" "}
+                      <span className="text-gray-300">ADR-001</span>
+                    </p>
+                    <p className="mt-2 text-emerald-400">
+                      Decision ADR-001: status Approved.
+                    </p>
+                    <p>Linked PR: yes</p>
+                    <p className="mt-2 text-gray-600">
+                      Judge: checking diff against decision ADR-001...
+                    </p>
+                    <p className="text-gray-600">Judge: building diff...</p>
+                    <p className="text-gray-600">
+                      Judge: analyzing diff (this may take a moment)...
+                    </p>
+                    <p className="mt-2 text-red-400 font-medium">
+                      Gate: blocked — judge: The diff modifies Terraform
+                      infrastructure and package.json dependencies; ADR-001 only
+                      approves the new API contract. These changes are out of
+                      scope.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </FadeIn>
+            </FadeIn>
+          </div>
         </div>
       </section>
 
       {/* ═══════════ PROBLEM ═══════════ */}
       <section
         id="problem"
-        className="scroll-mt-20 bg-gray-50/70 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
+        className="scroll-mt-20 bg-gray-50/50 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
       >
         <div className="mx-auto max-w-5xl">
           <FadeIn>
             <div className="mx-auto max-w-2xl text-center">
               <Eyebrow>{t("problem.eyebrow")}</Eyebrow>
-              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+              <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
                 {t("problem.title")}
               </h2>
               <p className="mt-6 text-lg leading-relaxed text-gray-500 dark:text-gray-400">
@@ -245,18 +222,18 @@ export default async function LandingPage() {
           <div className="mt-14 grid gap-5 lg:grid-cols-3">
             {(["example1", "example2", "example3"] as const).map((k, i) => (
               <FadeIn key={k} delay={i * 120}>
-                <div className="group relative h-full overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-900/60 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                <div className="group relative h-full overflow-hidden rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-800/50 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <div
                     className={`absolute inset-x-0 top-0 h-0.5 ${problemAccents[i]}`}
                     aria-hidden
                   />
                   <span
-                    className="block text-4xl leading-none text-gray-200 dark:text-gray-700 select-none"
+                    className="block text-5xl leading-none text-gray-200 dark:text-gray-700/60 select-none font-serif"
                     aria-hidden
                   >
                     &ldquo;
                   </span>
-                  <p className="-mt-2 text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
+                  <p className="-mt-3 text-[15px] leading-relaxed text-gray-600 dark:text-gray-300">
                     {t(`problem.${k}`)}
                   </p>
                 </div>
@@ -266,7 +243,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* ═══════════ THE SOLUTION — ADR intro + 4 steps ═══════════ */}
+      {/* ═══════════ SOLUTION — ADR intro + 4 steps ═══════════ */}
       <section
         id="solution"
         className="scroll-mt-20 bg-white dark:bg-gray-950 px-4 py-24 sm:py-28"
@@ -322,15 +299,15 @@ export default async function LandingPage() {
       {/* ═══════════ JUDGE — BYO LLM ═══════════ */}
       <section
         id="judge"
-        className="scroll-mt-20 bg-violet-50/30 dark:bg-violet-950/10 px-4 py-24 sm:py-28"
+        className="scroll-mt-20 bg-violet-50/40 dark:bg-violet-950/15 px-4 py-24 sm:py-28"
       >
         <div className="mx-auto max-w-5xl lg:grid lg:grid-cols-2 lg:gap-16 lg:items-start">
           <FadeIn direction="left" distance={20}>
-            <div className="space-y-4 lg:mt-0">
+            <div className="space-y-4">
               {(["point1", "point2"] as const).map((k) => (
                 <div
                   key={k}
-                  className="rounded-2xl border border-violet-200/60 dark:border-violet-700/30 bg-white dark:bg-gray-900/60 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
+                  className="rounded-2xl border border-violet-200/60 dark:border-violet-700/30 bg-white dark:bg-gray-800/50 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5"
                 >
                   <p className="text-[15px] font-medium leading-relaxed text-gray-700 dark:text-gray-200">
                     {t(`judge.${k}`)}
@@ -357,36 +334,34 @@ export default async function LandingPage() {
       {/* ═══════════ FEATURES ═══════════ */}
       <section
         id="features"
-        className="scroll-mt-20 bg-gray-50/70 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
+        className="scroll-mt-20 bg-gray-50/50 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
       >
         <div className="mx-auto max-w-5xl">
           <FadeIn className="mx-auto max-w-2xl text-center">
             <Eyebrow>{t("features.eyebrow")}</Eyebrow>
-            <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
+            <h2 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl lg:text-5xl">
               {t("features.title")}
             </h2>
           </FadeIn>
 
           <div className="mt-16 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {featureRows.map(
-              ({ titleKey, descKey, Icon, iconBg, iconText }, i) => (
-                <FadeIn key={titleKey} delay={80 * i}>
-                  <div className="group h-full rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-900/60 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
-                    <span
-                      className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}
-                    >
-                      <Icon className={`h-5 w-5 ${iconText}`} />
-                    </span>
-                    <h3 className="mt-4 font-semibold text-gray-900 dark:text-gray-100">
-                      {t(`features.${titleKey}`)}
-                    </h3>
-                    <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
-                      {t(`features.${descKey}`)}
-                    </p>
-                  </div>
-                </FadeIn>
-              ),
-            )}
+            {featureRows.map(([titleKey, descKey, Icon, iconBg, iconText], i) => (
+              <FadeIn key={titleKey} delay={80 * i}>
+                <div className="group h-full rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-800/50 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                  <span
+                    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}
+                  >
+                    <Icon className={`h-5 w-5 ${iconText}`} />
+                  </span>
+                  <h3 className="mt-4 font-semibold text-gray-900 dark:text-gray-100">
+                    {t(`features.${titleKey}`)}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                    {t(`features.${descKey}`)}
+                  </p>
+                </div>
+              </FadeIn>
+            ))}
           </div>
         </div>
       </section>
@@ -414,7 +389,7 @@ export default async function LandingPage() {
               ] as const
             ).map(([titleKey, descKey, accent], i) => (
               <FadeIn key={titleKey} delay={i * 100}>
-                <div className="group h-full rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-gray-50/70 dark:bg-gray-900/60 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5">
+                <div className="group h-full rounded-2xl border border-gray-200/80 dark:border-gray-700/40 bg-gray-50/80 dark:bg-gray-800/50 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                   <span
                     className={`inline-block h-2 w-2 rounded-full ${accent}`}
                     aria-hidden
@@ -435,7 +410,7 @@ export default async function LandingPage() {
       {/* ═══════════ FAQ ═══════════ */}
       <section
         id="faq"
-        className="scroll-mt-20 bg-gray-50/70 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
+        className="scroll-mt-20 bg-gray-50/50 dark:bg-gray-900/50 px-4 py-24 sm:py-28"
       >
         <div className="mx-auto max-w-2xl">
           <FadeIn>
@@ -448,11 +423,11 @@ export default async function LandingPage() {
             {(["q1", "q2", "q3", "q4", "q5", "q6"] as const).map(
               (qKey, i) => (
                 <FadeIn key={qKey} delay={i * 60}>
-                  <details className="landing-faq group rounded-xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-900/60 transition-shadow hover:shadow-sm">
-                    <summary className="flex cursor-pointer items-center justify-between px-6 py-5 text-base font-semibold text-gray-900 dark:text-gray-100 select-none [&::-webkit-details-marker]:hidden list-none">
+                  <details className="landing-faq group rounded-xl border border-gray-200/80 dark:border-gray-700/40 bg-white dark:bg-gray-800/50 transition-all hover:shadow-sm open:shadow-sm">
+                    <summary className="flex cursor-pointer items-center justify-between gap-4 px-6 py-5 text-base font-semibold text-gray-900 dark:text-gray-100 select-none [&::-webkit-details-marker]:hidden list-none">
                       <span>{t(`faq.${qKey}`)}</span>
                       <svg
-                        className="ml-4 h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 group-open:rotate-45"
+                        className="h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200 group-open:rotate-45"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -477,7 +452,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ═══════════ FINAL CTA ═══════════ */}
-      <section className="landing-cta-bg relative overflow-hidden px-4 py-24 sm:py-28">
+      <section className="landing-cta-bg relative overflow-hidden px-4 py-24 sm:py-32">
         <div
           className="landing-cta-blob landing-cta-blob-1 absolute -left-[20%] top-1/4"
           aria-hidden
@@ -499,10 +474,10 @@ export default async function LandingPage() {
           aria-hidden
         />
         <div className="relative mx-auto max-w-2xl text-center">
-          <h2 className="landing-cta-title text-2xl font-bold leading-snug tracking-tight text-white sm:text-3xl lg:text-4xl">
+          <h2 className="landing-cta-title text-3xl font-bold leading-snug tracking-tight text-white sm:text-4xl lg:text-5xl">
             {t.rich("cta.title", boldWhite)}
           </h2>
-          <p className="landing-cta-subline mt-5 text-brand-200/95 sm:text-lg">
+          <p className="landing-cta-subline mt-6 text-lg text-brand-200/90 sm:text-xl">
             {t("cta.subline")}
           </p>
           <div className="landing-cta-buttons mt-12 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -510,7 +485,7 @@ export default async function LandingPage() {
               <Link href="/dashboard">
                 <Button
                   size="lg"
-                  className="bg-white text-brand-700 hover:bg-gray-100"
+                  className="bg-white text-brand-700 hover:bg-gray-100 shadow-lg shadow-white/10"
                 >
                   Dashboard
                 </Button>
@@ -520,7 +495,7 @@ export default async function LandingPage() {
                 <Link href="/signup">
                   <Button
                     size="lg"
-                    className="bg-white text-brand-700 hover:bg-gray-100"
+                    className="bg-white text-brand-700 hover:bg-gray-100 shadow-lg shadow-white/10"
                   >
                     {t("cta.ctaPrimary")}
                   </Button>

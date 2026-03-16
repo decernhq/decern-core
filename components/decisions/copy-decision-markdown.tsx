@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { getDecisionStatusLabel } from "@/lib/constants/decision-status";
 
 type DecisionForMarkdown = {
   title: string;
@@ -26,93 +26,7 @@ function slugify(text: string): string {
     .replace(/\s+/g, "-")
     .replace(/[^a-z0-9-]/g, "")
     .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "") || "decisione";
-}
-
-function decisionToMarkdown(decision: DecisionForMarkdown): string {
-  const lines: string[] = [];
-
-  lines.push(`# ${decision.title}`);
-  lines.push("");
-  lines.push(`**Stato:** ${getDecisionStatusLabel(decision.status)}`);
-  if (decision.project?.name) {
-    lines.push(`**Progetto:** ${decision.project.name}`);
-  }
-  lines.push("");
-
-  if (decision.context) {
-    lines.push("## Contesto");
-    lines.push("");
-    lines.push(decision.context);
-    lines.push("");
-  }
-
-  if (decision.options?.length) {
-    lines.push("## Opzioni considerate");
-    lines.push("");
-    decision.options.forEach((opt) => lines.push(`- ${opt}`));
-    lines.push("");
-  }
-
-  if (decision.decision) {
-    lines.push("## Decisione");
-    lines.push("");
-    lines.push(decision.decision);
-    lines.push("");
-  }
-
-  if (decision.consequences) {
-    lines.push("## Conseguenze");
-    lines.push("");
-    lines.push(decision.consequences);
-    lines.push("");
-  }
-
-  if (decision.external_links?.length) {
-    lines.push("## Link esterni");
-    lines.push("");
-    decision.external_links.forEach((link) => {
-      const text = link.label || link.url;
-      lines.push(`- [${text}](${link.url})`);
-    });
-    lines.push("");
-  }
-
-  if (decision.pull_request_urls?.length) {
-    lines.push("## Pull Request");
-    lines.push("");
-    decision.pull_request_urls.forEach((url) => {
-      const u = url.trim();
-      if (u) lines.push(`- [Apri Pull Request](${u})`);
-    });
-    lines.push("");
-  }
-
-  if (decision.tags?.length) {
-    lines.push("## Tags");
-    lines.push("");
-    lines.push(decision.tags.join(", "));
-    lines.push("");
-  }
-
-  lines.push("---");
-  lines.push("");
-  const created = new Date(decision.created_at).toLocaleDateString("it-IT", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  lines.push(`*Creata: ${created}*`);
-  if (decision.updated_at !== decision.created_at) {
-    const updated = new Date(decision.updated_at).toLocaleDateString("it-IT", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-    lines.push(`*Aggiornata: ${updated}*`);
-  }
-
-  return lines.join("\n");
+    .replace(/^-|-$/g, "") || "decision";
 }
 
 interface CopyDecisionMarkdownProps {
@@ -120,9 +34,97 @@ interface CopyDecisionMarkdownProps {
 }
 
 export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
+  const t = useTranslations("decisions");
+  const ts = useTranslations("decisionStatus");
   const [copied, setCopied] = useState(false);
 
-  const markdown = decisionToMarkdown(decision);
+  function decisionToMarkdown(): string {
+    const lines: string[] = [];
+
+    lines.push(`# ${decision.title}`);
+    lines.push("");
+    lines.push(`**${t("status")}:** ${ts(decision.status as "proposed" | "approved" | "superseded" | "rejected")}`);
+    if (decision.project?.name) {
+      lines.push(`**${t("project")}** ${decision.project.name}`);
+    }
+    lines.push("");
+
+    if (decision.context) {
+      lines.push(`## ${t("mdContext")}`);
+      lines.push("");
+      lines.push(decision.context);
+      lines.push("");
+    }
+
+    if (decision.options?.length) {
+      lines.push(`## ${t("mdOptionsConsidered")}`);
+      lines.push("");
+      decision.options.forEach((opt) => lines.push(`- ${opt}`));
+      lines.push("");
+    }
+
+    if (decision.decision) {
+      lines.push(`## ${t("mdDecision")}`);
+      lines.push("");
+      lines.push(decision.decision);
+      lines.push("");
+    }
+
+    if (decision.consequences) {
+      lines.push(`## ${t("mdConsequences")}`);
+      lines.push("");
+      lines.push(decision.consequences);
+      lines.push("");
+    }
+
+    if (decision.external_links?.length) {
+      lines.push(`## ${t("mdExternalLinks")}`);
+      lines.push("");
+      decision.external_links.forEach((link) => {
+        const text = link.label || link.url;
+        lines.push(`- [${text}](${link.url})`);
+      });
+      lines.push("");
+    }
+
+    if (decision.pull_request_urls?.length) {
+      lines.push("## Pull Request");
+      lines.push("");
+      decision.pull_request_urls.forEach((url) => {
+        const u = url.trim();
+        if (u) lines.push(`- [${t("mdOpenPr")}](${u})`);
+      });
+      lines.push("");
+    }
+
+    if (decision.tags?.length) {
+      lines.push("## Tags");
+      lines.push("");
+      lines.push(decision.tags.join(", "));
+      lines.push("");
+    }
+
+    lines.push("---");
+    lines.push("");
+    const created = new Date(decision.created_at).toLocaleDateString(undefined, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    lines.push(`*${t("mdCreated", { date: created })}*`);
+    if (decision.updated_at !== decision.created_at) {
+      const updated = new Date(decision.updated_at).toLocaleDateString(undefined, {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      lines.push(`*${t("mdUpdated", { date: updated })}*`);
+    }
+
+    return lines.join("\n");
+  }
+
+  const markdown = decisionToMarkdown();
 
   const handleCopy = async () => {
     try {
@@ -168,7 +170,7 @@ export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
                 d="M5 13l4 4L19 7"
               />
             </svg>
-            Copiato!
+            {t("copied")}
           </>
         ) : (
           <>
@@ -185,7 +187,7 @@ export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
                 d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l2-2m-2 2l2 2"
               />
             </svg>
-            Copia in Markdown
+            {t("copyMarkdown")}
           </>
         )}
       </Button>
@@ -208,7 +210,7 @@ export function CopyDecisionMarkdown({ decision }: CopyDecisionMarkdownProps) {
             d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
           />
         </svg>
-        Scarica .md
+        {t("downloadMd")}
       </Button>
     </div>
   );

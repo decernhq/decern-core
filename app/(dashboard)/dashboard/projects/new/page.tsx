@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { ProjectForm } from "@/components/projects/project-form";
 import { createProjectAction } from "../actions";
 
-export default function NewProjectPage() {
+export default async function NewProjectPage() {
+  const t = await getTranslations("projects");
+
   return (
     <div className="mx-auto max-w-2xl">
       <div className="mb-6">
@@ -10,16 +13,16 @@ export default function NewProjectPage() {
           href="/dashboard/projects"
           className="text-sm text-gray-500 hover:text-gray-700"
         >
-          ← Torna ai progetti
+          {t("backToProjects")}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-gray-900">Nuovo progetto</h1>
+        <h1 className="mt-2 text-2xl font-bold text-gray-900">{t("newProjectTitle")}</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Crea un nuovo progetto per organizzare le tue decisioni tecniche.
+          {t("newProjectSubtitle")}
         </p>
       </div>
 
       <div className="rounded-xl border border-gray-200 bg-white p-6">
-        <ProjectForm action={createProjectAction} submitLabel="Crea progetto" />
+        <ProjectForm action={createProjectAction} submitLabel={t("createProject")} />
       </div>
     </div>
   );

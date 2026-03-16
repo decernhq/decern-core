@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   generateWorkspaceCiTokenAction,
@@ -14,13 +15,15 @@ export function WorkspaceCiTokenSection({
   workspaceId: string;
   ciTokenCreatedAt: string | null;
 }) {
+  const t = useTranslations("workspace");
+  const tc = useTranslations("common");
   const [loading, setLoading] = useState<"generate" | "revoke" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
   const hasToken = !!ciTokenCreatedAt;
   const createdDate = ciTokenCreatedAt
-    ? new Date(ciTokenCreatedAt).toLocaleDateString("it-IT", {
+    ? new Date(ciTokenCreatedAt).toLocaleDateString(undefined, {
         day: "numeric",
         month: "long",
         year: "numeric",
@@ -45,7 +48,7 @@ export function WorkspaceCiTokenSection({
   };
 
   const handleRevoke = async () => {
-    if (!confirm("Revocare il token CI? Dovrai generarne uno nuovo per usare il Decision Gate.")) return;
+    if (!confirm(t("confirmRevokeCiToken"))) return;
     setError(null);
     setLoading("revoke");
     try {
@@ -64,9 +67,9 @@ export function WorkspaceCiTokenSection({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-gray-900">Token CI (Decision Gate)</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{t("ciTokenTitle")}</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Usa questo token nelle pipeline CI per verificare che una decisione sia approvata prima di procedere.
+        {t("ciTokenDescription")}{" "}
         Endpoint: <code className="rounded bg-gray-100 px-1 text-xs">GET /api/decision-gate/validate?adrRef=ADR-001</code> oppure <code className="rounded bg-gray-100 px-1 text-xs">?decisionId=uuid</code>
       </p>
       {error && (
@@ -74,7 +77,7 @@ export function WorkspaceCiTokenSection({
       )}
       {revealedToken ? (
         <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-900">Token generato: copialo ora, non sarà più visibile.</p>
+          <p className="text-sm font-medium text-amber-900">{t("tokenGenerated")}</p>
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <code className="max-w-full truncate rounded bg-white px-2 py-1.5 text-sm font-mono text-gray-800">
               {revealedToken}
@@ -85,17 +88,17 @@ export function WorkspaceCiTokenSection({
               variant="outline"
               onClick={() => navigator.clipboard.writeText(revealedToken)}
             >
-              Copia
+              {tc("copy")}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={handleCloseReveal}>
-              Chiudi
+              {tc("close")}
             </Button>
           </div>
         </div>
       ) : hasToken ? (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <p className="text-sm text-gray-600">
-            Token presente (generato il {createdDate})
+            {t("tokenPresent", { date: createdDate ?? "" })}
           </p>
           <Button
             type="button"
@@ -104,7 +107,7 @@ export function WorkspaceCiTokenSection({
             disabled={!!loading}
             onClick={handleGenerate}
           >
-            {loading === "generate" ? "Generazione…" : "Rigenera"}
+            {loading === "generate" ? t("generating") : t("regenerate")}
           </Button>
           <Button
             type="button"
@@ -114,7 +117,7 @@ export function WorkspaceCiTokenSection({
             disabled={!!loading}
             onClick={handleRevoke}
           >
-            {loading === "revoke" ? "Revoca…" : "Revoca"}
+            {loading === "revoke" ? t("revoking") : t("revoke")}
           </Button>
         </div>
       ) : (
@@ -124,7 +127,7 @@ export function WorkspaceCiTokenSection({
             disabled={!!loading}
             onClick={handleGenerate}
           >
-            {loading === "generate" ? "Generazione…" : "Genera token CI"}
+            {loading === "generate" ? t("generating") : t("generateCiToken")}
           </Button>
         </div>
       )}

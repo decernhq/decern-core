@@ -5,7 +5,7 @@ import { getProjectById } from "@/lib/queries/projects";
 import { getDecisionsByProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
 import { DecisionStatus } from "@/types/decision";
-import { getDecisionStatusLabel, STATUS_COLORS } from "@/lib/constants/decision-status";
+import { STATUS_COLORS } from "@/lib/constants/decision-status";
 import { cn } from "@/lib/utils";
 
 interface ProjectPageProps {
@@ -14,11 +14,12 @@ interface ProjectPageProps {
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { id } = await params;
-  const [t, tDecisions, tDashboard, tCommon, locale] = await Promise.all([
+  const [t, tDecisions, tDashboard, tCommon, tStatus, locale] = await Promise.all([
     getTranslations("projects"),
     getTranslations("decisions"),
     getTranslations("dashboard"),
     getTranslations("common"),
+    getTranslations("decisionStatus"),
     getLocale(),
   ]);
   const dateLocale = locale === "it" ? "it-IT" : "en-US";
@@ -142,7 +143,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                         STATUS_COLORS[decision.status]
                       )}
                     >
-                      {getDecisionStatusLabel(decision.status)}
+                      {tStatus(decision.status as "proposed" | "approved" | "superseded" | "rejected")}
                     </span>
                   </td>
                   <td className="px-6 py-4">

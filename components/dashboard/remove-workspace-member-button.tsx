@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { removeWorkspaceMemberAction } from "@/app/(dashboard)/dashboard/settings/actions";
 
@@ -17,10 +18,12 @@ export function RemoveWorkspaceMemberButton({
   isSelf?: boolean;
 }) {
   const router = useRouter();
+  const t = useTranslations("workspace");
+  const tc = useTranslations("common");
   const [loading, setLoading] = useState(false);
 
   async function handleRemove() {
-    if (!confirm(isSelf ? "Vuoi uscire dal workspace?" : "Rimuovere questo membro?")) return;
+    if (!confirm(isSelf ? t("confirmLeaveWorkspace") : t("confirmRemoveMember"))) return;
     setLoading(true);
     const result = await removeWorkspaceMemberAction(workspaceId, userId);
     setLoading(false);
@@ -36,7 +39,7 @@ export function RemoveWorkspaceMemberButton({
       onClick={handleRemove}
       disabled={loading}
     >
-      {isSelf ? "Esci" : "Rimuovi"}
+      {isSelf ? t("leave") : tc("remove")}
     </Button>
   );
 }

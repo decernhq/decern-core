@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 
 export function ManageSubscriptionButton() {
+  const t = useTranslations("buttons");
+  const tc = useTranslations("common");
   const [loading, setLoading] = useState(false);
 
   const handleManage = async () => {
@@ -30,7 +33,7 @@ export function ManageSubscriptionButton() {
 
   return (
     <Button variant="outline" onClick={handleManage} disabled={loading}>
-      {loading ? "Caricamento..." : "Gestisci abbonamento"}
+      {loading ? tc("loading") : t("manageSubscription")}
     </Button>
   );
 }

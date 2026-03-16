@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export function PricingCheckoutButton({
   variant = "primary",
 }: PricingCheckoutButtonProps) {
   const router = useRouter();
+  const t = useTranslations("pricing");
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -60,7 +62,7 @@ export function PricingCheckoutButton({
       size={size}
       variant={variant}
     >
-      {loading ? "Caricamento..." : `Scegli ${planName}`}
+      {loading ? t("choosePlan", { planName: "..." }) : t("choosePlan", { planName })}
     </Button>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { revokeWorkspaceInvitationAction } from "@/app/(dashboard)/dashboard/settings/actions";
 
@@ -13,10 +14,11 @@ export function RevokeWorkspaceInvitationButton({
   email: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("workspace");
   const [loading, setLoading] = useState(false);
 
   async function handleRevoke() {
-    if (!confirm(`Revocare l'invito per ${email}?`)) return;
+    if (!confirm(t("confirmRevokeInvite", { email }))) return;
     setLoading(true);
     const result = await revokeWorkspaceInvitationAction(invitationId);
     setLoading(false);
@@ -32,7 +34,7 @@ export function RevokeWorkspaceInvitationButton({
       onClick={handleRevoke}
       disabled={loading}
     >
-      Revoca
+      {t("revoke")}
     </Button>
   );
 }

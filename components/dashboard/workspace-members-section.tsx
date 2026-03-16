@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import type { WorkspaceMemberWithProfile, WorkspaceInvitationPending } from "@/lib/queries/workspaces";
 import type { Profile } from "@/types/database";
 import { InviteWorkspaceForm } from "./invite-workspace-form";
@@ -8,7 +9,7 @@ function displayName(profile: { full_name: string | null; email: string }) {
   return profile.full_name?.trim() || profile.email || "—";
 }
 
-export function WorkspaceMembersSection({
+export async function WorkspaceMembersSection({
   workspaceId,
   currentUserId,
   ownerProfile,
@@ -21,19 +22,20 @@ export function WorkspaceMembersSection({
   members: WorkspaceMemberWithProfile[];
   invitations: WorkspaceInvitationPending[];
 }) {
+  const t = await getTranslations("workspace");
   const isOwner = currentUserId === ownerProfile?.id;
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-gray-900">Workspace – Membri e inviti</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{t("membersAndInvites")}</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Gli utenti invitati al workspace vedranno tutti i progetti. Gestisci inviti e membri qui.
+        {t("membersHint")}
       </p>
       <ul className="mt-4 space-y-2">
         <li className="flex items-center justify-between py-2">
           <span className="text-gray-900">{ownerProfile ? displayName(ownerProfile) : "—"}</span>
           <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-            Proprietario
+            {t("owner")}
           </span>
         </li>
         {members.map((m) => (
@@ -62,9 +64,9 @@ export function WorkspaceMembersSection({
       {isOwner && (
         <>
           <div className="mt-6 border-t border-gray-200 pt-6">
-            <h3 className="text-sm font-medium text-gray-700">Invita un utente al workspace</h3>
+            <h3 className="text-sm font-medium text-gray-700">{t("inviteUser")}</h3>
             <p className="mt-1 text-sm text-gray-500">
-              Enter the email and share the link (valid 7 days). The invitee will see all workspace projects.
+              {t("inviteHint")}
             </p>
             <div className="mt-3">
               <InviteWorkspaceForm workspaceId={workspaceId} />
@@ -73,7 +75,7 @@ export function WorkspaceMembersSection({
 
           {invitations.length > 0 && (
             <div className="mt-6 border-t border-gray-200 pt-6">
-              <h3 className="text-sm font-medium text-gray-700">Inviti in sospeso</h3>
+              <h3 className="text-sm font-medium text-gray-700">{t("pendingInvites")}</h3>
               <ul className="mt-2 space-y-2">
                 {invitations.map((inv) => (
                   <li

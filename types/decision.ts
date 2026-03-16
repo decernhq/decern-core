@@ -1,6 +1,6 @@
 /**
- * Decision status: valori ufficiali in inglese (DB, API, tipo).
- * Per l’UI usare getDecisionStatusLabel() da lib/constants/decision-status per la traduzione in italiano.
+ * Decision status values stored in DB and API.
+ * For UI labels use the "decisionStatus" namespace from next-intl translations.
  */
 export type DecisionStatus = "proposed" | "approved" | "superseded" | "rejected";
 

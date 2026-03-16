@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { deleteProjectAction } from "../../actions";
 
@@ -13,6 +14,8 @@ export function DeleteProjectButton({
   projectId,
   projectName,
 }: DeleteProjectButtonProps) {
+  const t = useTranslations("projects");
+  const tc = useTranslations("common");
   const [showConfirm, setShowConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -29,7 +32,7 @@ export function DeleteProjectButton({
         className="mt-4"
         onClick={() => setShowConfirm(true)}
       >
-        Elimina progetto
+        {t("deleteProject")}
       </Button>
     );
   }
@@ -37,7 +40,7 @@ export function DeleteProjectButton({
   return (
     <div className="mt-4 space-y-3">
       <p className="text-sm font-medium text-red-800">
-        Sei sicuro di voler eliminare &quot;{projectName}&quot;?
+        {t("confirmDelete", { name: projectName })}
       </p>
       <div className="flex gap-2">
         <Button
@@ -45,14 +48,14 @@ export function DeleteProjectButton({
           onClick={handleDelete}
           disabled={isPending}
         >
-          {isPending ? "Eliminazione..." : "Sì, elimina"}
+          {isPending ? tc("deleting") : tc("yesDelete")}
         </Button>
         <Button
           variant="outline"
           onClick={() => setShowConfirm(false)}
           disabled={isPending}
         >
-          Annulla
+          {tc("cancel")}
         </Button>
       </div>
     </div>

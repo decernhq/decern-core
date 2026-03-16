@@ -1,15 +1,17 @@
 "use client";
 
 import { useTheme } from "@/components/theme-provider";
+import { useTranslations } from "next-intl";
 
 export function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
+  const t = useTranslations("theme");
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={theme === "dark" ? "Attiva tema chiaro" : "Attiva tema scuro"}
+      aria-label={theme === "dark" ? t("switchToLight") : t("switchToDark")}
       className="rounded-lg p-2 text-app-text-muted transition hover:bg-app-hover hover:text-app-text"
     >
       {theme === "dark" ? (

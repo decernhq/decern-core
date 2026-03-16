@@ -2,12 +2,13 @@
 
 import { useState, useTransition, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
 import type { DbDecision, Project } from "@/types/database";
 import type { ActionState } from "@/app/(dashboard)/dashboard/decisions/actions";
-import { DECISION_STATUS_FORM_OPTIONS } from "@/lib/constants/decision-status";
+import { DECISION_STATUS_VALUES } from "@/lib/constants/decision-status";
 
 const DEFAULT_SUGGESTED_TAGS = [
   "frontend",
@@ -101,8 +102,6 @@ interface DecisionFormProps {
   submitLabel: string;
 }
 
-const statusOptions = DECISION_STATUS_FORM_OPTIONS;
-
 type ExternalLink = { url: string; label?: string };
 
 /** Dati iniziali per il form: edit, duplicato o prefill da AI */
@@ -115,7 +114,7 @@ function getInitialData(
   if (duplicateFrom) {
     return {
       ...duplicateFrom,
-      title: ((duplicateFrom.title ?? "").trim() || "Copia decisione") + " (copia)",
+      title: (duplicateFrom.title ?? "").trim() + " (copy)",
     };
   }
   if (prefillFromAi && Object.keys(prefillFromAi).length > 0) {
@@ -148,6 +147,9 @@ export function DecisionForm({
   action,
   submitLabel,
 }: DecisionFormProps) {
+  const t = useTranslations("decisions");
+  const tc = useTranslations("common");
+  const ts = useTranslations("decisionStatus");
   const initialData = getInitialData(decision, duplicateFrom, prefillFromAi);
   const isEditMode = !!decision;
   const checkDuplicate = !isEditMode && existingDecisionsForDuplicateCheck.length > 0;
@@ -328,14 +330,14 @@ export function DecisionForm({
             />
           </svg>
           <div className="min-w-0 flex-1">
-            <p className="font-medium">Possibile decisione già esistente</p>
+            <p className="font-medium">{t("duplicateWarningTitle")}</p>
             <p className="mt-0.5 text-sm text-amber-800">
-              Esiste già una decisione con lo stesso titolo.{" "}
+              {t("duplicateWarningBody")}{" "}
               <Link
                 href={`/dashboard/decisions/${duplicateWarning.id}`}
                 className="font-medium underline hover:no-underline"
               >
-                Apri la decisione esistente
+                {t("openExisting")}
               </Link>
             </p>
           </div>
@@ -349,7 +351,7 @@ export function DecisionForm({
             htmlFor="project_id"
             className="mb-1.5 block text-sm font-medium text-gray-700"
           >
-            Progetto *
+            {t("projectRequired")}
           </label>
           <select
             id="project_id"
@@ -359,7 +361,7 @@ export function DecisionForm({
             required
             className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
           >
-            <option value="">Select a project...</option>
+            <option value="">{t("selectProject")}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
@@ -372,8 +374,8 @@ export function DecisionForm({
       <Input
         id="title"
         name="title"
-        label="Titolo *"
-        placeholder="Es. Adottare Next.js come framework frontend"
+        label={t("titleRequired")}
+        placeholder={t("titlePlaceholder")}
         value={checkDuplicate ? titleValue : undefined}
         defaultValue={checkDuplicate ? undefined : initialData?.title}
         onChange={checkDuplicate ? (e) => setTitleValue(e.target.value) : undefined}
@@ -385,7 +387,7 @@ export function DecisionForm({
           htmlFor="status"
           className="mb-1.5 block text-sm font-medium text-gray-700"
         >
-          Stato
+          {t("status")}
         </label>
         <select
           id="status"
@@ -393,9 +395,9 @@ export function DecisionForm({
           defaultValue={initialData?.status || "proposed"}
           className="flex h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
+          {DECISION_STATUS_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {ts(value)}
             </option>
           ))}
         </select>
@@ -406,13 +408,13 @@ export function DecisionForm({
           htmlFor="context"
           className="mb-1.5 block text-sm font-medium text-gray-700"
         >
-          Contesto
+          {t("context")}
         </label>
         <textarea
           id="context"
           name="context"
           rows={3}
-          placeholder="Descrivi il problema o la situazione che ha portato a questa decisione..."
+          placeholder={t("contextPlaceholder")}
           defaultValue={initialData?.context}
           className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
@@ -423,13 +425,13 @@ export function DecisionForm({
           htmlFor="decision"
           className="mb-1.5 block text-sm font-medium text-gray-700"
         >
-          Decisione*
+          {t("decisionRequired")}
         </label>
         <textarea
           id="decision"
           name="decision"
           rows={3}
-          placeholder="Descrivi la decisione finale presa..."
+          placeholder={t("decisionPlaceholder")}
           defaultValue={initialData?.decision}
           className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
@@ -438,7 +440,7 @@ export function DecisionForm({
       <div>
         <div className="mb-1.5 flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
-            Opzioni considerate
+            {t("optionsConsidered")}
           </label>
           <Button
             type="button"
@@ -446,7 +448,7 @@ export function DecisionForm({
             size="sm"
             onClick={addOption}
           >
-            + Aggiungi opzione
+            {t("addOption")}
           </Button>
         </div>
         <div className="space-y-3">
@@ -460,7 +462,7 @@ export function DecisionForm({
               </span>
               <input
                 type="text"
-                placeholder="Es. Next.js - SSR nativo, ottimo ecosistema"
+                placeholder={t("optionPlaceholder")}
                 value={option}
                 onChange={(e) => updateOption(index, e.target.value)}
                 className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
@@ -471,15 +473,15 @@ export function DecisionForm({
                 size="sm"
                 onClick={() => removeOption(index)}
                 className="flex-shrink-0 text-gray-500 hover:text-red-600"
-                aria-label="Rimuovi opzione"
+                aria-label={t("removeOption")}
               >
-                Rimuovi
+                {tc("remove")}
               </Button>
             </div>
           ))}
           {options.length === 0 && (
             <p className="text-sm text-gray-500">
-              No options. Click &quot;Add option&quot; to list the alternatives considered.
+              {t("noOptions")}
             </p>
           )}
         </div>
@@ -490,13 +492,13 @@ export function DecisionForm({
           htmlFor="consequences"
           className="mb-1.5 block text-sm font-medium text-gray-700"
         >
-          Conseguenze
+          {t("consequences")}
         </label>
         <textarea
           id="consequences"
           name="consequences"
           rows={3}
-          placeholder="Descrivi le conseguenze positive e negative di questa decisione..."
+          placeholder={t("consequencesPlaceholder")}
           defaultValue={initialData?.consequences}
           className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
@@ -504,7 +506,7 @@ export function DecisionForm({
 
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Tags
+          {t("tags")}
         </label>
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-gray-300 bg-white p-2 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20">
           {tags.map((tag, index) => (
@@ -517,7 +519,7 @@ export function DecisionForm({
                 type="button"
                 onClick={() => removeTag(index)}
                 className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200"
-                aria-label={`Rimuovi tag ${tag}`}
+                aria-label={t("removeTag", { tag })}
               >
                 ×
               </button>
@@ -534,7 +536,7 @@ export function DecisionForm({
               }}
               onFocus={() => setTagSuggestionsOpen(true)}
               onKeyDown={handleTagInputKeyDown}
-              placeholder="Aggiungi tag..."
+              placeholder={t("addTag")}
               className="h-8 min-w-0 flex-1 border-0 bg-transparent px-2 py-1 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-0"
             />
             {tagSuggestionsOpen && filteredTagSuggestions.length > 0 && (
@@ -557,21 +559,21 @@ export function DecisionForm({
           </div>
         </div>
         <p className="mt-1 text-xs text-gray-500">
-          Scrivi e scegli dai suggerimenti o premi Invio per aggiungere.
+          {t("tagHint")}
         </p>
       </div>
 
       {/* Pull Request (multiple) */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Pull Request</span>
+          <span className="text-sm font-medium text-gray-700">{t("pullRequest")}</span>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={addPullRequest}
           >
-            + Aggiungi PR
+            {t("addPr")}
           </Button>
         </div>
         <div className="space-y-3">
@@ -593,15 +595,15 @@ export function DecisionForm({
                 size="sm"
                 onClick={() => removePullRequest(index)}
                 className="flex-shrink-0 text-gray-500 hover:text-red-600"
-                aria-label="Rimuovi PR"
+                aria-label={t("removePr")}
               >
-                Rimuovi
+                {tc("remove")}
               </Button>
             </div>
           ))}
           {pullRequestUrls.length === 0 && (
             <p className="text-sm text-gray-500">
-              No pull requests. Click &quot;Add PR&quot; to link one or more PRs to this decision.
+              {t("noPr")}
             </p>
           )}
         </div>
@@ -610,14 +612,14 @@ export function DecisionForm({
       {/* Link esterni */}
       <div>
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700">Link esterni</span>
+          <span className="text-sm font-medium text-gray-700">{t("externalLinks")}</span>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={addLink}
           >
-            + Aggiungi link
+            {t("addLink")}
           </Button>
         </div>
         <div className="space-y-3">
@@ -628,7 +630,7 @@ export function DecisionForm({
             >
               <input
                 type="text"
-                placeholder="Etichetta (opzionale)"
+                placeholder={t("labelOptional")}
                 value={link.label ?? ""}
                 onChange={(e) => updateLink(index, "label", e.target.value)}
                 className="h-9 w-40 flex-shrink-0 rounded border border-gray-300 bg-white px-2.5 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500/20"
@@ -646,15 +648,15 @@ export function DecisionForm({
                 size="sm"
                 onClick={() => removeLink(index)}
                 className="flex-shrink-0 text-gray-500 hover:text-red-600"
-                aria-label="Rimuovi link"
+                aria-label={t("removeLink")}
               >
-                Rimuovi
+                {tc("remove")}
               </Button>
             </div>
           ))}
           {externalLinks.length === 0 && (
             <p className="text-sm text-gray-500">
-              No links. Click &quot;Add link&quot; to add external references (RFC, documentation, etc.).
+              {t("noLinks")}
             </p>
           )}
         </div>
@@ -663,7 +665,7 @@ export function DecisionForm({
       {/* Sostituisce (supersede): decisione che questa sostituisce */}
       <div>
         <label className="mb-1.5 block text-sm font-medium text-gray-700">
-          Sostituisce (supersede) la decisione
+          {t("supersedes")}
         </label>
         <input
           type="hidden"
@@ -682,10 +684,10 @@ export function DecisionForm({
               onClick={() => setSelectedLinkedDecision(null)}
               className="text-gray-500 hover:text-red-600"
             >
-              Rimuovi
+              {tc("remove")}
             </Button>
             <Button type="button" variant="outline" size="sm" onClick={openLinkedModal}>
-              Cambia
+              {tc("change")}
             </Button>
           </div>
         ) : (
@@ -697,17 +699,17 @@ export function DecisionForm({
             disabled={!currentProjectId}
             className="w-full justify-center sm:w-auto"
           >
-            Select decision to supersede
+            {t("selectSuperseded")}
           </Button>
         )}
         {!currentProjectId && !decision && (
           <p className="mt-1 text-xs text-gray-500">
-            Select a project first to search for the decision this will supersede.
+            {t("selectProjectFirst")}
           </p>
         )}
         {currentProjectId && (
           <p className="mt-1 text-xs text-gray-500">
-            Opzionale: indica quale decisione questa sostituisce (supersede). La decisione selezionata verrà marcata come &quot;Superata&quot;.
+            {t("supersedesHint")}
           </p>
         )}
       </div>
@@ -726,11 +728,11 @@ export function DecisionForm({
           >
             <div className="border-b border-gray-200 p-4">
               <h2 id="linked-modal-title" className="text-lg font-semibold text-gray-900">
-                Select the decision this supersedes
+                {t("selectSupersedesModal")}
               </h2>
               {currentProjectId && (
                 <p className="mt-0.5 text-sm text-gray-500">
-                  Progetto: {projects.find((p) => p.id === currentProjectId)?.name ?? ""}
+                  {t("project")} {projects.find((p) => p.id === currentProjectId)?.name ?? ""}
                 </p>
               )}
               <input
@@ -738,7 +740,7 @@ export function DecisionForm({
                 type="text"
                 value={linkedSearchQuery}
                 onChange={(e) => setLinkedSearchQuery(e.target.value)}
-                placeholder="Cerca per titolo..."
+                placeholder={t("searchByTitle")}
                 className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
               />
             </div>
@@ -746,8 +748,8 @@ export function DecisionForm({
               {filteredLinkedDecisions.length === 0 ? (
                 <p className="py-6 text-center text-sm text-gray-500">
                   {projectDecisions.length === 0
-                    ? "No decisions in this project."
-                    : "No search results."}
+                    ? t("noDecisionsInProject")
+                    : t("noSearchResults")}
                 </p>
               ) : (
                 <ul className="space-y-1">
@@ -769,7 +771,7 @@ export function DecisionForm({
               )}
             </div>
             <p className="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
-              La decisione scelta verrà marcata come &quot;Superata&quot;.
+              {t("supersededNote")}
             </p>
             <div className="border-t border-gray-200 p-3">
               <Button
@@ -779,7 +781,7 @@ export function DecisionForm({
                 onClick={() => setLinkedModalOpen(false)}
                 className="w-full"
               >
-                Annulla
+                {tc("cancel")}
               </Button>
             </div>
           </div>
@@ -792,13 +794,13 @@ export function DecisionForm({
 
       {state?.success && (
         <FormMessage
-          message={{ type: "success", text: "Decisione salvata con successo!" }}
+          message={{ type: "success", text: t("saved") }}
         />
       )}
 
       <div className="flex justify-end gap-3">
         <Button type="submit" disabled={isPending}>
-          {isPending ? "Salvataggio..." : submitLabel}
+          {isPending ? tc("saving") : submitLabel}
         </Button>
       </div>
     </form>

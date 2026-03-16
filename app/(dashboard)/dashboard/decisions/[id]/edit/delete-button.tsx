@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { deleteDecisionAction } from "../../actions";
 
@@ -13,6 +14,8 @@ export function DeleteDecisionButton({
   decisionId,
   decisionTitle,
 }: DeleteDecisionButtonProps) {
+  const t = useTranslations("decisions");
+  const tc = useTranslations("common");
   const [showConfirm, setShowConfirm] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -29,7 +32,7 @@ export function DeleteDecisionButton({
         className="mt-4"
         onClick={() => setShowConfirm(true)}
       >
-        Elimina decisione
+        {t("deleteDecision")}
       </Button>
     );
   }
@@ -37,18 +40,18 @@ export function DeleteDecisionButton({
   return (
     <div className="mt-4 space-y-3">
       <p className="text-sm font-medium text-red-800">
-        Sei sicuro di voler eliminare &quot;{decisionTitle}&quot;?
+        {t("confirmDelete", { title: decisionTitle })}
       </p>
       <div className="flex gap-2">
         <Button variant="danger" onClick={handleDelete} disabled={isPending}>
-          {isPending ? "Eliminazione..." : "Sì, elimina"}
+          {isPending ? tc("deleting") : tc("yesDelete")}
         </Button>
         <Button
           variant="outline"
           onClick={() => setShowConfirm(false)}
           disabled={isPending}
         >
-          Annulla
+          {tc("cancel")}
         </Button>
       </div>
     </div>

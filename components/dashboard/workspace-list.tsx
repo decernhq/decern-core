@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Workspace } from "@/types/database";
 import { renameWorkspaceAction } from "@/app/(dashboard)/dashboard/actions";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,8 @@ export function WorkspaceList({
   currentUserId: string;
 }) {
   const router = useRouter();
+  const t = useTranslations("workspace");
+  const tc = useTranslations("common");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -54,9 +57,9 @@ export function WorkspaceList({
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
-      <h2 className="text-lg font-semibold text-gray-900">I tuoi workspace</h2>
+      <h2 className="text-lg font-semibold text-gray-900">{t("yourWorkspaces")}</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Select a workspace from the sidebar to see its projects. You can rename the ones you own.
+        {t("yourWorkspacesHint")}
       </p>
       <ul className="mt-4 space-y-2">
         {workspaces.map((w) => {
@@ -91,10 +94,10 @@ export function WorkspaceList({
                     onClick={() => saveEdit(w.id)}
                     disabled={loading || !editName.trim()}
                   >
-                    {loading ? "Salvataggio…" : "Salva"}
+                    {loading ? tc("saving") : tc("save")}
                   </Button>
                   <Button size="sm" variant="ghost" onClick={cancelEdit} disabled={loading}>
-                    Annulla
+                    {tc("cancel")}
                   </Button>
                 </>
               ) : (
@@ -103,16 +106,16 @@ export function WorkspaceList({
                   <span className="flex shrink-0 items-center gap-1.5">
                     {isSelected && (
                       <span className="rounded bg-brand-100 px-2 py-0.5 text-xs font-medium text-brand-700">
-                        In uso
+                        {t("inUse")}
                       </span>
                     )}
                     {isOwner ? (
                       <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-700">
-                        Proprietario
+                        {t("owner")}
                       </span>
                     ) : (
                       <span className="rounded bg-gray-100 px-2 py-0.5 text-xs text-gray-600">
-                        Membro
+                        {t("memberRole")}
                       </span>
                     )}
                     {isOwner && (
@@ -122,7 +125,7 @@ export function WorkspaceList({
                         className="h-8 text-gray-500 hover:text-gray-700"
                         onClick={() => startEdit(w)}
                       >
-                        Rinomina
+                        {t("renameButton")}
                       </Button>
                     )}
                   </span>
