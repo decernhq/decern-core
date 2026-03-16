@@ -2,29 +2,7 @@
 
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { stripe } from "@/lib/stripe";
-
-/** Cents per 1M input tokens. Default = 3× Anthropic cost (~€2.80/1M → ~€8.40/1M = 840 cents). */
-const DEFAULT_INPUT_CENTS_PER_1M = 840;
-/** Cents per 1M output tokens. Default = 3× Anthropic cost (~€14/1M → ~€42/1M = 4200 cents). */
-const DEFAULT_OUTPUT_CENTS_PER_1M = 4200;
-
-function getInputCentsPer1M(): number {
-  const v = process.env.JUDGE_BILLING_INPUT_CENTS_PER_1M;
-  if (v != null && v !== "") {
-    const n = parseInt(v, 10);
-    if (!Number.isNaN(n) && n >= 0) return n;
-  }
-  return DEFAULT_INPUT_CENTS_PER_1M;
-}
-
-function getOutputCentsPer1M(): number {
-  const v = process.env.JUDGE_BILLING_OUTPUT_CENTS_PER_1M;
-  if (v != null && v !== "") {
-    const n = parseInt(v, 10);
-    if (!Number.isNaN(n) && n >= 0) return n;
-  }
-  return DEFAULT_OUTPUT_CENTS_PER_1M;
-}
+import { estimateJudgeUsageCents } from "@/lib/judge-pricing";
 
 export type BillJudgeUsageResult = {
   period: string;
@@ -87,8 +65,6 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
     if (s.stripe_customer_id) customerByOwner.set(s.user_id, s.stripe_customer_id);
   }
 
-  const inputCentsPer1M = getInputCentsPer1M();
-  const outputCentsPer1M = getOutputCentsPer1M();
   const billedOwnerIds: string[] = [];
 
   for (const [ownerId, tokens] of Array.from(workspaceByOwner.entries())) {
@@ -97,10 +73,7 @@ export async function billJudgeUsageForPeriod(period: string): Promise<BillJudge
       errors.push(`Owner ${ownerId} has no Stripe customer; skip billing`);
       continue;
     }
-    const amountCents = Math.round(
-      (tokens.input_tokens / 1_000_000) * inputCentsPer1M +
-        (tokens.output_tokens / 1_000_000) * outputCentsPer1M
-    );
+    const amountCents = estimateJudgeUsageCents(tokens.input_tokens, tokens.output_tokens);
     if (amountCents <= 0) continue;
 
     try {

@@ -82,7 +82,7 @@ Tests cover: missing auth, invalid token, invalid/missing `decisionId`, decision
 
 # Judge endpoint (LLM as a judge)
 
-After validation (validate), the **decern-gate** CLI can call the **judge** endpoint to have an LLM evaluate whether the submitted **diff** is consistent with the referenced decision (ADR or decision ID). The **LLM is chosen and configured by the user**: decern-gate sends in the request body the parameters needed to call the LLM. **Decern does not store or retain API keys**: they are used only for the single request.
+After validation (validate), the **decern-gate** CLI can call the **judge** endpoint to have an LLM evaluate whether the submitted **diff** is consistent with the referenced decision (ADR or decision ID). By default the **LLM is chosen and configured by the user** (BYO LLM) and sent in the request body. If BYO config is omitted, backend can fallback to server fair-use config via `OPEN_AI_API_KEY` (+ optional `OPEN_AI_MODEL`). **Decern does not store or retain BYO API keys**: they are used only for the single request.
 
 - **Anthropic:** if `llm.baseUrl` is `https://api.anthropic.com` (with or without path, e.g. `https://api.anthropic.com/v1`), the backend uses the **native** Messages API (`POST /v1/messages`), with no gateway.
 - **Other providers:** for any other URL (OpenAI, Together, OpenRouter, etc.) the backend uses the **OpenAI-compatible fallback** (`POST {baseUrl}/chat/completions`).
@@ -94,7 +94,7 @@ After validation (validate), the **decern-gate** CLI can call the **judge** endp
 
 ## Request body (JSON)
 
-The client sends **exactly one** of `adrRef` or `decisionId` (not both) and **must** send the `llm` object with the user’s chosen LLM configuration (native Anthropic or OpenAI-compatible).
+The client sends **exactly one** of `adrRef` or `decisionId` (not both). `llm` is optional: when present, BYO config is used; when omitted, backend uses `OPEN_AI_API_KEY` fair-use fallback (if configured).
 
 | Field        | Type    | Description |
 |-------------|---------|-------------|
@@ -104,7 +104,7 @@ The client sends **exactly one** of `adrRef` or `decisionId` (not both) and **mu
 | `headSha`   | string  | Git head ref (e.g. `HEAD` or SHA). |
 | `adrRef`    | string  | Present **only** when the decision is an ADR (e.g. `ADR-002`). |
 | `decisionId`| string  | Present **only** when the decision is a UUID (not ADR). |
-| `llm`       | object  | **Required.** User’s LLM configuration (never stored). See below. |
+| `llm`       | object  | **Optional.** User’s BYO LLM configuration (never stored). If omitted, backend fallback uses `OPEN_AI_API_KEY` (+ optional `OPEN_AI_MODEL`). See below. |
 
 ### `llm` object
 
@@ -180,7 +180,11 @@ On error (invalid token, decision not found, LLM timeout, network error to the L
 
 ## Environment variables (backend)
 
-- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: same as validate (reading decisions and token lookup). No LLM keys are required on the backend: the user supplies their LLM configuration in the request body.
+- `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`: same as validate (reading decisions and token lookup).
+- `OPEN_AI_API_KEY` (optional): backend fair-use fallback when request body omits `llm`.
+- `OPEN_AI_MODEL` (optional): model for fair-use fallback (default `gpt-4o-mini`).
+- `JUDGE_FAIR_USE_TEAM_CAP_CENTS` (optional): monthly cap for server fair-use on Team (default `2000` = €20).
+- `JUDGE_FAIR_USE_BUSINESS_CAP_CENTS` (optional): monthly cap for server fair-use on Business (default `3500` = €35).
 
 ## Usage history and monthly billing
 
@@ -219,6 +223,7 @@ To prevent abuse and cost overruns the following measures are in place:
 |--------|-------------|
 | **Rate limit (workspace)** | Maximum N requests per workspace per minute (default 60, env `JUDGE_RATE_LIMIT_PER_MINUTE`). Above the limit: `200` with `allowed: false`, `reason: "Rate limit exceeded. Try again later."` without calling the LLM. |
 | **Rate limit (owner)** | Maximum M requests per owner (account) per minute across all workspaces (default 120, env `JUDGE_RATE_LIMIT_PER_MINUTE_OWNER`). Same response when exceeded. Prevents circumventing the workspace limit by using multiple workspaces. |
+| **Fair-use cap (server fallback)** | When BYO `llm` is omitted and backend uses `OPEN_AI_API_KEY`, Team is capped at €20/month and Business at €35/month by default (configurable via `JUDGE_FAIR_USE_TEAM_CAP_CENTS` and `JUDGE_FAIR_USE_BUSINESS_CAP_CENTS`). When cap is reached, response is advisory (`allowed: false`, `advisory: true`) and the LLM is not called. |
 | **Billing required** | On **Team** and above, the workspace owner must have `stripe_customer_id` (payment configured). On **Free**, Judge is available without billing (BYO LLM, advisory). |
 | **Plans** | Judge is available on Free (always advisory), Team and Business/Enterprise/Governance (can block when workspace **Judge blocking** is on). Unsupported plan: `allowed: false`, `reason: "Judge is not available for this plan."`. |
 | **Idempotent billing** | The billing cron sets `billed_at` only for workspaces whose owners were successfully billed. A second run for the same period does not create duplicate invoices. |

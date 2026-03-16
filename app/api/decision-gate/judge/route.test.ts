@@ -39,6 +39,7 @@ const mockSubscriptionMaybeSingle = vi.fn();
 const mockWorkspacePoliciesMaybeSingle = vi.fn();
 const mockDecisionMaybeSingle = vi.fn();
 const mockProjectMaybeSingle = vi.fn();
+const mockJudgeUsageMaybeSingle = vi.fn();
 const mockFetch = vi.fn();
 
 const chainEqMaybe = (maybeSingle: typeof mockDecisionMaybeSingle) => {
@@ -51,17 +52,19 @@ vi.mock("@/lib/supabase/service-role", () => ({
   createServiceRoleClient: () => ({
     from: (table: string) => ({
       select: () => ({
-        eq: (_key: string, _val?: string) =>
-          table === "decisions"
-            ? chainEqMaybe(mockDecisionMaybeSingle)
-            : table === "subscriptions"
-              ? { eq: () => ({ maybeSingle: mockSubscriptionMaybeSingle }) }
-              : table === "workspace_policies"
-                ? { maybeSingle: mockWorkspacePoliciesMaybeSingle }
-                : {
-                    maybeSingle:
-                      table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
-                  },
+        eq: (_key: string, _val?: string) => {
+          if (table === "decisions") return chainEqMaybe(mockDecisionMaybeSingle);
+          if (table === "subscriptions") return { eq: () => ({ maybeSingle: mockSubscriptionMaybeSingle }) };
+          if (table === "workspace_policies") return { maybeSingle: mockWorkspacePoliciesMaybeSingle };
+          if (table === "judge_usage") {
+            const chain = { maybeSingle: mockJudgeUsageMaybeSingle, eq: () => chain };
+            return chain;
+          }
+          return {
+            maybeSingle:
+              table === "workspaces" ? mockWorkspaceMaybeSingle : mockProjectMaybeSingle,
+          };
+        },
       }),
     }),
     rpc: (_name: string, _args: unknown) => mockRpc(),
@@ -75,6 +78,8 @@ vi.mock("@/lib/ci-token", () => ({
 describe("POST /api/decision-gate/judge", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    process.env.OPEN_AI_API_KEY = "sk-server-fallback";
+    delete process.env.OPEN_AI_MODEL;
     mockRpc.mockResolvedValue({ data: true });
     mockSubscriptionMaybeSingle.mockResolvedValue({
       data: { stripe_customer_id: "cus_test123", plan_id: "team" },
@@ -102,6 +107,10 @@ describe("POST /api/decision-gate/judge", () => {
     });
     mockProjectMaybeSingle.mockResolvedValue({
       data: { workspace_id: WORKSPACE_ID },
+      error: null,
+    });
+    mockJudgeUsageMaybeSingle.mockResolvedValue({
+      data: { input_tokens: 0, output_tokens: 0 },
       error: null,
     });
     mockFetch.mockResolvedValue({
@@ -337,7 +346,7 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({ allowed: false, reason: "Decision not found." });
   });
 
-  it("missing llm config => 200 allowed: false", async () => {
+  it("missing llm config => uses OPEN_AI_API_KEY fallback", async () => {
     const req = new NextRequest("http://localhost/api/decision-gate/judge", {
       method: "POST",
       headers: { Authorization: `Bearer ${VALID_TOKEN}`, "Content-Type": "application/json" },
@@ -350,8 +359,69 @@ describe("POST /api/decision-gate/judge", () => {
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data.allowed).toBe(false);
-    expect(data.reason).toContain("LLM configuration");
+    expect(data).toEqual({
+      allowed: true,
+      reason: "Change aligns with ADR.",
+      advisory: false,
+      confidence: 1,
+    });
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://api.openai.com/v1/chat/completions",
+      expect.objectContaining({
+        method: "POST",
+        headers: expect.objectContaining({ Authorization: "Bearer sk-server-fallback" }),
+      })
+    );
+  });
+
+  it("missing llm config and no OPEN_AI_API_KEY => 200 allowed: false", async () => {
+    delete process.env.OPEN_AI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${VALID_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        diff: "d",
+        decisionId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    });
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "No BYO LLM provided and OPEN_AI_API_KEY is not configured.",
+    });
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it("missing llm config + Team budget reached => 200 allowed: false advisory", async () => {
+    mockSubscriptionMaybeSingle.mockResolvedValueOnce({
+      data: { stripe_customer_id: "cus_test123", plan_id: "team" },
+      error: null,
+    });
+    mockJudgeUsageMaybeSingle.mockResolvedValueOnce({
+      data: { input_tokens: 0, output_tokens: 500000 },
+      error: null,
+    });
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${VALID_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        diff: "d",
+        decisionId: "550e8400-e29b-41d4-a716-446655440000",
+      }),
+    });
+    const { POST } = await import("./route");
+    const res = await POST(req);
+    const data = await res.json();
+    expect(res.status).toBe(200);
+    expect(data).toEqual({
+      allowed: false,
+      reason: "Fair-use monthly budget reached for Team (€20). Configure BYO LLM to continue.",
+      advisory: true,
+    });
     expect(mockFetch).not.toHaveBeenCalled();
   });
 

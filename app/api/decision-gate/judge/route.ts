@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { hashCiToken } from "@/lib/ci-token";
 import { recordJudgeUsage } from "@/lib/judge-usage";
+import { getJudgeUsagePeriod } from "@/lib/judge-usage";
+import { estimateJudgeUsageCents } from "@/lib/judge-pricing";
 import { JUDGE_ALLOWED_PLANS, isJudgeAdvisory, type PlanId } from "@/lib/decision-gate-policies";
 
 const DECISION_ID_MAX_LENGTH = 128;
@@ -13,6 +15,8 @@ const MAX_DIFF_CHARS = 120_000;
 const MAX_LLM_BASE_URL_LEN = 512;
 const MAX_LLM_MODEL_LEN = 256;
 const MAX_LLM_API_KEY_LEN = 2048;
+const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
+const DEFAULT_OPENAI_MODEL = "gpt-4o-mini";
 
 /** Anthropic Messages API base host (native support, no gateway). */
 const ANTHROPIC_API_HOST = "api.anthropic.com";
@@ -36,8 +40,8 @@ export type JudgeRequestBody = {
   headSha?: string;
   adrRef?: string;
   decisionId?: string;
-  /** Required: LLM config from user (decern-gate sends it). We never store keys. */
-  llm: JudgeLlmConfig;
+  /** Optional BYO config from user; when missing, backend can fallback to OPEN_AI_API_KEY fair-use config. */
+  llm?: JudgeLlmConfig;
 };
 
 export type JudgeResponse = {
@@ -111,6 +115,33 @@ function validateLlmConfig(llm: unknown): { ok: true; config: JudgeLlmConfig } |
     if (host !== "localhost" && host !== "127.0.0.1") return { ok: false };
   }
   return { ok: true, config: { baseUrl, apiKey, model } };
+}
+
+function getServerFallbackLlmConfig(): JudgeLlmConfig | null {
+  const apiKey = process.env.OPEN_AI_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!apiKey || apiKey.trim().length === 0) return null;
+  const model = (process.env.OPEN_AI_MODEL ?? process.env.OPENAI_MODEL ?? DEFAULT_OPENAI_MODEL).trim();
+  if (!model) return null;
+  return {
+    baseUrl: DEFAULT_OPENAI_BASE_URL,
+    apiKey: apiKey.trim(),
+    model,
+  };
+}
+
+function getFairUseMonthlyCapCents(planId: PlanId): number | null {
+  const parseCap = (value: string | undefined, fallback: number): number => {
+    if (value == null || value.trim() === "") return fallback;
+    const n = parseInt(value, 10);
+    return Number.isNaN(n) || n < 0 ? fallback : n;
+  };
+  if (planId === "team") {
+    return parseCap(process.env.JUDGE_FAIR_USE_TEAM_CAP_CENTS, 2000);
+  }
+  if (planId === "business") {
+    return parseCap(process.env.JUDGE_FAIR_USE_BUSINESS_CAP_CENTS, 3500);
+  }
+  return null;
 }
 
 /** Build decision text for the LLM (title + context + options + decision + consequences). */
@@ -236,11 +267,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return judgeJson(false, "Missing or empty diff.");
   }
 
-  const llmValidation = validateLlmConfig(body.llm);
-  if (!llmValidation.ok) {
-    return judgeJson(false, "Missing or invalid LLM configuration. Provide llm: { baseUrl, apiKey, model } (OpenAI-compatible).");
+  const hasProvidedLlm = body.llm != null;
+  const usingServerFairUse = !hasProvidedLlm;
+  const llmValidation = hasProvidedLlm ? validateLlmConfig(body.llm) : null;
+  const llmConfig =
+    hasProvidedLlm && llmValidation?.ok
+      ? llmValidation.config
+      : !hasProvidedLlm
+        ? getServerFallbackLlmConfig()
+        : null;
+  if (!llmConfig) {
+    return judgeJson(
+      false,
+      hasProvidedLlm
+        ? "Missing or invalid LLM configuration. Provide llm: { baseUrl, apiKey, model }."
+        : "No BYO LLM provided and OPEN_AI_API_KEY is not configured."
+    );
   }
-  const llmConfig = llmValidation.config;
 
   const adrRefTrimmed = typeof body.adrRef === "string" ? body.adrRef.trim() : "";
   const decisionIdParam = typeof body.decisionId === "string" ? body.decisionId : null;
@@ -325,6 +368,35 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
     if (planId !== "free" && !subscription?.stripe_customer_id) {
       return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
+    }
+
+    if (usingServerFairUse) {
+      const fairUseCapCents = getFairUseMonthlyCapCents(planId);
+      if (fairUseCapCents != null) {
+        const period = getJudgeUsagePeriod();
+        const { data: usageRow, error: usageError } = await supabase
+          .from("judge_usage")
+          .select("input_tokens, output_tokens")
+          .eq("workspace_id", workspace.id)
+          .eq("period", period)
+          .maybeSingle();
+        if (usageError) {
+          return judgeJson(false, "Judge unavailable.");
+        }
+        const spentCents = estimateJudgeUsageCents(
+          Number(usageRow?.input_tokens ?? 0),
+          Number(usageRow?.output_tokens ?? 0)
+        );
+        if (spentCents >= fairUseCapCents) {
+          const capEuro = (fairUseCapCents / 100).toFixed(0);
+          const planLabel = planId === "team" ? "Team" : "Business";
+          return judgeJson(
+            false,
+            `Fair-use monthly budget reached for ${planLabel} (€${capEuro}). Configure BYO LLM to continue.`,
+            { advisory: true }
+          );
+        }
+      }
     }
 
     const judgeBlockingFromDb = workspacePolicies?.judge_blocking ?? true;
