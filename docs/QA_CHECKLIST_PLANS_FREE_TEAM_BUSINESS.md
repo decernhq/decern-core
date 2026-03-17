@@ -69,10 +69,10 @@ Checklist operativa per testare i comportamenti di prodotto, CI Validate e Judge
 
 ### Validate con policy Business
 
-- [ ] **Given** `enforce=false`, **When** validate su decisione non approvata, **Then** `200 observation:true`.
-- [ ] **Given** `enforce=true` e `requireApproved=true` con decisione non approvata, **When** validate, **Then** `422 not_approved`.
-- [ ] **Given** `enforce=true` e `requireLinkedPR=true` con decisione senza PR linkata, **When** validate, **Then** `422 linked_pr_required`.
-- [ ] **Given** `enforce=true` e policy soddisfatte, **When** validate, **Then** `200 observation:false`.
+- [ ] **Given** `high_impact=false` e `requireApproved=false`, **When** validate su decisione non approvata, **Then** `200 observation:true`.
+- [ ] **Given** `requireApproved=true` con decisione non approvata, **When** validate, **Then** `422 not_approved` (indipendentemente da high_impact).
+- [ ] **Given** `requireLinkedPR=true` con decisione senza PR linkata, **When** validate, **Then** `422 linked_pr_required` (indipendentemente da high_impact).
+- [ ] **Given** `high_impact=true` e policy soddisfatte, **When** validate, **Then** `200 observation:false`.
 
 ### Judge Business
 
@@ -97,6 +97,6 @@ Checklist operativa per testare i comportamenti di prodotto, CI Validate e Judge
 
 - [ ] Free: validate in observation e judge advisory verificati.
 - [ ] Team: `highImpact=true` blocca solo non approved.
-- [ ] Business: `enforce/requireApproved/requireLinkedPR` rispettati.
+- [ ] Business: `high_impact/requireApproved/requireLinkedPR` rispettati.
 - [ ] Fair-use fallback: cap owner mensile rispettato (20/35) su piu' workspace.
 - [ ] BYO LLM continua a funzionare anche dopo cap fallback raggiunto.

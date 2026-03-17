@@ -132,7 +132,7 @@ export interface Database {
           workspace_id: string;
           require_linked_pr: boolean;
           require_approved: boolean;
-          enforce: boolean;
+          high_impact: boolean;
           judge_blocking: boolean;
           judge_tolerance_percent: number | null;
           created_at: string;
@@ -142,7 +142,7 @@ export interface Database {
           workspace_id: string;
           require_linked_pr?: boolean;
           require_approved?: boolean;
-          enforce?: boolean;
+          high_impact?: boolean;
           judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
           created_at?: string;
@@ -152,7 +152,7 @@ export interface Database {
           workspace_id?: string;
           require_linked_pr?: boolean;
           require_approved?: boolean;
-          enforce?: boolean;
+          high_impact?: boolean;
           judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
           created_at?: string;

@@ -7,7 +7,7 @@
  * 3. Status (Team/Business when highImpact; Business when requireApproved)
  * 4. LLM as judge (Judge endpoint: Free advisory, Team/Business can block)
  *
- * highImpact is a server-side workspace policy (stored as `enforce` column in DB).
+ * highImpact is a server-side workspace policy (column `high_impact` in DB).
  * Default: true (blocking). The CLI (v0.1.10+) does not send highImpact; the server decides.
  */
 
@@ -15,7 +15,7 @@ export type PlanId = "free" | "team" | "business" | "enterprise" | "governance";
 
 /** Policy params for validate (from DB + optional query overrides). */
 export interface ValidatePolicyParams {
-  /** Server-side policy: when true, CI blocking applies for paid plans. Default true. Stored as `enforce` in DB. */
+  /** Server-side policy: when true, CI blocking applies for paid plans. Default true. */
   highImpact: boolean;
   /** Business only: when true, decision must have at least one linked PR. */
   requireLinkedPR: boolean;
@@ -66,14 +66,14 @@ export function defaultValidatePolicyParams(): ValidatePolicyParams {
   return { highImpact: true, requireLinkedPR: false, requireApproved: true };
 }
 
-/** Map workspace_policies row to ValidatePolicyParams. DB column `enforce` → `highImpact`. */
+/** Map workspace_policies row to ValidatePolicyParams. */
 export function dbRowToValidateParams(row: {
-  enforce: boolean;
+  high_impact: boolean;
   require_linked_pr: boolean;
   require_approved: boolean;
 }): Partial<ValidatePolicyParams> {
   return {
-    highImpact: row.enforce,
+    highImpact: row.high_impact,
     requireLinkedPR: row.require_linked_pr,
     requireApproved: row.require_approved,
   };
@@ -97,7 +97,7 @@ function queryOverrides(searchParams: URLSearchParams): Partial<ValidatePolicyPa
  * Query params override DB; DB overrides defaults.
  */
 export function mergeValidateParams(
-  dbRow: { enforce: boolean; require_linked_pr: boolean; require_approved: boolean } | null,
+  dbRow: { high_impact: boolean; require_linked_pr: boolean; require_approved: boolean } | null,
   searchParams: URLSearchParams
 ): ValidatePolicyParams {
   const base = defaultValidatePolicyParams();

@@ -61,7 +61,7 @@ export default async function WorkspacePage() {
     getProfileById(workspace.owner_id),
     supabase
       .from("workspace_policies")
-      .select("enforce, require_linked_pr, require_approved, judge_blocking, judge_tolerance_percent")
+      .select("high_impact, require_linked_pr, require_approved, judge_blocking, judge_tolerance_percent")
       .eq("workspace_id", workspace.id)
       .maybeSingle(),
   ]);
@@ -71,7 +71,7 @@ export default async function WorkspacePage() {
   const showPolicies =
     isOwner && (planId === "team" || BUSINESS_PLANS.includes(planId));
   const policiesInitial = {
-    high_impact: policiesRow?.data?.enforce ?? true,
+    high_impact: policiesRow?.data?.high_impact ?? true,
     require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
     require_approved: policiesRow?.data?.require_approved ?? true,
     judge_blocking: policiesRow?.data?.judge_blocking ?? true,

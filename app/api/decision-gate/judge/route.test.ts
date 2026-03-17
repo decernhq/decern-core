@@ -204,23 +204,21 @@ describe("POST /api/decision-gate/judge", () => {
     expect(data).toEqual({ allowed: false, reason: "Invalid adrRef or decisionId." });
   });
 
-  it("owner has no subscription (treated as free) => Judge allowed, no billing check, LLM called", async () => {
+  it("owner has no subscription (treated as free) => no fair-use LLM, advisory message", async () => {
     mockSubscriptionMaybeSingle.mockResolvedValueOnce({ data: null, error: null });
-    const req = createJudgeRequest(
-      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
-      `Bearer ${VALID_TOKEN}`
-    );
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: new Headers({ "Content-Type": "application/json", Authorization: `Bearer ${VALID_TOKEN}` }),
+      body: JSON.stringify({ diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" }),
+    });
     const { POST } = await import("./route");
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({
-      allowed: true,
-      reason: "Change aligns with ADR.",
-      advisory: true,
-      confidence: 1,
-    });
-    expect(mockFetch).toHaveBeenCalled();
+    expect(data.allowed).toBe(false);
+    expect(data.advisory).toBe(true);
+    expect(data.reason).toContain("Fair-use LLM is not available on the Free plan");
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("owner on Team plan but no Stripe customer => 200 allowed: false, Billing not set up", async () => {
@@ -243,26 +241,24 @@ describe("POST /api/decision-gate/judge", () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it("owner on free plan => Judge allowed without billing, LLM called", async () => {
+  it("owner on free plan => no fair-use LLM, advisory message to use BYO", async () => {
     mockSubscriptionMaybeSingle.mockResolvedValueOnce({
       data: { stripe_customer_id: null, plan_id: "free" },
       error: null,
     });
-    const req = createJudgeRequest(
-      { diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" },
-      `Bearer ${VALID_TOKEN}`
-    );
+    const req = new NextRequest("http://localhost/api/decision-gate/judge", {
+      method: "POST",
+      headers: new Headers({ "Content-Type": "application/json", Authorization: `Bearer ${VALID_TOKEN}` }),
+      body: JSON.stringify({ diff: "d", decisionId: "550e8400-e29b-41d4-a716-446655440000" }),
+    });
     const { POST } = await import("./route");
     const res = await POST(req);
     const data = await res.json();
     expect(res.status).toBe(200);
-    expect(data).toEqual({
-      allowed: true,
-      reason: "Change aligns with ADR.",
-      advisory: true,
-      confidence: 1,
-    });
-    expect(mockFetch).toHaveBeenCalled();
+    expect(data.allowed).toBe(false);
+    expect(data.advisory).toBe(true);
+    expect(data.reason).toContain("Fair-use LLM is not available on the Free plan");
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it("unsupported plan => 200 allowed: false, Judge not available for this plan", async () => {

@@ -226,7 +226,7 @@
     "free": {
       "name": "Free",
       "description": "To get started",
-      "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)*", "CI Observation (no blocking)"]
+      "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory, BYO only)", "CI Observation (no blocking)"]
     },
     "team": {
       "name": "Team",

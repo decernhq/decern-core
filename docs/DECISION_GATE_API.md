@@ -4,7 +4,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 ## Policies (validate) — order of evaluation
 
-1. **Blocking mode** — Determined by `highImpact`, a **server-side workspace policy** (stored as `enforce` in `workspace_policies`, default `true`). Free: always observation. Team/Business+: when `highImpact=true` → blocking; when `false` → observation (`200` with minimal body, no further checks). The CLI (v0.1.10+) does not send `highImpact`; the server decides based on the workspace policy. The query param `highImpact` can still override the DB value when provided.
+1. **Blocking mode** — Determined by `highImpact`, a **server-side workspace policy** (column `high_impact` in `workspace_policies`, default `true`). Free: always observation. Team/Business+: when `highImpact=true` → blocking; when `false` → observation (`200` with minimal body, no further checks). The CLI (v0.1.10+) does not send `highImpact`; the server decides based on the workspace policy. The query param `highImpact` can still override the DB value when provided.
 2. **Linked PR** — **Free / Team:** linking a PR to a decision is never required. **Business+:** the workspace can require it via `requireLinkedPR=true`; if so, the decision must have at least one linked PR, otherwise `422` `linked_pr_required`.
 3. **Status** — (Team when `highImpact=true`; Business when `requireApproved=true`.) Decision must be **approved**; otherwise `422` `not_approved`.
 

@@ -92,7 +92,7 @@ export default async function PricingPage() {
                 </li>
               ))}
             </ul>
-            {(plan.id === "free" || plan.id === "team" || plan.id === "business") && (
+            {(plan.id === "team" || plan.id === "business") && (
               <p className="mt-2 text-xs text-gray-400">* {t("byoLLM")}</p>
             )}
 

@@ -112,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const [{ data: sub }, { data: workspacePolicies }] = await Promise.all([
       supabase.from("subscriptions").select("plan_id").eq("user_id", workspace.owner_id).eq("status", "active").maybeSingle(),
-      supabase.from("workspace_policies").select("enforce, require_linked_pr, require_approved").eq("workspace_id", workspace.id).maybeSingle(),
+      supabase.from("workspace_policies").select("high_impact, require_linked_pr, require_approved").eq("workspace_id", workspace.id).maybeSingle(),
     ]);
     const planId = ((sub as { plan_id?: string } | null)?.plan_id ?? "free") as PlanId;
     const policyParams = mergeValidateParams(workspacePolicies ?? null, request.nextUrl.searchParams);
@@ -163,13 +163,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const hasLinkedPR = pullRequestUrls.length > 0;
     const status = decision.status as string;
 
-    // Policies applied in order when in blocking mode:
+    // Policies applied in order (independently of blocking mode):
     // 1. Linked PR (Business + requireLinkedPR)
-    if (blocking && shouldRequireLinkedPR(planId, policyParams) && !hasLinkedPR) {
+    if (shouldRequireLinkedPR(planId, policyParams) && !hasLinkedPR) {
       return json({ valid: false, reason: "linked_pr_required" }, 422);
     }
     // 2. Status (Team when highImpact, Business when requireApproved)
-    if (blocking && shouldRequireApproved(planId, policyParams) && status !== "approved") {
+    if (shouldRequireApproved(planId, policyParams) && status !== "approved") {
       return json({ valid: false, reason: "not_approved", status }, 422);
     }
 

@@ -229,7 +229,7 @@ export async function updateWorkspacePoliciesAction(
   const { error } = await supabase.from("workspace_policies").upsert(
     {
       workspace_id: workspaceId,
-      enforce: data.high_impact,
+      high_impact: data.high_impact,
       require_linked_pr: data.require_linked_pr,
       require_approved: data.require_approved,
       judge_blocking: data.judge_blocking,

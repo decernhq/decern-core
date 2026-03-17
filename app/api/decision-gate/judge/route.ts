@@ -369,6 +369,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (planId !== "free" && !subscription?.stripe_customer_id) {
       return judgeJson(false, "Billing not set up. Add a payment method to use the Judge.");
     }
+    /** Free plan: no integrated (fair-use) LLM; BYO LLM required to use the Judge. */
+    if (planId === "free" && usingServerFairUse) {
+      return judgeJson(
+        false,
+        "Fair-use LLM is not available on the Free plan. Configure BYO LLM (DECERN_JUDGE_LLM_*) to use the Judge.",
+        { advisory: true }
+      );
+    }
 
     if (usingServerFairUse) {
       const fairUseCapCents = getFairUseMonthlyCapCents(planId);

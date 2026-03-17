@@ -347,7 +347,7 @@ describe("GET /api/decision-gate/validate", () => {
     });
   });
 
-  it("Business + highImpact=false + decision not approved => 200 observation con status", async () => {
+  it("Business + highImpact=false + requireApproved=true + decision not approved => 422 not_approved", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
@@ -362,14 +362,8 @@ describe("GET /api/decision-gate/validate", () => {
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
-    expect(res.status).toBe(200);
-    expect(body).toEqual({
-      valid: true,
-      decisionId,
-      adrRef: "ADR-042",
-      observation: true,
-      status: "proposed",
-    });
+    expect(res.status).toBe(422);
+    expect(body).toEqual({ valid: false, reason: "not_approved", status: "proposed" });
   });
 
   it("Business default (highImpact=true) + decision not approved => 422", async () => {
