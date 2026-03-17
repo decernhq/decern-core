@@ -112,7 +112,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const [{ data: sub }, { data: workspacePolicies }] = await Promise.all([
       supabase.from("subscriptions").select("plan_id").eq("user_id", workspace.owner_id).eq("status", "active").maybeSingle(),
-      supabase.from("workspace_policies").select("require_linked_pr, require_approved, enforce").eq("workspace_id", workspace.id).maybeSingle(),
+      supabase.from("workspace_policies").select("enforce, require_linked_pr, require_approved").eq("workspace_id", workspace.id).maybeSingle(),
     ]);
     const planId = ((sub as { plan_id?: string } | null)?.plan_id ?? "free") as PlanId;
     const policyParams = mergeValidateParams(workspacePolicies ?? null, request.nextUrl.searchParams);

@@ -9,7 +9,6 @@ function createRequest(options: {
   adrRef?: string;
   auth?: string;
   highImpact?: boolean;
-  enforce?: boolean;
   requireLinkedPR?: boolean;
   requireApproved?: boolean;
 }): NextRequest {
@@ -17,7 +16,7 @@ function createRequest(options: {
   if (options.decisionId != null) search.set("decisionId", options.decisionId);
   if (options.adrRef != null) search.set("adrRef", options.adrRef);
   if (options.highImpact === true) search.set("highImpact", "true");
-  if (options.enforce === false) search.set("enforce", "false");
+  if (options.highImpact === false) search.set("highImpact", "false");
   if (options.requireLinkedPR === true) search.set("requireLinkedPR", "true");
   if (options.requireApproved === false) search.set("requireApproved", "false");
   const params = search.toString() ? `?${search.toString()}` : "";
@@ -300,7 +299,7 @@ describe("GET /api/decision-gate/validate", () => {
     });
   });
 
-  it("Team without highImpact + decision not approved => 200 observation con status", async () => {
+  it("Team + highImpact=false + decision not approved => 200 observation con status", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "proposed", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -310,7 +309,7 @@ describe("GET /api/decision-gate/validate", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, highImpact: false });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -324,7 +323,7 @@ describe("GET /api/decision-gate/validate", () => {
     });
   });
 
-  it("Team without highImpact + decision approved => 200 observation con status", async () => {
+  it("Team + highImpact=false + decision approved => 200 observation con status", async () => {
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
       data: { id: decisionId, status: "approved", project_id: "proj-1", adr_ref: "ADR-042" },
@@ -334,7 +333,7 @@ describe("GET /api/decision-gate/validate", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}` });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, highImpact: false });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -348,7 +347,7 @@ describe("GET /api/decision-gate/validate", () => {
     });
   });
 
-  it("Business + enforce=false + decision not approved => 200 observation con status", async () => {
+  it("Business + highImpact=false + decision not approved => 200 observation con status", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({
@@ -359,7 +358,7 @@ describe("GET /api/decision-gate/validate", () => {
       data: { workspace_id: WORKSPACE_ID },
       error: null,
     });
-    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, enforce: false });
+    const req = createRequest({ decisionId, auth: `Bearer ${VALID_TOKEN}`, highImpact: false });
     const { GET } = await import("./route");
     const res = await GET(req);
     const body = await res.json();
@@ -373,7 +372,7 @@ describe("GET /api/decision-gate/validate", () => {
     });
   });
 
-  it("Business default (enforce) + decision not approved => 422", async () => {
+  it("Business default (highImpact=true) + decision not approved => 422", async () => {
     mockSubMaybeSingle.mockResolvedValueOnce({ data: { plan_id: "business" }, error: null });
     const decisionId = "550e8400-e29b-41d4-a716-446655440000";
     mockDecisionMaybeSingle.mockResolvedValueOnce({

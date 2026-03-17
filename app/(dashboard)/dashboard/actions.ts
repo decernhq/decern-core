@@ -201,9 +201,9 @@ export type UpdateWorkspacePoliciesResult = { error?: string; success?: boolean 
 export async function updateWorkspacePoliciesAction(
   workspaceId: string,
   data: {
+    high_impact: boolean;
     require_linked_pr: boolean;
     require_approved: boolean;
-    enforce: boolean;
     judge_blocking: boolean;
     judge_tolerance_percent: number | null;
   }
@@ -229,9 +229,9 @@ export async function updateWorkspacePoliciesAction(
   const { error } = await supabase.from("workspace_policies").upsert(
     {
       workspace_id: workspaceId,
+      enforce: data.high_impact,
       require_linked_pr: data.require_linked_pr,
       require_approved: data.require_approved,
-      enforce: data.enforce,
       judge_blocking: data.judge_blocking,
       judge_tolerance_percent: tolerance,
       updated_at: new Date().toISOString(),

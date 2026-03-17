@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useFormatter } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   generateWorkspaceCiTokenAction,
@@ -17,13 +17,14 @@ export function WorkspaceCiTokenSection({
 }) {
   const t = useTranslations("workspace");
   const tc = useTranslations("common");
+  const format = useFormatter();
   const [loading, setLoading] = useState<"generate" | "revoke" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
 
   const hasToken = !!ciTokenCreatedAt;
   const createdDate = ciTokenCreatedAt
-    ? new Date(ciTokenCreatedAt).toLocaleDateString(undefined, {
+    ? format.dateTime(new Date(ciTokenCreatedAt), {
         day: "numeric",
         month: "long",
         year: "numeric",

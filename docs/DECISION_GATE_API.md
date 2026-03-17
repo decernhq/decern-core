@@ -4,7 +4,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 
 ## Policies (validate) — order of evaluation
 
-1. **Enforcement** — Are we in blocking mode? If not (observation), the gate always returns `200` with minimal body; no further checks.
+1. **Blocking mode** — Determined by `highImpact`, a **server-side workspace policy** (stored as `enforce` in `workspace_policies`, default `true`). Free: always observation. Team/Business+: when `highImpact=true` → blocking; when `false` → observation (`200` with minimal body, no further checks). The CLI (v0.1.10+) does not send `highImpact`; the server decides based on the workspace policy. The query param `highImpact` can still override the DB value when provided.
 2. **Linked PR** — **Free / Team:** linking a PR to a decision is never required. **Business+:** the workspace can require it via `requireLinkedPR=true`; if so, the decision must have at least one linked PR, otherwise `422` `linked_pr_required`.
 3. **Status** — (Team when `highImpact=true`; Business when `requireApproved=true`.) Decision must be **approved**; otherwise `422` `not_approved`.
 
@@ -14,7 +14,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 |--------|----------------|---------------------|--------------------------------------------------|
 | **Free**   | Not checked    | Not checked         | Always observation (never block). |
 | **Team**   | Not checked    | Checked only when `highImpact=true` | Blocking only for High Impact Changes (`highImpact=true`). |
-| **Business+** | Optional: require with `requireLinkedPR=true` | Optional: require with `requireApproved=true` (default) | Default on; disable with `enforce=false`.        |
+| **Business+** | Optional: require with `requireLinkedPR=true` | Optional: require with `requireApproved=true` (default) | Blocking when `highImpact=true` (default). |
 
 ## Endpoint
 
@@ -22,8 +22,7 @@ CI/CD validation endpoint: it checks whether a decision exists and meets policy.
 - **URL:** `/api/decision-gate/validate`
 - **Query params:**
   - `decisionId` (decision UUID) or `adrRef` (e.g. `ADR-001`) — at least one required. With `adrRef` the decision is looked up by workspace + ADR reference.
-  - **Optional:** `highImpact` — `true` or `1`: on **Team**, enables blocking (require approved). Ignored on other plans.
-  - **Optional:** `enforce` — `false` or `0`: on **Business+**, disables enforcement (observation). Default when omitted: `true`.
+  - **Optional:** `highImpact` — override for the server-side `highImpact` policy. `true`/`1` → blocking; `false`/`0` → observation. If omitted, the workspace policy value is used (default `true`).
   - **Optional (Business+):** `requireLinkedPR` — `true` or `1`: decision must have at least one linked PR; otherwise `422` `linked_pr_required`. Default: `false`.
   - **Optional (Business+):** `requireApproved` — `false` or `0`: do not require decision to be approved. Default: `true`.
 
