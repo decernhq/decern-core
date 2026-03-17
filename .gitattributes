@@ -1,0 +1,3 @@
+# git-crypt: encrypt QA demo secrets
+decern-gate-demo/qa-demo/.env filter=git-crypt diff=git-crypt
+decern-gate-demo/qa-demo/env/*.env filter=git-crypt diff=git-crypt
