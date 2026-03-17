@@ -219,7 +219,7 @@
     "free": "Free",
     "custom": "Personalizzato",
     "active": "Attivo",
-    "byoLLM": "BYO LLM",
+    "byoLLM": "LLM integrato (fair use) / BYO LLM",
     "choosePlan": "Scegli {planName}"
   },
   "plans": {
@@ -236,7 +236,7 @@
     "business": {
       "name": "Business",
       "description": "Per le organizzazioni",
-      "features": ["Workspace illimitati", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (può bloccare)*", "Full CI Blocking", "Policy avanzate", "Ruoli"]
+      "features": ["Workspace illimitati", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (può bloccare)*", "CI Blocking per High Impact changes", "Judge tolerance", "Policy avanzate", "Ruoli"]
     },
     "enterprise": {
       "name": "Enterprise",

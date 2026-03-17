@@ -219,7 +219,7 @@
     "free": "Free",
     "custom": "Custom",
     "active": "Active",
-    "byoLLM": "BYO LLM",
+    "byoLLM": "Integrated LLM (fair use) / BYO LLM",
     "choosePlan": "Choose {planName}"
   },
   "plans": {

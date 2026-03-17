@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { PricingCheckoutButton } from "@/components/pricing-checkout-button";
 import { cn } from "@/lib/utils";
 
-const PLAN_ORDER: PlanId[] = ["free", "team", "business", "enterprise", "governance"];
+const PLAN_ORDER: PlanId[] = ["free", "team", "business", "enterprise"];
 
 export default async function PricingPage() {
   const t = await getTranslations("pricing");
@@ -34,7 +34,7 @@ export default async function PricingPage() {
         </p>
       </div>
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {plans.map((plan) => (
           <div
             key={plan.id}
@@ -60,9 +60,9 @@ export default async function PricingPage() {
               <p className="mt-1 text-xs text-gray-500">{plan.description}</p>
               <div className="mt-4">
                 <span className="text-3xl font-bold text-gray-900">
-                  {plan.price === 0 && plan.id !== "enterprise" && plan.id !== "governance"
+                  {plan.price === 0 && plan.id !== "enterprise"
                     ? "€0"
-                    : plan.id === "enterprise" || plan.id === "governance"
+                    : plan.id === "enterprise"
                       ? "—"
                       : `€${plan.price}`}
                 </span>
@@ -106,15 +106,6 @@ export default async function PricingPage() {
               ) : plan.id === "enterprise" ? (
                 <a
                   href="mailto:support@decern.app?subject=Enterprise"
-                  className="block"
-                >
-                  <Button variant="outline" className="w-full">
-                    {t("contactUs")}
-                  </Button>
-                </a>
-              ) : plan.id === "governance" ? (
-                <a
-                  href="mailto:support@decern.app?subject=Governance%20%2F%20On%20Prem"
                   className="block"
                 >
                   <Button variant="outline" className="w-full">

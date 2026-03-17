@@ -21,7 +21,7 @@ export async function getPlanLimits(userId: string): Promise<PlanLimits | null> 
     projects_limit: row.projects_limit ?? 1,
     users_per_workspace_limit: row.users_per_workspace_limit ?? 1,
     decisions_limit: row.decisions_limit ?? 30,
-    ai_generations_per_month: row.ai_generations_per_month ?? 5,
+    ai_generations_per_month: row.ai_generations_per_month ?? 10,
   };
 }
 
@@ -208,8 +208,8 @@ export async function checkCanUseAiGeneration(userId: string): Promise<{
     return {
       allowed: false,
       error:
-        limits.ai_generations_per_month === 5
-          ? "Hai esaurito le 5 generazioni AI mensili del piano Free. Passa al piano Team."
+        limits.ai_generations_per_month <= 10
+          ? `Hai esaurito le ${limits.ai_generations_per_month} generazioni AI mensili del piano Free. Passa al piano Team.`
           : "Hai esaurito le generazioni AI incluse questo mese. Riprova il prossimo mese o passa a un piano superiore.",
     };
   }
@@ -256,12 +256,12 @@ export async function reserveAiUsageSlot(userId: string): Promise<{
   const allowed = data === true || (Array.isArray(data) && data[0] === true);
   if (allowed) return { allowed: true };
   const limits = await getPlanLimits(userId);
-  const limit = limits?.ai_generations_per_month ?? 5;
+  const limit = limits?.ai_generations_per_month ?? 10;
   return {
     allowed: false,
     error:
-      limit === 5
-        ? "Hai esaurito le 5 generazioni AI mensili del piano Free. Passa al piano Team."
+      limit <= 10
+        ? `Hai esaurito le ${limit} generazioni AI mensili del piano Free. Passa al piano Team.`
         : "Hai esaurito le generazioni AI incluse questo mese. Riprova il prossimo mese o passa a un piano superiore.",
   };
 }
