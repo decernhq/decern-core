@@ -426,7 +426,7 @@ describe("POST /api/decision-gate/judge", () => {
     expect(res.status).toBe(200);
     expect(data).toEqual({
       allowed: false,
-      reason: "Fair-use monthly budget reached for Team (€20). Configure BYO LLM to continue.",
+      reason: "Fair-use monthly budget reached. Configure BYO LLM to continue.",
       advisory: true,
     });
     expect(mockFetch).not.toHaveBeenCalled();
@@ -459,7 +459,7 @@ describe("POST /api/decision-gate/judge", () => {
     expect(res.status).toBe(200);
     expect(data).toEqual({
       allowed: false,
-      reason: "Fair-use monthly budget reached for Team (€20). Configure BYO LLM to continue.",
+      reason: "Fair-use monthly budget reached. Configure BYO LLM to continue.",
       advisory: true,
     });
     expect(mockFetch).not.toHaveBeenCalled();

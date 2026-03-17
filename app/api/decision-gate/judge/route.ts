@@ -401,11 +401,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           );
           const spentCents = estimateJudgeUsageCents(totals.input, totals.output);
           if (spentCents >= fairUseCapCents) {
-            const capEuro = (fairUseCapCents / 100).toFixed(0);
-            const planLabel = planId === "team" ? "Team" : "Business";
             return judgeJson(
               false,
-              `Fair-use monthly budget reached for ${planLabel} (€${capEuro}). Configure BYO LLM to continue.`,
+              "Fair-use monthly budget reached. Configure BYO LLM to continue.",
               { advisory: true }
             );
           }
