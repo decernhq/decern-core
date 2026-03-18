@@ -40,24 +40,19 @@ pnpm install
 
 ### 3. Run database migrations
 
-In the Supabase SQL Editor, run the migration files in order:
-
-1. `supabase/migrations/00001_create_profiles.sql`
-2. `supabase/migrations/00002_create_projects.sql`
-3. `supabase/migrations/00003_create_decisions.sql`
-4. `supabase/migrations/00004_create_subscriptions.sql`
-
-Or use the Supabase CLI:
+Run all migrations in order using the Supabase CLI (recommended):
 
 ```bash
 npx supabase db push
 ```
 
+This applies every file in `supabase/migrations/` (profiles, projects, decisions, subscriptions, workspaces, invites, plans, Decision Gate, Judge, etc.). If you prefer the SQL Editor, run each migration file in numeric order.
+
 ### 4. Set up Stripe
 
 1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Create a product "Decern Pro" with a monthly price (e.g., €9/month)
-3. Copy the Price ID
+2. Create two products with monthly prices: **Team** (e.g. €49/month) and **Business** (e.g. €99/month)
+3. Copy both Price IDs (they start with `price_`)
 4. Set up a webhook endpoint pointing to `/api/stripe/webhook`
 5. Select events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
 
@@ -82,6 +77,7 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_TEAM_PRICE_ID=price_...
+STRIPE_BUSINESS_PRICE_ID=price_...
 
 # App
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -112,18 +108,23 @@ decern/
 │   │   ├── page.tsx           # Landing page
 │   │   ├── login/             # Login page
 │   │   ├── signup/            # Signup page
-│   │   └── pricing/           # Pricing page
+│   │   ├── pricing/           # Pricing page
+│   │   └── invite/[token]/    # Public invite page
 │   ├── (dashboard)/           # Protected dashboard
 │   │   └── dashboard/
 │   │       ├── page.tsx       # Dashboard home
 │   │       ├── projects/      # Projects CRUD
 │   │       ├── decisions/     # Decisions CRUD
+│   │       ├── workspace/     # Workspace list, members, invites, CI token
+│   │       ├── invite/[token]/ # Accept invite
 │   │       └── settings/      # User settings & billing
 │   ├── api/
-│   │   └── stripe/            # Stripe API routes
-│   │       ├── checkout/      # Create checkout session
-│   │       ├── portal/        # Customer portal
-│   │       └── webhook/       # Stripe webhooks
+│   │   ├── stripe/            # Stripe API routes
+│   │   │   ├── checkout/      # Create checkout session
+│   │   │   ├── portal/        # Customer portal
+│   │   │   └── webhook/       # Stripe webhooks
+│   │   ├── decisions/         # e.g. generate-from-text
+│   │   └── decision-gate/     # validate, judge (CI/CD)
 │   ├── layout.tsx
 │   └── globals.css
 ├── components/
@@ -153,35 +154,40 @@ decern/
 
 - [x] Landing page with pricing
 - [x] User authentication (signup/login/logout)
+- [x] Workspaces (default workspace, switcher, multiple on Business+)
+- [x] Team collaboration (invite by email, accept invite, members, revoke)
 - [x] Protected dashboard layout
-- [x] Projects CRUD (create, read, update, delete)
+- [x] Projects CRUD (per workspace)
 - [x] Decisions CRUD (create, read, update, delete)
 - [x] Decision status workflow (proposed → approved/rejected/superseded)
-- [x] Tags for decisions
+- [x] Tags, external links, linked PRs, superseded-by link
+- [x] AI generation from free text (with plan limits)
+- [x] Export: copy as Markdown, download .md file
+- [x] Search and filtering on decisions
 - [x] Database schema with RLS policies
-- [x] Stripe integration (checkout, webhooks, customer portal)
-- [x] Subscription management (Free/Team plans)
-- [x] Settings page with billing
+- [x] Stripe integration (checkout Team/Business, webhooks, customer portal)
+- [x] Subscription management (Free/Team/Business/Enterprise)
+- [x] Settings page with billing and language
+- [x] Decision Gate API (validate + judge for CI/CD)
 
 ### Planned
 
-- [ ] Team collaboration (invite members)
 - [ ] Decision history/changelog
-- [ ] Export to Markdown/PDF
-- [ ] Search and filtering
 - [ ] Email notifications
-- [ ] API for integrations
+- [ ] Additional API for integrations
 
 ## Database Schema
 
-### Tables
+### Main tables
 
-- **profiles**: User profiles (extends auth.users)
-- **projects**: User projects
-- **decisions**: Technical decision records
-- **subscriptions**: Stripe subscription data
+- **profiles**: User profiles (extends auth.users), includes role and locale
+- **workspaces**: Owned by a user; contain projects and have members/invites
+- **workspace_members**, **workspace_invitations**: Collaboration per workspace
+- **projects**: Belong to a workspace (via `workspace_id`)
+- **decisions**: Technical decision records (per project)
+- **subscriptions**: Stripe subscription data (plan_id: free, team, business, enterprise, governance)
 
-All tables have Row Level Security (RLS) enabled.
+Additional tables support plans/limits, CI token (Decision Gate), workspace policies, Judge usage and billing. All tables have Row Level Security (RLS) enabled. Run `npx supabase db push` to apply the full migration set.
 
 ## Deployment
 

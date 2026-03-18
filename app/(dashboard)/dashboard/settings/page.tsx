@@ -8,6 +8,7 @@ import { ProfileRoleForm } from "./profile-role-form";
 import { ProfileLocaleForm } from "./profile-locale-form";
 import type { PlanId } from "@/types/billing";
 import { PLANS } from "@/types/billing";
+import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -31,6 +32,12 @@ export default async function SettingsPage() {
     .select("*")
     .eq("user_id", user?.id)
     .single();
+
+  const { data: ghConn } = await supabase
+    .from("github_connections")
+    .select("github_username")
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
 
   const effectivePlanId = getEffectivePlanId(subscription?.plan_id) as PlanId;
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
@@ -76,6 +83,11 @@ export default async function SettingsPage() {
             <p className="mt-1 font-mono text-sm text-gray-600">{user?.id}</p>
           </div>
         </div>
+      </div>
+
+      {/* GitHub section */}
+      <div className="mt-6">
+        <GitHubConnectSection githubUsername={ghConn?.github_username ?? null} />
       </div>
 
       {/* Billing section */}

@@ -260,3 +260,22 @@ export async function updateProfileLocaleAction(
   revalidatePath("/", "layout");
   return { success: true };
 }
+
+export async function disconnectGitHubAction(): Promise<{ error?: string; success?: boolean }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { error } = await supabase
+    .from("github_connections")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error disconnecting GitHub:", error);
+    return { error: "Failed to disconnect GitHub" };
+  }
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}

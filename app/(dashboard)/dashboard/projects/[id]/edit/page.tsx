@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
 import { getProjectById } from "@/lib/queries/projects";
 import { ProjectForm } from "@/components/projects/project-form";
 import { updateProjectAction, deleteProjectAction } from "../../actions";
@@ -12,10 +13,17 @@ interface EditProjectPageProps {
 
 export default async function EditProjectPage({ params }: EditProjectPageProps) {
   const { id } = await params;
-  const [project, t, tc] = await Promise.all([
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  const [project, t, tc, ghConnResult] = await Promise.all([
     getProjectById(id),
     getTranslations("projects"),
     getTranslations("common"),
+    supabase
+      .from("github_connections")
+      .select("id")
+      .eq("user_id", user?.id ?? "")
+      .maybeSingle(),
   ]);
 
   if (!project) {
@@ -41,6 +49,7 @@ export default async function EditProjectPage({ params }: EditProjectPageProps) 
           project={project}
           action={updateProjectAction}
           submitLabel={t("saveChanges")}
+          isGithubConnected={!!ghConnResult.data}
         />
       </div>
 

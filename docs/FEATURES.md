@@ -42,7 +42,7 @@
 |--------------|-------------|
 | **CRUD** | Creazione, lettura, modifica, eliminazione progetti. Ogni progetto appartiene al workspace corrente. |
 | **Campi** | Nome, descrizione (opzionale). |
-| **Limiti** | Free: 1 progetto. Pro/Business/Enterprise: progetti illimitati (o secondo limiti piano). |
+| **Limiti** | Free: 1 progetto. Team/Business/Enterprise: progetti illimitati (o secondo limiti piano). |
 | **Lista progetti** | Pagina “Progetti” con elenco e link alle decisioni per progetto. |
 | **Dettaglio progetto** | Pagina progetto con nome, descrizione, link a “Modifica” e “Elimina”, e lista decisioni del progetto. |
 
@@ -84,7 +84,7 @@
 | Funzionalità | Descrizione |
 |--------------|-------------|
 | **Flusso** | In “Nuova decisione” è possibile incollare un testo libero (es. note, verbale) e richiedere la generazione. L’API estrae titolo, contesto, opzioni, decisione, conseguenze e tag. |
-| **Limiti** | Il numero di generazioni al mese dipende dal piano (Free: 5, Team 300, Business: 1.500, Enterprise: illimitato). Il conteggio è per utente (tabella `ai_generations_usage`). |
+| **Limiti** | Il numero di generazioni al mese dipende dal piano (Free: 10, Team: 500, Business: 1.500, Enterprise: illimitato). Il conteggio è per utente (tabella `ai_generations_usage`). |
 | **Tag** | L’AI usa preferibilmente tag già esistenti nel workspace; tag generici sono filtrati lato server. |
 | **Dopo la generazione** | I campi vengono precompilati nel form; l’utente può modificare e salvare. |
 
@@ -109,7 +109,7 @@
 | **Accetta invito** | `/dashboard/invite/[token]`: solo per utenti loggati. Se l’email dell’invito coincide con l’utente, può accettare e entrare nel workspace. Altrimenti messaggio che l’invito è per un’altro indirizzo. |
 | **Membri workspace** | Lista membri con nome/email e azione “Rimuovi” (proprietario può rimuovere membri). |
 | **Inviti in sospeso** | Lista inviti pendenti con email e azione “Revoca”. |
-| **Limiti inviti** | Numero massimo di utenti per workspace in base al piano (Free: 1, Team 5, Business: 20, Enterprise: illimitato). |
+| **Limiti inviti** | Numero massimo di utenti per workspace in base al piano (Free: 1, Team: 10, Business: 20, Enterprise: illimitato). |
 
 ---
 
@@ -119,19 +119,19 @@
 
 | Piano | Prezzo | Workspace | Progetti | Utenti/workspace | Decisioni | Generazioni AI/mese |
 |------|--------|-----------|----------|------------------|-----------|---------------------|
-| **Free** | €0 | 1 | 1 | 1 | 30 totali | 5 |
-| **Pro** | €19/mese | 1 | Illimitati | 5 | Illimitate | 300 |
-| **Business** | €49/mese | Illimitati | Illimitati | 20 | Illimitate | 1.500 |
+| **Free** | €0 | 1 | 1 | 1 | Illimitate | 10 |
+| **Team** | €49/mese | 1 | Illimitati | 10 | Illimitate | 500 |
+| **Business** | €99/mese | Illimitati | Illimitati | 20 | Illimitate | 1.500 |
 | **Enterprise** | Su richiesta | Illimitati | Illimitati | Illimitati | Illimitate | Illimitate |
 
 ### 7.2 Funzionalità billing
 
 | Funzionalità | Descrizione |
 |--------------|-------------|
-| **Pagina Prezzi** | `/pricing`: confronto Free, Team, Business, Enterprise. Pulsanti “Inizia gratis” (Free), “Scegli Pro” / “Scegli Business” (checkout Stripe), “Contattaci” (Enterprise, mailto). |
-| **Checkout Stripe** | Scelta piano Business o Business → creazione sessione Stripe Checkout → redirect a Stripe. Dopo pagamento, webhook aggiorna la subscription nel DB. |
-| **Customer Portal** | In Impostazioni, per utenti Pro/Business: pulsante “Gestisci abbonamento” che apre il Stripe Customer Portal (cambio piano, metodo di pagamento, cancellazione). |
-| **Sidebar upgrade** | Free: pulsante “Passa a Team. Team: pulsante “Passa a Business”. Business/Enterprise: nessun pulsante. |
+| **Pagina Prezzi** | `/pricing`: confronto Free, Team, Business, Enterprise. Pulsanti “Inizia gratis” (Free), “Scegli Team” / “Scegli Business” (checkout Stripe), “Contattaci” (Enterprise, mailto). |
+| **Checkout Stripe** | Scelta piano Team o Business → creazione sessione Stripe Checkout → redirect a Stripe. Dopo pagamento, webhook aggiorna la subscription nel DB. |
+| **Customer Portal** | In Impostazioni, per utenti Team/Business: pulsante “Gestisci abbonamento” che apre il Stripe Customer Portal (cambio piano, metodo di pagamento, cancellazione). |
+| **Sidebar upgrade** | Free: pulsante “Passa a Team”. Team: pulsante “Passa a Business”. Business/Enterprise: nessun pulsante. |
 | **Impostazioni – Abbonamento** | Mostra piano corrente e prezzo. Free: pulsanti “Passa a Team" e “Passa a Business”. Enterprise: messaggio “Contatta il supporto”. |
 | **Applicazione limiti** | I limiti sono applicati lato server: creazione workspace, progetto, invito, decisione e uso generazione AI verificano il piano (e gli override su subscription) prima di consentire l’azione. |
 
@@ -143,7 +143,7 @@
 |--------------|-------------|
 | **Account** | Nome (full name), ruolo (da elenco predefinito), email (sola lettura da auth), ID utente. |
 | **Abbonamento** | Piano corrente, prezzo, pulsanti upgrade o “Gestisci abbonamento” (Stripe Portal). |
-| **Variabile PLAN_OVERRIDE** | (Opzionale, env) Override del piano mostrato per test (free/pro/Business/enterprise). |
+| **Variabile PLAN_OVERRIDE** | (Opzionale, env) Override del piano mostrato per test (free/team/business/enterprise). |
 
 ---
 
@@ -152,7 +152,7 @@
 | Funzionalità | Descrizione |
 |--------------|-------------|
 | **Home** | Benvenuto, statistiche (progetti, decisioni totali, per stato: proposta, approvata, superata, rifiutata), ultime decisioni, lista progetti, quick actions (Nuovo progetto, Nuova decisione, Vedi decisioni). Sezione “Come iniziare” se non ci sono progetti. |
-| **Layout** | Sidebar (logo, workspace switcher, nav: Dashboard, Progetti, Decisioni, Workspace, Impostazioni, pulsante upgrade se Free/Pro), header con email e logout, area contenuto. |
+| **Layout** | Sidebar (logo, workspace switcher, nav: Dashboard, Progetti, Decisioni, Workspace, Impostazioni, pulsante upgrade se Free/Team), header con email e logout, area contenuto. |
 | **Pulsante “Nuova decisione”** | FAB (floating action button) per aprire la creazione decisione. |
 
 ---

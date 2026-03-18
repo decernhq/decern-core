@@ -22,6 +22,9 @@ export async function Navbar({ user }: NavbarProps) {
           <Link href="/pricing">
             <Button variant="ghost">{t("pricing")}</Button>
           </Link>
+          <Link href="/docs">
+            <Button variant="ghost">{t("docs")}</Button>
+          </Link>
           {user ? (
             <Link href="/dashboard">
               <Button>{t("enter")}</Button>

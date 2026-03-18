@@ -166,6 +166,8 @@ export interface Database {
           description: string | null;
           owner_id: string;
           workspace_id: string;
+          github_repo_full_name: string | null;
+          github_default_branch: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -175,6 +177,8 @@ export interface Database {
           description?: string | null;
           owner_id: string;
           workspace_id: string;
+          github_repo_full_name?: string | null;
+          github_default_branch?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -184,6 +188,8 @@ export interface Database {
           description?: string | null;
           owner_id?: string;
           workspace_id?: string;
+          github_repo_full_name?: string | null;
+          github_default_branch?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -247,6 +253,38 @@ export interface Database {
           updated_at?: string;
         };
       };
+      github_connections: {
+        Row: {
+          id: string;
+          user_id: string;
+          github_user_id: number;
+          github_username: string;
+          access_token: string;
+          scope: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          github_user_id: number;
+          github_username: string;
+          access_token: string;
+          scope?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          github_user_id?: number;
+          github_username?: string;
+          access_token?: string;
+          scope?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       judge_usage: {
         Row: {
           workspace_id: string;
@@ -304,3 +342,4 @@ export type UpdateProject = Database["public"]["Tables"]["projects"]["Update"];
 export type InsertDecision = Database["public"]["Tables"]["decisions"]["Insert"];
 export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"];
 export type JudgeUsage = Database["public"]["Tables"]["judge_usage"]["Row"];
+export type GitHubConnection = Database["public"]["Tables"]["github_connections"]["Row"];

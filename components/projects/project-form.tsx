@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormMessage } from "@/components/ui/form-message";
+import { GitHubRepoSelector } from "@/components/projects/github-repo-selector";
 import type { Project } from "@/types/database";
 import type { ActionState } from "@/app/(dashboard)/dashboard/projects/actions";
 
@@ -12,9 +13,10 @@ interface ProjectFormProps {
   project?: Project;
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   submitLabel: string;
+  isGithubConnected: boolean;
 }
 
-export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) {
+export function ProjectForm({ project, action, submitLabel, isGithubConnected }: ProjectFormProps) {
   const t = useTranslations("projects");
   const tc = useTranslations("common");
   const [state, setState] = useState<ActionState>({});
@@ -58,6 +60,12 @@ export function ProjectForm({ project, action, submitLabel }: ProjectFormProps) 
           className="flex w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         />
       </div>
+
+      <GitHubRepoSelector
+        defaultValue={project?.github_repo_full_name}
+        defaultBranch={project?.github_default_branch}
+        isGithubConnected={isGithubConnected}
+      />
 
       {state?.error && (
         <FormMessage message={{ type: "error", text: state.error }} />
