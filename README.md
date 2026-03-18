@@ -210,13 +210,18 @@ Additional tables support plans/limits, CI token (Decision Gate), workspace poli
 
 ## Deployment
 
-### Vercel
+### Vercel (produzione con cloud)
 
-1. Push to GitHub
-2. Import project in Vercel
-3. Add environment variables
-4. (Cloud) Add a build step to clone `decernhq/decern-cloud` into `cloud/` and run `bash cloud/setup.sh`
-5. Deploy
+Il build esegue automaticamente `scripts/vercel-prebuild.mjs` prima di `next build`.
+
+1. Collega il repo **pubblico** `decernorg/decern` al progetto Vercel.
+2. In **Settings → Environment Variables** aggiungi:
+   - **`DECERN_CLOUD_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo privato `decernhq/decern-cloud` (fine-grained PAT consigliato, solo su quel repository).
+   - Opzionale: **`DECERN_CLOUD_REPO_URL`** se usi un fork del cloud repo (default: `https://github.com/decernhq/decern-cloud.git`).
+3. Tutte le altre variabili (Supabase, Stripe, GitHub OAuth, ecc.) come in `.env.example`.
+4. Deploy: a ogni build Vercel clona `decern-cloud` in `cloud/`, crea i symlink API e compila l’app completa.
+
+Senza `DECERN_CLOUD_CLONE_TOKEN` il deploy produce solo il **core open source** (nessuna route Stripe / Decision Gate / GitHub in `app/api/`).
 
 ### Supabase
 
