@@ -20,10 +20,10 @@ The public repo works **standalone** for self-hosting. Cloud features (billing, 
 
 ### For team members
 
-After cloning the public repo, add the cloud layer:
+After cloning the public repo, add the cloud layer (requires access to the private cloud repository):
 
 ```bash
-git clone https://github.com/decernhq/decern-cloud.git cloud
+git clone <PRIVATE_CLOUD_REPO_URL> cloud
 bash cloud/setup.sh
 ```
 
@@ -216,10 +216,10 @@ Il build esegue automaticamente `scripts/vercel-prebuild.mjs` prima di `next bui
 
 1. Collega il repo **pubblico** `decernorg/decern` al progetto Vercel.
 2. In **Settings → Environment Variables** aggiungi:
-   - **`DECERN_CLOUD_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo privato `decernhq/decern-cloud` (fine-grained PAT consigliato, solo su quel repository).
-   - Opzionale: **`DECERN_CLOUD_REPO_URL`** se usi un fork del cloud repo (default: `https://github.com/decernhq/decern-cloud.git`).
+   - **`DECERN_CLOUD_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo privato cloud (fine-grained PAT consigliato).
+   - **`DECERN_CLOUD_REPO_URL`** — URL HTTPS del repo privato cloud (es. `https://github.com/your-org/your-cloud-repo.git`).
 3. Tutte le altre variabili (Supabase, Stripe, GitHub OAuth, ecc.) come in `.env.example`.
-4. Deploy: a ogni build Vercel clona `decern-cloud` in `cloud/`, crea i symlink API e compila l’app completa.
+4. Deploy: a ogni build Vercel clona il repo privato in `cloud/`, crea i symlink API e compila l’app completa.
 
 Senza `DECERN_CLOUD_CLONE_TOKEN` il deploy produce solo il **core open source** (nessuna route Stripe / Decision Gate / GitHub in `app/api/`).
 
