@@ -8,6 +8,7 @@ import type { PlanId } from "@/types/billing";
 import { Logo } from "@/components/logo";
 import { WorkspaceSwitcher } from "@/components/dashboard/workspace-switcher";
 import { UpgradeButton } from "@/app/(dashboard)/dashboard/settings/upgrade-button";
+import { IS_CLOUD } from "@/lib/cloud";
 import { cn } from "@/lib/utils";
 
 const iconClass = "h-5 w-5 flex-shrink-0";
@@ -75,7 +76,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const navigation = useNavItems();
-  const showUpgrade = planId === "free" || planId === "team";
+  const showUpgrade = IS_CLOUD && (planId === "free" || planId === "team");
   const upgradePlanId = planId === "free" ? "team" : "business";
 
   return (

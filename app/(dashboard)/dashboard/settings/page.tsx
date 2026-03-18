@@ -9,6 +9,7 @@ import { ProfileLocaleForm } from "./profile-locale-form";
 import type { PlanId } from "@/types/billing";
 import { PLANS } from "@/types/billing";
 import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
+import { IS_CLOUD } from "@/lib/cloud";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -85,96 +86,102 @@ export default async function SettingsPage() {
         </div>
       </div>
 
-      {/* GitHub section */}
-      <div className="mt-6">
-        <GitHubConnectSection githubUsername={ghConn?.github_username ?? null} />
-      </div>
+      {/* GitHub section (cloud only) */}
+      {IS_CLOUD && (
+        <div className="mt-6">
+          <GitHubConnectSection githubUsername={ghConn?.github_username ?? null} />
+        </div>
+      )}
 
-      {/* Billing section */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t("subscription")}</h2>
-        <div className="mt-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900">{t("plan", { name: planName })}</p>
-              <p className="text-sm text-gray-500">
-                {currentPlan.price > 0
-                  ? `€${currentPlan.price}${tPricing("perMonth")}`
-                  : isEnterprise
-                    ? tPricing("custom")
-                    : tPricing("free")}
-              </p>
+      {/* Billing section (cloud only) */}
+      {IS_CLOUD && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">{t("subscription")}</h2>
+          <div className="mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-gray-900">{t("plan", { name: planName })}</p>
+                <p className="text-sm text-gray-500">
+                  {currentPlan.price > 0
+                    ? `€${currentPlan.price}${tPricing("perMonth")}`
+                    : isEnterprise
+                      ? tPricing("custom")
+                      : tPricing("free")}
+                </p>
+              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-sm font-medium ${
+                  isPaid || isEnterprise || isGovernance
+                    ? "bg-brand-100 text-brand-700"
+                    : "bg-gray-100 text-gray-700"
+                }`}
+              >
+                {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : isGovernance ? "Governance" : tPricing("free")}
+              </span>
             </div>
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-medium ${
-                isPaid || isEnterprise || isGovernance
-                  ? "bg-brand-100 text-brand-700"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : isGovernance ? "Governance" : tPricing("free")}
-            </span>
-          </div>
 
-          {isOverridden && (
-            <p className="mt-2 text-xs text-amber-700">
-              {t("planOverride", { value: planOverride ?? "" })}
-            </p>
-          )}
-
-          {subscription?.current_period_end && !isOverridden && (
-            <p className="mt-3 text-sm text-gray-500">
-              {t("renewal")}{" "}
-              {new Date(subscription.current_period_end).toLocaleDateString(dateLocale, {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
-            </p>
-          )}
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            {isPaid ? (
-              <ManageSubscriptionButton />
-            ) : isEnterprise || isGovernance ? (
-              <p className="text-sm text-gray-500">{t("contactSupport")}</p>
-            ) : (
-              <>
-                <UpgradeButton planId="team" />
-                <UpgradeButton planId="business" />
-              </>
+            {isOverridden && (
+              <p className="mt-2 text-xs text-amber-700">
+                {t("planOverride", { value: planOverride ?? "" })}
+              </p>
             )}
+
+            {subscription?.current_period_end && !isOverridden && (
+              <p className="mt-3 text-sm text-gray-500">
+                {t("renewal")}{" "}
+                {new Date(subscription.current_period_end).toLocaleDateString(dateLocale, {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              {isPaid ? (
+                <ManageSubscriptionButton />
+              ) : isEnterprise || isGovernance ? (
+                <p className="text-sm text-gray-500">{t("contactSupport")}</p>
+              ) : (
+                <>
+                  <UpgradeButton planId="team" />
+                  <UpgradeButton planId="business" />
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Plan features */}
-      <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900">{t("planFeatures")}</h2>
-        <ul className="mt-4 space-y-2">
-          {featuresList.map((feature) => (
-            <li key={feature} className="flex items-center gap-2 text-sm">
-              <svg
-                className="h-4 w-4 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-              <span className="text-gray-600">{feature}</span>
-            </li>
-          ))}
-        </ul>
-        {(effectivePlanId === "team" || effectivePlanId === "business") && (
-          <p className="mt-2 text-xs text-gray-400">* {tPricing("byoLLM")}</p>
-        )}
-      </div>
+      {/* Plan features (cloud only) */}
+      {IS_CLOUD && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">{t("planFeatures")}</h2>
+          <ul className="mt-4 space-y-2">
+            {featuresList.map((feature) => (
+              <li key={feature} className="flex items-center gap-2 text-sm">
+                <svg
+                  className="h-4 w-4 text-green-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span className="text-gray-600">{feature}</span>
+              </li>
+            ))}
+          </ul>
+          {(effectivePlanId === "team" || effectivePlanId === "business") && (
+            <p className="mt-2 text-xs text-gray-400">* {tPricing("byoLLM")}</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

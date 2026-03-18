@@ -17,6 +17,7 @@ import { WorkspaceList } from "@/components/dashboard/workspace-list";
 import { CreateWorkspaceForm } from "@/components/dashboard/create-workspace-form";
 import { WorkspaceCiTokenSection } from "@/components/dashboard/workspace-ci-token-section";
 import { WorkspacePoliciesForm } from "@/components/dashboard/workspace-policies-form";
+import { IS_CLOUD } from "@/lib/cloud";
 import Link from "next/link";
 
 const BUSINESS_PLANS = ["business", "enterprise", "governance"];
@@ -110,7 +111,7 @@ export default async function WorkspacePage() {
         </p>
       )}
 
-      {isOwner && (
+      {IS_CLOUD && isOwner && (
         <div className="mt-6">
           <WorkspaceCiTokenSection
             workspaceId={workspace.id}
@@ -119,7 +120,7 @@ export default async function WorkspacePage() {
         </div>
       )}
 
-      {showPolicies && (
+      {IS_CLOUD && showPolicies && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-gray-900">{t("policiesSectionTitle")}</h2>
           <p className="mt-1 text-sm text-gray-500">{t("policiesSectionSubtitle")}</p>

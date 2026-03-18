@@ -6,30 +6,51 @@ Your team's technical decision register. Document, share and track architectural
 
 The app is available in **English** (default) and **Italian**. Logged-in users can set their language in **Dashboard → Settings → Language**; the choice is saved to their profile and used on all devices.
 
+## Architecture: Open Core
+
+Decern follows an **open-core** model:
+
+| | Public repo | Private repo |
+|---|---|---|
+| **What** | Core decision register (projects, decisions, workspace, auth, UI) | Cloud features (Stripe, Decision Gate, GitHub integration, metered AI, billing) |
+| **Repo** | [decernorg/decern](https://github.com/decernorg/decern) | Team-only access |
+| **License** | MIT | Proprietary |
+
+The public repo works **standalone** for self-hosting. Cloud features (billing, CI gate, GitHub sync) are activated automatically when the private `cloud/` directory is present.
+
+### For team members
+
+After cloning the public repo, add the cloud layer:
+
+```bash
+git clone https://github.com/decernhq/decern-cloud.git cloud
+bash cloud/setup.sh
+```
+
+See `cloud/README.md` for full details.
+
 ## Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
 - **Auth & Database**: Supabase (PostgreSQL)
-- **Payments**: Stripe
+- **Payments**: Stripe (cloud only)
 - **Deployment**: Vercel + Supabase Cloud
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm, pnpm, or yarn
+- Node.js 18+ (or Bun)
 - A Supabase account
-- A Stripe account (for billing)
 
 ### 1. Install dependencies
 
 ```bash
 npm install
 # or
-pnpm install
+bun install
 ```
 
 ### 2. Set up Supabase
@@ -40,31 +61,21 @@ pnpm install
 
 ### 3. Run database migrations
 
-Run all migrations in order using the Supabase CLI (recommended):
-
 ```bash
 npx supabase db push
 ```
 
-This applies every file in `supabase/migrations/` (profiles, projects, decisions, subscriptions, workspaces, invites, plans, Decision Gate, Judge, etc.). If you prefer the SQL Editor, run each migration file in numeric order.
+This applies every file in `supabase/migrations/` (profiles, projects, decisions, subscriptions, workspaces, invites, plans, Decision Gate, etc.).
 
-### 4. Set up Stripe
-
-1. Create a Stripe account at [stripe.com](https://stripe.com)
-2. Create two products with monthly prices: **Team** (e.g. €49/month) and **Business** (e.g. €99/month)
-3. Copy both Price IDs (they start with `price_`)
-4. Set up a webhook endpoint pointing to `/api/stripe/webhook`
-5. Select events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`
-
-### 5. Configure environment variables
+### 4. Configure environment variables
 
 Copy the example env file:
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-Edit `.env.local` with your values:
+Edit `.env` with your values:
 
 ```env
 # Supabase
@@ -72,6 +83,14 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
+# App
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+<details>
+<summary><strong>Cloud-only env vars</strong> (team members with cloud/ access)</summary>
+
+```env
 # Stripe
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -79,21 +98,26 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_TEAM_PRICE_ID=price_...
 STRIPE_BUSINESS_PRICE_ID=price_...
 
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+# GitHub OAuth
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
+GITHUB_WEBHOOK_SECRET=...
+
+# OpenAI (fallback for Judge)
+OPENAI_API_KEY=sk-...
 ```
 
-### 6. Run the development server
+</details>
+
+### 5. Run the development server
 
 ```bash
-npm run dev
+bun run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-### 7. Test Stripe webhooks locally
-
-Use the Stripe CLI to forward webhooks:
+### 6. (Cloud only) Stripe webhooks locally
 
 ```bash
 stripe listen --forward-to localhost:3000/api/stripe/webhook
@@ -104,44 +128,33 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 decern/
 ├── app/
-│   ├── (public)/              # Public pages
-│   │   ├── page.tsx           # Landing page
-│   │   ├── login/             # Login page
-│   │   ├── signup/            # Signup page
-│   │   ├── pricing/           # Pricing page
-│   │   └── invite/[token]/    # Public invite page
+│   ├── (public)/              # Public pages (landing, login, signup, pricing)
 │   ├── (dashboard)/           # Protected dashboard
 │   │   └── dashboard/
 │   │       ├── page.tsx       # Dashboard home
 │   │       ├── projects/      # Projects CRUD
 │   │       ├── decisions/     # Decisions CRUD
-│   │       ├── workspace/     # Workspace list, members, invites, CI token
-│   │       ├── invite/[token]/ # Accept invite
-│   │       └── settings/      # User settings & billing
-│   ├── api/
-│   │   ├── stripe/            # Stripe API routes
-│   │   │   ├── checkout/      # Create checkout session
-│   │   │   ├── portal/        # Customer portal
-│   │   │   └── webhook/       # Stripe webhooks
-│   │   ├── decisions/         # e.g. generate-from-text
-│   │   └── decision-gate/     # validate, judge (CI/CD)
+│   │       ├── workspace/     # Workspace, members, invites
+│   │       └── settings/      # User settings
+│   ├── api/                   # API routes (cloud routes via symlinks)
 │   ├── layout.tsx
 │   └── globals.css
+├── cloud/                     # ⛅ Private repo (git-ignored)
+│   ├── app/api/               #    Stripe, Decision Gate, GitHub, Cron, AI
+│   ├── lib/                   #    Cloud lib implementations
+│   ├── components/            #    Cloud UI components
+│   └── setup.sh               #    Symlink installer
 ├── components/
-│   ├── ui/                    # Reusable UI components
+│   ├── ui/                    # Reusable UI primitives
 │   ├── dashboard/             # Dashboard layout components
 │   ├── projects/              # Project-specific components
 │   └── decisions/             # Decision-specific components
 ├── lib/
 │   ├── supabase/              # Supabase clients
 │   ├── queries/               # Database queries
-│   ├── stripe.ts              # Stripe helpers
+│   ├── cloud.ts               # IS_CLOUD feature flag
 │   └── utils.ts               # Utility functions
-├── types/
-│   ├── decision.ts            # Decision types
-│   ├── project.ts             # Project types
-│   ├── database.ts            # Supabase database types
-│   └── billing.ts             # Stripe billing types
+├── types/                     # TypeScript types
 ├── supabase/
 │   ├── migrations/            # SQL migrations
 │   └── seed.sql               # Seed data
@@ -150,25 +163,31 @@ decern/
 
 ## Features
 
-### Implemented
+### Core (open source)
 
-- [x] Landing page with pricing
+- [x] Landing page with pricing overview
 - [x] User authentication (signup/login/logout)
-- [x] Workspaces (default workspace, switcher, multiple on Business+)
+- [x] Workspaces (default workspace, switcher)
 - [x] Team collaboration (invite by email, accept invite, members, revoke)
 - [x] Protected dashboard layout
 - [x] Projects CRUD (per workspace)
 - [x] Decisions CRUD (create, read, update, delete)
 - [x] Decision status workflow (proposed → approved/rejected/superseded)
 - [x] Tags, external links, linked PRs, superseded-by link
-- [x] AI generation from free text (with plan limits)
 - [x] Export: copy as Markdown, download .md file
 - [x] Search and filtering on decisions
 - [x] Database schema with RLS policies
+- [x] i18n (English, Italian)
+
+### Cloud (private)
+
 - [x] Stripe integration (checkout Team/Business, webhooks, customer portal)
 - [x] Subscription management (Free/Team/Business/Enterprise)
-- [x] Settings page with billing and language
 - [x] Decision Gate API (validate + judge for CI/CD)
+- [x] GitHub integration (OAuth, repo sync, ADR commit/parse)
+- [x] AI generation from free text (metered per plan)
+- [x] Workspace policies (high impact, require approved, judge blocking)
+- [x] Judge metered billing (usage tracking, Stripe invoicing)
 
 ### Planned
 
@@ -185,9 +204,9 @@ decern/
 - **workspace_members**, **workspace_invitations**: Collaboration per workspace
 - **projects**: Belong to a workspace (via `workspace_id`)
 - **decisions**: Technical decision records (per project)
-- **subscriptions**: Stripe subscription data (plan_id: free, team, business, enterprise, governance)
+- **subscriptions**: Stripe subscription data
 
-Additional tables support plans/limits, CI token (Decision Gate), workspace policies, Judge usage and billing. All tables have Row Level Security (RLS) enabled. Run `npx supabase db push` to apply the full migration set.
+Additional tables support plans/limits, CI token (Decision Gate), workspace policies, Judge usage and billing. All tables have Row Level Security (RLS) enabled.
 
 ## Deployment
 
@@ -196,19 +215,21 @@ Additional tables support plans/limits, CI token (Decision Gate), workspace poli
 1. Push to GitHub
 2. Import project in Vercel
 3. Add environment variables
-4. Deploy
+4. (Cloud) Add a build step to clone `decernhq/decern-cloud` into `cloud/` and run `bash cloud/setup.sh`
+5. Deploy
 
 ### Supabase
 
-1. Database is already in Supabase Cloud
+1. Database is in Supabase Cloud
 2. Update `NEXT_PUBLIC_APP_URL` for production
 
-### Stripe
+### Self-hosted (open source only)
 
-1. Switch to live mode keys for production
-2. Update webhook endpoint URL
-3. Configure Customer Portal settings
+1. Clone this repo
+2. Set up Supabase and env vars
+3. `npm run build && npm start`
+4. Cloud features (billing, gate, GitHub) will be inactive — stubs return noops
 
 ## License
 
-MIT
+MIT (core). Cloud features are proprietary.

@@ -37,3 +37,14 @@ next-env.d.ts
 # IDE
 .idea/
 .vscode/
+
+# Cloud (private repo – see cloud/README.md)
+cloud/
+
+# Cloud API route symlinks (created by cloud/setup.sh)
+app/api/stripe
+app/api/decision-gate
+app/api/github
+app/api/cron
+app/api/decisions/generate-from-text
+app/api/dev

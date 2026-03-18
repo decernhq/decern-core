@@ -3,6 +3,7 @@ import { getTranslations, getMessages } from "next-intl/server";
 import { PLANS, type PlanId } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { PricingCheckoutButton } from "@/components/pricing-checkout-button";
+import { IS_CLOUD } from "@/lib/cloud";
 import { cn } from "@/lib/utils";
 
 const PLAN_ORDER: PlanId[] = ["free", "team", "business", "enterprise"];
@@ -112,13 +113,22 @@ export default async function PricingPage() {
                     {t("contactUs")}
                   </Button>
                 </a>
-              ) : (
+              ) : IS_CLOUD ? (
                 <PricingCheckoutButton
                   planId={plan.id as "team" | "business"}
                   planName={plan.name}
                   className={cn(plan.id === "team" && "bg-brand-600 hover:bg-brand-700")}
                   size="sm"
                 />
+              ) : (
+                <a
+                  href="mailto:support@decern.app?subject=Upgrade"
+                  className="block"
+                >
+                  <Button variant="outline" className="w-full">
+                    {t("contactUs")}
+                  </Button>
+                </a>
               )}
             </div>
           </div>
