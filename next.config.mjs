@@ -18,28 +18,37 @@ const nextConfig = {
   },
   webpack: (config) => {
     if (isCloud) {
+      const root = resolve(".");
+      const cloudMap = {
+        "lib/stripe": "lib/stripe.ts",
+        "lib/ci-token": "lib/ci-token.ts",
+        "lib/decision-gate-policies": "lib/decision-gate-policies.ts",
+        "lib/judge-billing": "lib/judge-billing.ts",
+        "lib/judge-pricing": "lib/judge-pricing.ts",
+        "lib/judge-usage": "lib/judge-usage.ts",
+        "lib/github/client": "lib/github/client.ts",
+        "lib/github/sync": "lib/github/sync.ts",
+        "lib/github/adr-parser": "lib/github/adr-parser.ts",
+        "lib/github/adr-formatter": "lib/github/adr-formatter.ts",
+        "components/pricing-checkout-button": "components/pricing-checkout-button.tsx",
+        "components/dashboard/github-connect-section": "components/dashboard/github-connect-section.tsx",
+        "components/dashboard/workspace-ci-token-section": "components/dashboard/workspace-ci-token-section.tsx",
+        "components/dashboard/workspace-policies-form": "components/dashboard/workspace-policies-form.tsx",
+        "components/projects/github-repo-selector": "components/projects/github-repo-selector.tsx",
+        "app/(dashboard)/dashboard/settings/upgrade-button": "app/(dashboard)/dashboard/settings/upgrade-button.tsx",
+        "app/(dashboard)/dashboard/settings/manage-subscription-button": "app/(dashboard)/dashboard/settings/manage-subscription-button.tsx",
+      };
+
+      const cloudAliases = {};
+      for (const [stub, cloud] of Object.entries(cloudMap)) {
+        const cloudAbsolute = resolve(cloudDir, cloud);
+        cloudAliases[`@/${stub}$`] = cloudAbsolute;
+        cloudAliases[resolve(root, stub)] = cloudAbsolute;
+      }
+
       config.resolve.alias = {
+        ...cloudAliases,
         ...config.resolve.alias,
-        // Lib aliases – cloud implementations override stubs
-        "@/lib/stripe$": resolve(cloudDir, "lib/stripe.ts"),
-        "@/lib/ci-token$": resolve(cloudDir, "lib/ci-token.ts"),
-        "@/lib/decision-gate-policies$": resolve(cloudDir, "lib/decision-gate-policies.ts"),
-        "@/lib/judge-billing$": resolve(cloudDir, "lib/judge-billing.ts"),
-        "@/lib/judge-pricing$": resolve(cloudDir, "lib/judge-pricing.ts"),
-        "@/lib/judge-usage$": resolve(cloudDir, "lib/judge-usage.ts"),
-        "@/lib/github/client$": resolve(cloudDir, "lib/github/client.ts"),
-        "@/lib/github/sync$": resolve(cloudDir, "lib/github/sync.ts"),
-        "@/lib/github/adr-parser$": resolve(cloudDir, "lib/github/adr-parser.ts"),
-        "@/lib/github/adr-formatter$": resolve(cloudDir, "lib/github/adr-formatter.ts"),
-        // Component aliases
-        "@/components/pricing-checkout-button$": resolve(cloudDir, "components/pricing-checkout-button.tsx"),
-        "@/components/dashboard/github-connect-section$": resolve(cloudDir, "components/dashboard/github-connect-section.tsx"),
-        "@/components/dashboard/workspace-ci-token-section$": resolve(cloudDir, "components/dashboard/workspace-ci-token-section.tsx"),
-        "@/components/dashboard/workspace-policies-form$": resolve(cloudDir, "components/dashboard/workspace-policies-form.tsx"),
-        "@/components/projects/github-repo-selector$": resolve(cloudDir, "components/projects/github-repo-selector.tsx"),
-        // Page component aliases
-        "@/app/(dashboard)/dashboard/settings/upgrade-button$": resolve(cloudDir, "app/(dashboard)/dashboard/settings/upgrade-button.tsx"),
-        "@/app/(dashboard)/dashboard/settings/manage-subscription-button$": resolve(cloudDir, "app/(dashboard)/dashboard/settings/manage-subscription-button.tsx"),
       };
     }
     return config;
