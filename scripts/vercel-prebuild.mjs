@@ -3,7 +3,7 @@
  * Runs before `next build` on Vercel (and locally).
  *
  * If DECERN_CLOUD_CLONE_TOKEN is set: shallow-clones the private cloud repo into cloud/
- * and runs cloud/setup.sh to create API route symlinks.
+ * and runs cloud/setup.sh to generate API route proxy files.
  *
  * Else if cloud/ already exists (local dev): runs setup.sh only.
  *
@@ -40,10 +40,10 @@ if (TOKEN) {
   }
   console.log("[vercel-prebuild] Cloning private cloud repo…");
   run(`git clone --depth 1 "${authed}" cloud`);
-  console.log("[vercel-prebuild] Creating API symlinks…");
+  console.log("[vercel-prebuild] Creating API route proxies…");
   run("bash cloud/setup.sh");
 } else if (fs.existsSync(path.join(root, "cloud", "setup.sh"))) {
-  console.log("[vercel-prebuild] Using local cloud/ + symlinks…");
+  console.log("[vercel-prebuild] Using local cloud/ + route proxies…");
   run("bash cloud/setup.sh");
 } else {
   console.log(

@@ -72,22 +72,45 @@ export async function createProjectAction(
     }
   }
 
-  const { data: inserted, error } = await supabase.from("projects").insert({
+  const insertPayload = {
     name: name.trim(),
     description: description?.trim() || null,
     owner_id: user.id,
     workspace_id: workspaceId,
     github_repo_full_name: githubRepoFullName,
     github_default_branch: githubRepoFullName ? githubDefaultBranch : null,
-  }).select("id").single();
+  };
 
-  if (error || !inserted) {
-    console.error("Error creating project:", error);
-    return { error: "Error creating project" };
-  }
+  // Without GitHub repo we don't need RETURNING — avoids RSC/PostgREST edge cases where
+  // .single() fails even though the row was inserted.
+  console.log("[createProject] payload:", JSON.stringify(insertPayload));
+  console.log("[createProject] githubRepoFullName:", JSON.stringify(githubRepoFullName));
 
-  // Import any existing ADR files from the repo
-  if (githubRepoFullName) {
+  if (!githubRepoFullName) {
+    const { error, status, statusText } = await supabase.from("projects").insert(insertPayload);
+    console.log("[createProject] insert result:", { error, status, statusText });
+    if (error) {
+      console.error("[createProject] INSERT ERROR:", JSON.stringify(error, null, 2));
+      if (error.code === "42501") {
+        return { error: "Non hai permesso di creare progetti in questo workspace." };
+      }
+      if (error.code === "23503") {
+        return { error: "Profilo utente non trovato. Prova a uscire e accedere di nuovo." };
+      }
+      return { error: `Error creating project: ${error.message} (code: ${error.code})` };
+    }
+  } else {
+    const { data: rows, error } = await supabase
+      .from("projects")
+      .insert(insertPayload)
+      .select("id");
+
+    const inserted = rows?.[0];
+    if (error || !inserted) {
+      console.error("Error creating project:", error);
+      return { error: "Error creating project" };
+    }
+
     const token = await getGitHubToken(user.id);
     if (token) {
       try {

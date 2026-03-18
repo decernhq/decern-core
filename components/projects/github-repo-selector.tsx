@@ -13,5 +13,10 @@ export function GitHubRepoSelector({
   defaultBranch?: string | null;
   isGithubConnected: boolean;
 }) {
-  return null;
+  return (
+    <>
+      <input type="hidden" name="github_repo_full_name" value="" />
+      <input type="hidden" name="github_default_branch" value="main" />
+    </>
+  );
 }
