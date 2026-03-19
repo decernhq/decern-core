@@ -61,8 +61,11 @@
 .dark .border-gray-100 { border-color: var(--app-border) !important; }
 .dark .border-gray-300 { border-color: var(--app-border) !important; }
 .dark .bg-brand-50 { background-color: var(--app-active) !important; }
+.dark .hover\:bg-brand-50:hover { background-color: var(--app-active) !important; }
+.dark .hover\:bg-brand-100:hover { background-color: var(--app-chip-brand) !important; }
 .dark .text-brand-700,
 .dark .text-brand-600 { color: var(--app-active-text) !important; }
+.dark .hover\:text-brand-800:hover { color: var(--app-chip-brand-text) !important; }
 .dark .hover\:bg-gray-100:hover { background-color: var(--app-hover) !important; }
 .dark .hover\:bg-gray-50:hover { background-color: var(--app-hover) !important; }
 .dark input[type="text"],
@@ -119,6 +122,16 @@
 .dark .rounded-full.bg-green-100.text-green-800 { color: #86efac !important; }
 .dark .rounded-full.bg-red-100 { background-color: rgba(239, 68, 68, 0.35) !important; }
 .dark .rounded-full.bg-red-100.text-red-800 { color: #fca5a5 !important; }
+
+/* Status loader – uses explicit colors to avoid dark-mode !important overrides */
+.status-loader {
+  border: 2px solid #e5e7eb;
+  border-top-color: #0284c7;
+}
+.dark .status-loader {
+  border-color: #4b5563 !important;
+  border-top-color: #38bdf8 !important;
+}
 
 /* Tabella decisioni: bordi e linee divisorie più tenui in dark */
 .dark .divide-gray-200 > * + * { border-color: var(--app-border-subtle) !important; }

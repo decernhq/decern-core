@@ -430,7 +430,7 @@ export function DecisionsListWithFilters({
                 <button
                   type="button"
                   onClick={() => removeTag(tag)}
-                  className="rounded-full p-0.5 hover:bg-brand-200"
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full p-0 hover:bg-brand-200"
                   aria-label={t("removeTag", { tag })}
                 >
                   ×
@@ -690,34 +690,42 @@ export function DecisionsListWithFilters({
                       )}
                       {visibleColumnKeys.includes("status") && (
                         <td className="min-w-[7rem] shrink-0 px-3 py-2">
-                          <select
-                            value={decision.status}
-                            onChange={(e) =>
-                              handleStatusChange(
-                                decision.id,
-                                e.target.value as DecisionStatus,
-                              )
-                            }
-                            disabled={updatingStatusId === decision.id}
-                            className={cn(
-                              "w-full min-w-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0 whitespace-nowrap appearance-none",
-                              statusColors[decision.status],
-                              "border-transparent hover:opacity-90",
-                            )}
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {statusOptions
-                              .filter((opt) => opt.value !== "")
-                              .map((opt) => (
-                                <option
-                                  key={opt.value}
-                                  value={opt.value}
-                                  className="bg-white text-gray-900"
-                                >
-                                  {opt.label}
-                                </option>
-                              ))}
-                          </select>
+                          {updatingStatusId === decision.id ? (
+                            <div className="flex justify-center pr-3">
+                              <span
+                                className="status-loader inline-block h-4 w-4 shrink-0 animate-spin rounded-full"
+                                aria-hidden
+                              />
+                            </div>
+                          ) : (
+                            <select
+                              value={decision.status}
+                              onChange={(e) =>
+                                handleStatusChange(
+                                  decision.id,
+                                  e.target.value as DecisionStatus,
+                                )
+                              }
+                              className={cn(
+                                "w-full min-w-0 cursor-pointer rounded-full border px-2.5 py-1 text-xs font-medium outline-none focus:ring-2 focus:ring-brand-500/40 focus:ring-offset-0 whitespace-nowrap appearance-none",
+                                statusColors[decision.status],
+                                "border-transparent hover:opacity-90",
+                              )}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {statusOptions
+                                .filter((opt) => opt.value !== "")
+                                .map((opt) => (
+                                  <option
+                                    key={opt.value}
+                                    value={opt.value}
+                                    className="bg-white text-gray-900"
+                                  >
+                                    {opt.label}
+                                  </option>
+                                ))}
+                            </select>
+                          )}
                         </td>
                       )}
                       {visibleColumnKeys.includes("tags") && (

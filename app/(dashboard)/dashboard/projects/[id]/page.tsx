@@ -4,6 +4,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { getProjectById } from "@/lib/queries/projects";
 import { getDecisionsByProject } from "@/lib/queries/decisions";
 import { Button } from "@/components/ui/button";
+import { ExportDecisionsCsvButton } from "@/components/projects/export-decisions-csv-button";
 import { DecisionStatus } from "@/types/decision";
 import { STATUS_COLORS } from "@/lib/constants/decision-status";
 import { cn } from "@/lib/utils";
@@ -49,7 +50,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               <p className="mt-1 text-gray-600">{project.description}</p>
             )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <ExportDecisionsCsvButton projectId={id} />
             <Link href={`/dashboard/projects/${id}/edit`}>
               <Button variant="outline">{tCommon("edit")}</Button>
             </Link>

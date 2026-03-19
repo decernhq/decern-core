@@ -307,7 +307,9 @@
     "goToSettings": "Go to Settings",
     "deleteProject": "Delete project",
     "deleteProjectWarning": "Deleting this project will also delete all associated decisions. This action cannot be undone.",
-    "confirmDelete": "Are you sure you want to delete \"{name}\"?"
+    "confirmDelete": "Are you sure you want to delete \"{name}\"?",
+    "exportDecisionsCsv": "Export decisions (CSV)",
+    "exportDecisionsCsvDownloading": "Preparing download..."
   },
   "decisions": {
     "title": "Decisions",

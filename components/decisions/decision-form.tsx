@@ -518,7 +518,7 @@ export function DecisionForm({
               <button
                 type="button"
                 onClick={() => removeTag(index)}
-                className="ml-0.5 rounded-full p-0.5 hover:bg-brand-200"
+                className="ml-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full p-0 hover:bg-brand-200"
                 aria-label={t("removeTag", { tag })}
               >
                 ×
