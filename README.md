@@ -139,11 +139,13 @@ decern/
 │   ├── api/                   # API routes (cloud routes via symlinks)
 │   ├── layout.tsx
 │   └── globals.css
+├── protocol/                  # 📐 Open source repo (git-ignored)
+│   └── src/                   #    Stateless core: ADR, policies, types
 ├── cloud/                     # ⛅ Private repo (git-ignored)
 │   ├── app/api/               #    Stripe, Decision Gate, GitHub, Cron, AI
 │   ├── lib/                   #    Cloud lib implementations
 │   ├── components/            #    Cloud UI components
-│   └── setup.sh               #    Symlink installer
+│   └── setup.sh               #    Route proxy generator
 ├── components/
 │   ├── ui/                    # Reusable UI primitives
 │   ├── dashboard/             # Dashboard layout components
@@ -216,12 +218,15 @@ Il build esegue automaticamente `scripts/vercel-prebuild.mjs` prima di `next bui
 
 1. Collega il repo **pubblico** `decernorg/decern` al progetto Vercel.
 2. In **Settings → Environment Variables** aggiungi:
+   - **`DECERN_PROTOCOL_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo protocol (fine-grained PAT consigliato).
+   - **`DECERN_PROTOCOL_REPO_URL`** — URL HTTPS del repo protocol (es. `https://github.com/your-org/your-protocol-repo.git`).
    - **`DECERN_CLOUD_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo privato cloud (fine-grained PAT consigliato).
    - **`DECERN_CLOUD_REPO_URL`** — URL HTTPS del repo privato cloud (es. `https://github.com/your-org/your-cloud-repo.git`).
 3. Tutte le altre variabili (Supabase, Stripe, GitHub OAuth, ecc.) come in `.env.example`.
-4. Deploy: a ogni build Vercel clona il repo privato in `cloud/`, crea i symlink API e compila l’app completa.
+4. Deploy: a ogni build Vercel clona `protocol/` e `cloud/`, crea i proxy API e compila l’app completa.
 
 Senza `DECERN_CLOUD_CLONE_TOKEN` il deploy produce solo il **core open source** (nessuna route Stripe / Decision Gate / GitHub in `app/api/`).
+Senza `DECERN_PROTOCOL_CLONE_TOKEN` (e senza `protocol/` locale), il layer protocol non viene clonato.
 
 ### Supabase
 

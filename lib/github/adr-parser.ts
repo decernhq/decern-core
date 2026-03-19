@@ -6,6 +6,8 @@
 export interface ParsedAdr {
   title: string;
   status: string;
+  author: string | null;
+  date: string | null;
   tags: string[];
   context: string;
   options: string[];
@@ -13,12 +15,15 @@ export interface ParsedAdr {
   consequences: string;
   pullRequestUrls: string[];
   externalLinks: { url: string; label?: string }[];
+  supersedes: string | null;
 }
 
 export function parseAdrMarkdown(_markdown: string): ParsedAdr {
   return {
     title: "",
     status: "",
+    author: null,
+    date: null,
     tags: [],
     context: "",
     options: [],
@@ -26,5 +31,6 @@ export function parseAdrMarkdown(_markdown: string): ParsedAdr {
     consequences: "",
     pullRequestUrls: [],
     externalLinks: [],
+    supersedes: null,
   };
 }

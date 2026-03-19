@@ -9,26 +9,20 @@ import {
   deleteFile,
   getFileContent,
 } from "@/lib/github/client";
-import { formatAdrMarkdown, adrFilename } from "@/lib/github/adr-formatter";
-
-function parseExternalLinks(raw: string | null | undefined): { url: string; label?: string }[] {
-  if (!raw?.trim()) return [];
-  return raw
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-    .map((line) => {
-      const sep = " | ";
-      const idx = line.indexOf(sep);
-      if (idx !== -1) {
-        const label = line.slice(0, idx).trim();
-        const url = line.slice(idx + sep.length).trim();
-        return url ? { url, label: label || undefined } : null;
-      }
-      return line.startsWith("http") ? { url: line } : null;
-    })
-    .filter((l): l is { url: string; label?: string } => l !== null);
-}
+import {
+  formatAdrMarkdown,
+  adrFilename,
+  adrCommitMessageCreate,
+  adrCommitMessageUpdate,
+  adrCommitMessageRename,
+  adrCommitMessageStatus,
+  adrCommitMessageDelete,
+} from "@/lib/github/adr-formatter";
+import {
+  prepareDecisionData,
+  isValidDecisionStatus,
+  type ExternalLink,
+} from "../../../../protocol/src/models/decision";
 
 export type ActionState = {
   error?: string;
@@ -55,6 +49,18 @@ async function getProjectGitHub(projectId: string) {
   return data;
 }
 
+function resolveAdrAuthor(user: { email?: string | null; user_metadata?: { full_name?: string | null } | null }): string {
+  const fullName = user.user_metadata?.full_name?.trim();
+  if (fullName) return fullName;
+  const email = user.email?.trim();
+  return email || "Unknown";
+}
+
+function resolveAdrDate(value: string | null | undefined): string {
+  if (!value) return new Date().toISOString().slice(0, 10);
+  return value.slice(0, 10);
+}
+
 export async function createDecisionAction(
   _prevState: ActionState,
   formData: FormData
@@ -68,22 +74,27 @@ export async function createDecisionAction(
   if (!user) {
     return { error: "Not authenticated" };
   }
+  const adrAuthor = resolveAdrAuthor(user);
 
   const projectId = formData.get("project_id") as string;
-  const title = formData.get("title") as string;
-  const status = formData.get("status") as string;
-  const context = formData.get("context") as string;
-  const optionsRaw = formData.get("options") as string;
-  const decision = formData.get("decision") as string;
-  const consequences = formData.get("consequences") as string;
-  const tagsRaw = formData.get("tags") as string;
-  const externalLinksRaw = formData.get("external_links") as string;
-  const pullRequestUrlsRaw = formData.get("pull_request_urls") as string | null;
-  const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
-
   if (!projectId) {
     return { error: "Select a project" };
   }
+
+  const prepared = prepareDecisionData({
+    title: formData.get("title") as string,
+    status: formData.get("status") as string,
+    context: formData.get("context") as string,
+    options: formData.get("options") as string,
+    decision: formData.get("decision") as string,
+    consequences: formData.get("consequences") as string,
+    tags: formData.get("tags") as string,
+    externalLinks: formData.get("external_links") as string,
+    pullRequestUrls: formData.get("pull_request_urls") as string | null,
+    linkedDecisionId: formData.get("linked_decision_id") as string | null,
+  });
+  if (!prepared.ok) return { error: prepared.error };
+  const d = prepared.data;
 
   const project = await supabase.from("projects").select("workspace_id").eq("id", projectId).single();
   if (project.error || !project.data) return { error: "Project not found" };
@@ -94,45 +105,20 @@ export async function createDecisionAction(
   const canCreate = await checkCanCreateDecision(ws.data.owner_id, workspaceId);
   if (!canCreate.allowed) return { error: canCreate.error };
 
-  if (!title || title.trim().length === 0) {
-    return { error: "Title is required" };
-  }
-
-  const options = optionsRaw
-    ? optionsRaw
-        .split("\n")
-        .map((o) => o.trim())
-        .filter((o) => o.length > 0)
-    : [];
-
-  const tags = tagsRaw
-    ? tagsRaw
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter((t) => t.length > 0)
-    : [];
-
-  const external_links = parseExternalLinks(externalLinksRaw);
-  const pull_request_urls = pullRequestUrlsRaw
-    ? pullRequestUrlsRaw.split("\n").map((u) => u.trim()).filter(Boolean)
-    : [];
-  const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
-
-  // 1. Insert into Supabase (trigger generates adr_ref + workspace_id)
   const { data: inserted, error } = await supabase.from("decisions").insert({
     project_id: projectId,
-    title: title.trim(),
-    status: status as "proposed" | "approved" | "superseded" | "rejected",
-    context: context?.trim() || "",
-    options,
-    decision: decision?.trim() || "",
-    consequences: consequences?.trim() || "",
-    tags,
-    external_links,
-    pull_request_urls,
-    linked_decision_id,
+    title: d.title,
+    status: d.status,
+    context: d.context,
+    options: d.options,
+    decision: d.decision,
+    consequences: d.consequences,
+    tags: d.tags,
+    external_links: d.externalLinks,
+    pull_request_urls: d.pullRequestUrls,
+    linked_decision_id: d.linkedDecisionId,
     created_by: user.id,
-  }).select("id, adr_ref").single();
+  }).select("id, adr_ref, created_at").single();
 
   if (error || !inserted) {
     console.error("Error creating decision:", error);
@@ -151,25 +137,27 @@ export async function createDecisionAction(
     if (token) {
       try {
         const markdown = formatAdrMarkdown({
-          title: title.trim(),
-          status: status || "proposed",
-          tags,
-          context: context?.trim() || "",
-          options,
-          decision: decision?.trim() || "",
-          consequences: consequences?.trim() || "",
-          pullRequestUrls: pull_request_urls,
-          externalLinks: external_links,
-          supersedes: linked_decision_id ? null : null,
+          title: d.title,
+          status: d.status,
+          author: adrAuthor,
+          date: resolveAdrDate(inserted.created_at),
+          tags: d.tags,
+          context: d.context,
+          options: d.options,
+          decision: d.decision,
+          consequences: d.consequences,
+          pullRequestUrls: d.pullRequestUrls,
+          externalLinks: d.externalLinks,
+          supersedes: null,
         });
 
-        const filePath = adrFilename(inserted.adr_ref, title.trim());
+        const filePath = adrFilename(inserted.adr_ref, d.title);
         await createOrUpdateFile(
           token,
           projectInfo.data.github_repo_full_name,
           filePath,
           markdown,
-          `docs: add ${inserted.adr_ref} - ${title.trim()}`,
+          adrCommitMessageCreate(inserted.adr_ref, d.title),
           undefined,
           projectInfo.data.github_default_branch || undefined
         );
@@ -181,16 +169,16 @@ export async function createDecisionAction(
     }
   }
 
-  if (linked_decision_id) {
+  if (d.linkedDecisionId) {
     await supabase
       .from("decisions")
       .update({ status: "superseded" })
-      .eq("id", linked_decision_id);
+      .eq("id", d.linkedDecisionId);
   }
 
   revalidatePath("/dashboard/decisions");
   revalidatePath(`/dashboard/projects/${projectId}`);
-  if (linked_decision_id) revalidatePath(`/dashboard/decisions/${linked_decision_id}`);
+  if (d.linkedDecisionId) revalidatePath(`/dashboard/decisions/${d.linkedDecisionId}`);
   redirect("/dashboard/decisions");
 }
 
@@ -202,70 +190,50 @@ export async function updateDecisionAction(
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+  const adrAuthor = resolveAdrAuthor(user);
 
   const id = formData.get("id") as string;
-  const title = formData.get("title") as string;
-  const status = formData.get("status") as string;
-  const context = formData.get("context") as string;
-  const optionsRaw = formData.get("options") as string;
-  const decision = formData.get("decision") as string;
-  const consequences = formData.get("consequences") as string;
-  const tagsRaw = formData.get("tags") as string;
-  const externalLinksRaw = formData.get("external_links") as string;
-  const pullRequestUrlsRaw = formData.get("pull_request_urls") as string | null;
-  const linkedDecisionIdRaw = formData.get("linked_decision_id") as string | null;
-
   if (!id) {
     return { error: "Missing decision ID" };
   }
 
-  if (!title || title.trim().length === 0) {
-    return { error: "Title is required" };
-  }
-
-  const options = optionsRaw
-    ? optionsRaw
-        .split("\n")
-        .map((o) => o.trim())
-        .filter((o) => o.length > 0)
-    : [];
-
-  const tags = tagsRaw
-    ? tagsRaw
-        .split(",")
-        .map((t) => t.trim().toLowerCase())
-        .filter((t) => t.length > 0)
-    : [];
-
-  const external_links = parseExternalLinks(externalLinksRaw);
-  const pull_request_urls = pullRequestUrlsRaw
-    ? pullRequestUrlsRaw.split("\n").map((u) => u.trim()).filter(Boolean)
-    : [];
-  const linked_decision_id = linkedDecisionIdRaw?.trim() || null;
+  const prepared = prepareDecisionData({
+    title: formData.get("title") as string,
+    status: formData.get("status") as string,
+    context: formData.get("context") as string,
+    options: formData.get("options") as string,
+    decision: formData.get("decision") as string,
+    consequences: formData.get("consequences") as string,
+    tags: formData.get("tags") as string,
+    externalLinks: formData.get("external_links") as string,
+    pullRequestUrls: formData.get("pull_request_urls") as string | null,
+    linkedDecisionId: formData.get("linked_decision_id") as string | null,
+  });
+  if (!prepared.ok) return { error: prepared.error };
+  const d = prepared.data;
 
   // Get existing decision for adr_ref and project info
   const { data: existing } = await supabase
     .from("decisions")
-    .select("adr_ref, title, project_id")
+    .select("adr_ref, title, project_id, created_at")
     .eq("id", id)
     .single();
 
   if (!existing) return { error: "Decision not found" };
 
-  // 1. Update Supabase cache
   const { error } = await supabase
     .from("decisions")
     .update({
-      title: title.trim(),
-      status: status as "proposed" | "approved" | "superseded" | "rejected",
-      context: context?.trim() || "",
-      options,
-      decision: decision?.trim() || "",
-      consequences: consequences?.trim() || "",
-      tags,
-      external_links,
-      pull_request_urls,
-      linked_decision_id,
+      title: d.title,
+      status: d.status,
+      context: d.context,
+      options: d.options,
+      decision: d.decision,
+      consequences: d.consequences,
+      tags: d.tags,
+      external_links: d.externalLinks,
+      pull_request_urls: d.pullRequestUrls,
+      linked_decision_id: d.linkedDecisionId,
     })
     .eq("id", id);
 
@@ -286,38 +254,39 @@ export async function updateDecisionAction(
     if (token) {
       try {
         const oldPath = adrFilename(existing.adr_ref, existing.title);
-        const newPath = adrFilename(existing.adr_ref, title.trim());
+        const newPath = adrFilename(existing.adr_ref, d.title);
         const branch = projectInfo.data.github_default_branch || undefined;
         const repo = projectInfo.data.github_repo_full_name;
 
         const markdown = formatAdrMarkdown({
-          title: title.trim(),
-          status: status || "proposed",
-          tags,
-          context: context?.trim() || "",
-          options,
-          decision: decision?.trim() || "",
-          consequences: consequences?.trim() || "",
-          pullRequestUrls: pull_request_urls,
-          externalLinks: external_links,
+          title: d.title,
+          status: d.status,
+          author: adrAuthor,
+          date: resolveAdrDate(existing.created_at),
+          tags: d.tags,
+          context: d.context,
+          options: d.options,
+          decision: d.decision,
+          consequences: d.consequences,
+          pullRequestUrls: d.pullRequestUrls,
+          externalLinks: d.externalLinks,
           supersedes: null,
         });
 
-        // If title changed, delete old file and create new one
         if (oldPath !== newPath) {
           try {
             const old = await getFileContent(token, repo, oldPath, branch);
-            await deleteFile(token, repo, oldPath, old.sha, `docs: rename ${existing.adr_ref}`, branch);
+            await deleteFile(token, repo, oldPath, old.sha, adrCommitMessageRename(existing.adr_ref), branch);
           } catch {
             // Old file may not exist
           }
-          await createOrUpdateFile(token, repo, newPath, markdown, `docs: update ${existing.adr_ref} - ${title.trim()}`, undefined, branch);
+          await createOrUpdateFile(token, repo, newPath, markdown, adrCommitMessageUpdate(existing.adr_ref, d.title), undefined, branch);
         } else {
           try {
             const current = await getFileContent(token, repo, newPath, branch);
-            await createOrUpdateFile(token, repo, newPath, markdown, `docs: update ${existing.adr_ref} - ${title.trim()}`, current.sha, branch);
+            await createOrUpdateFile(token, repo, newPath, markdown, adrCommitMessageUpdate(existing.adr_ref, d.title), current.sha, branch);
           } catch {
-            await createOrUpdateFile(token, repo, newPath, markdown, `docs: update ${existing.adr_ref} - ${title.trim()}`, undefined, branch);
+            await createOrUpdateFile(token, repo, newPath, markdown, adrCommitMessageUpdate(existing.adr_ref, d.title), undefined, branch);
           }
         }
       } catch (err) {
@@ -326,20 +295,18 @@ export async function updateDecisionAction(
     }
   }
 
-  if (linked_decision_id) {
+  if (d.linkedDecisionId) {
     await supabase
       .from("decisions")
       .update({ status: "superseded" })
-      .eq("id", linked_decision_id);
-    revalidatePath(`/dashboard/decisions/${linked_decision_id}`);
+      .eq("id", d.linkedDecisionId);
+    revalidatePath(`/dashboard/decisions/${d.linkedDecisionId}`);
   }
 
   revalidatePath("/dashboard/decisions");
   revalidatePath(`/dashboard/decisions/${id}`);
   return { success: true };
 }
-
-const VALID_STATUSES = ["proposed", "approved", "superseded", "rejected"] as const;
 
 export async function updateDecisionStatusAction(
   decisionId: string,
@@ -349,18 +316,19 @@ export async function updateDecisionStatusAction(
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
+  const adrAuthor = resolveAdrAuthor(user);
 
   if (!decisionId) {
     return { error: "Missing decision ID" };
   }
-  if (!VALID_STATUSES.includes(status as (typeof VALID_STATUSES)[number])) {
+  if (!isValidDecisionStatus(status)) {
     return { error: "Invalid status" };
   }
 
   // Get existing decision for GitHub update
   const { data: existing } = await supabase
     .from("decisions")
-    .select("adr_ref, title, project_id, context, options, decision, consequences, tags, external_links, pull_request_urls")
+    .select("adr_ref, title, project_id, context, options, decision, consequences, tags, external_links, pull_request_urls, created_at")
     .eq("id", decisionId)
     .single();
 
@@ -394,21 +362,24 @@ export async function updateDecisionStatusAction(
           const markdown = formatAdrMarkdown({
             title: existing.title,
             status,
+            author: adrAuthor,
+            date: resolveAdrDate(existing.created_at),
             tags: existing.tags || [],
             context: existing.context || "",
             options: existing.options || [],
             decision: existing.decision || "",
             consequences: existing.consequences || "",
             pullRequestUrls: existing.pull_request_urls || [],
-            externalLinks: (existing.external_links || []) as { url: string; label?: string }[],
+            externalLinks: (existing.external_links || []) as ExternalLink[],
             supersedes: null,
           });
 
+          const commitMsg = adrCommitMessageStatus(existing.adr_ref, status);
           try {
             const current = await getFileContent(token, repo, filePath, branch);
-            await createOrUpdateFile(token, repo, filePath, markdown, `docs: ${status} ${existing.adr_ref}`, current.sha, branch);
+            await createOrUpdateFile(token, repo, filePath, markdown, commitMsg, current.sha, branch);
           } catch {
-            await createOrUpdateFile(token, repo, filePath, markdown, `docs: ${status} ${existing.adr_ref}`, undefined, branch);
+            await createOrUpdateFile(token, repo, filePath, markdown, commitMsg, undefined, branch);
           }
         } catch (err) {
           console.error("Error updating ADR status on GitHub:", err);
@@ -450,7 +421,7 @@ export async function deleteDecisionAction(id: string): Promise<ActionState> {
           const repo = projectInfo.data.github_repo_full_name;
           const branch = projectInfo.data.github_default_branch || undefined;
           const current = await getFileContent(token, repo, filePath, branch);
-          await deleteFile(token, repo, filePath, current.sha, `docs: remove ${decision.adr_ref} - ${decision.title}`, branch);
+          await deleteFile(token, repo, filePath, current.sha, adrCommitMessageDelete(decision.adr_ref, decision.title), branch);
         } catch (err) {
           console.error("Error deleting ADR from GitHub:", err);
         }
