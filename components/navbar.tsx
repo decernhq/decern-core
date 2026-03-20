@@ -4,6 +4,7 @@ import { Logo } from "./logo";
 import { Button } from "./ui/button";
 import { ThemeToggle } from "./theme-toggle";
 import type { User } from "@supabase/supabase-js";
+import { websitePath } from "@/lib/website";
 
 interface NavbarProps {
   user?: User | null;
@@ -11,6 +12,7 @@ interface NavbarProps {
 
 export async function Navbar({ user }: NavbarProps) {
   const t = await getTranslations("nav");
+  const pricingHref = websitePath("/pricing");
 
   return (
     <header className="border-b border-app-border bg-app-card">
@@ -19,9 +21,9 @@ export async function Navbar({ user }: NavbarProps) {
         <div className="flex items-center gap-2">
           <ThemeToggle />
           <span className="flex items-center gap-4">
-          <Link href="/pricing">
+          <a href={pricingHref}>
             <Button variant="ghost">{t("pricing")}</Button>
-          </Link>
+          </a>
           <Link href="/docs">
             <Button variant="ghost">{t("docs")}</Button>
           </Link>

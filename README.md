@@ -18,6 +18,12 @@ Decern follows an **open-core** model:
 
 The public repo works **standalone** for self-hosting. Cloud features (billing, CI gate, GitHub sync) are activated automatically when the private `cloud/` directory is present.
 
+Marketing website and pricing are split in a separate repo:
+- Website: [decernhq/decern-website](https://github.com/decernhq/decern-website)
+- Core app (this repo): product app, auth, dashboard, APIs
+
+In `decern-core`, `/` and `/pricing` redirect to the website using `NEXT_PUBLIC_WEBSITE_URL` (default `https://decern.dev`).
+
 ### For team members
 
 After cloning the public repo, add the cloud layer (requires access to the private cloud repository):

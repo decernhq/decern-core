@@ -51,3 +51,7 @@ app/api/github
 app/api/cron
 app/api/decisions/generate-from-text
 app/api/dev
+
+
+# Website
+website/

@@ -102,7 +102,7 @@ Workspace
 
 ### 4.1 Sign Up
 
-1. Go to your Decern instance (e.g. `https://decern.app`) and click **Sign up**.
+1. Go to your Decern instance (e.g. `https://decern.dev`) and click **Sign up**.
 2. Enter your **full name**, **role** (e.g. Developer, Tech Lead, Architect), **email**, and **password**.
 3. Check your inbox for a **confirmation email** and click the link to verify your account.
 4. After confirming, log in with your credentials.
@@ -438,7 +438,7 @@ To link a code change to a decision, include one of these patterns in your **PR 
 | `ADR-XXX` | `ADR-001` | Recommended. Matches the ADR ref shown in Decern. |
 | `decern:<uuid>` | `decern:550e8400-e29b-41d4-a716-446655440000` | Uses the decision UUID. |
 | `DECERN-XXX` | `DECERN-001` | Alternative format. |
-| Decision URL | `https://decern.app/dashboard/decisions/550e8400-...` | A Decern URL containing `/decisions/<uuid>`. |
+| Decision URL | `https://decern.dev/dashboard/decisions/550e8400-...` | A Decern URL containing `/decisions/<uuid>`. |
 
 **Examples:**
 
@@ -485,7 +485,7 @@ The CLI automatically:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DECERN_BASE_URL` | **Yes** | Your Decern instance URL (e.g. `https://decern.app`). No trailing slash. |
+| `DECERN_BASE_URL` | **Yes** | Your Decern instance URL (e.g. `https://decern.dev`). No trailing slash. |
 | `DECERN_CI_TOKEN` | **Yes** | Workspace CI token (generated from Dashboard → Workspace → CI Token). |
 | `CI_BASE_SHA` | No | Base commit SHA (e.g. PR target branch). If not set, the CLI uses `origin/main`. |
 | `CI_HEAD_SHA` | No | Head commit SHA. If not set, the CLI uses `HEAD`. |
@@ -522,7 +522,7 @@ In your GitHub repository, go to **Settings → Secrets and variables → Action
 
 | Secret | Value |
 |--------|-------|
-| `DECERN_BASE_URL` | Your Decern instance URL (e.g. `https://decern.app`) |
+| `DECERN_BASE_URL` | Your Decern instance URL (e.g. `https://decern.dev`) |
 | `DECERN_CI_TOKEN` | The CI token from your workspace |
 
 ### Step 2: Create the Workflow
@@ -768,7 +768,7 @@ For paid plans, go to **Settings** → click **Manage Subscription**. This opens
 
 ### Enterprise
 
-For Enterprise plans, contact `support@decern.app`. Enterprise includes custom limits, dedicated support, and tailored configurations.
+For Enterprise plans, contact `support@decern.dev`. Enterprise includes custom limits, dedicated support, and tailored configurations.
 
 ---
 

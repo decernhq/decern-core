@@ -10,6 +10,7 @@ const isCloud = !selfHostedEnv && existsSync(cloudDir);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@decern/protocol"],
   env: {
     NEXT_PUBLIC_IS_CLOUD: isCloud ? "true" : "false",
   },

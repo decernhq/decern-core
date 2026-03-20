@@ -22,7 +22,7 @@ import {
   prepareDecisionData,
   isValidDecisionStatus,
   type ExternalLink,
-} from "../../../../protocol/src/models/decision";
+} from "@decern/protocol";
 
 export type ActionState = {
   error?: string;
