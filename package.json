@@ -17,6 +17,7 @@
     "qa:judge": "bash decern-gate-demo/qa-demo/run-judge.sh"
   },
   "dependencies": {
+    "@decernhq/cloud": "0.1.0",
     "@decern/protocol": "github:decernhq/decern-protocol",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",

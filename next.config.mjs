@@ -4,13 +4,21 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
-const cloudDir = resolve("./cloud");
+const localCloudDir = resolve("./cloud");
+const packageCloudDir = resolve("./node_modules/@decernhq/cloud");
+const resolvedCloudDir = existsSync(localCloudDir)
+  ? localCloudDir
+  : existsSync(packageCloudDir)
+    ? packageCloudDir
+    : null;
 const selfHostedEnv = process.env.NEXT_PUBLIC_SELF_HOSTED === "true";
-const isCloud = !selfHostedEnv && existsSync(cloudDir);
+const hasSelfHostedLicense = Boolean(process.env.DECERN_LICENSE_KEY?.trim());
+const canUseCloud = !selfHostedEnv || hasSelfHostedLicense;
+const isCloud = canUseCloud && Boolean(resolvedCloudDir);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@decern/protocol"],
+  transpilePackages: ["@decern/protocol", "@decernhq/cloud"],
   env: {
     NEXT_PUBLIC_IS_CLOUD: isCloud ? "true" : "false",
   },
@@ -18,7 +26,7 @@ const nextConfig = {
     // serverActions are stable in Next.js 14
   },
   webpack: (config) => {
-    if (isCloud) {
+    if (isCloud && resolvedCloudDir) {
       const root = resolve(".");
       const cloudMap = {
         "lib/stripe": "lib/stripe.ts",
@@ -42,7 +50,7 @@ const nextConfig = {
 
       const cloudAliases = {};
       for (const [stub, cloud] of Object.entries(cloudMap)) {
-        const cloudAbsolute = resolve(cloudDir, cloud);
+        const cloudAbsolute = resolve(resolvedCloudDir, cloud);
         cloudAliases[`@/${stub}$`] = cloudAbsolute;
         cloudAliases[resolve(root, stub)] = cloudAbsolute;
       }

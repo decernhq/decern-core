@@ -16,7 +16,7 @@ Decern follows an **open-core** model:
 | **Repo** | [decernorg/decern](https://github.com/decernorg/decern) | Team-only access |
 | **License** | MIT | Proprietary |
 
-The public repo works **standalone** for self-hosting. Cloud features (billing, CI gate, GitHub sync) are activated automatically when the private `cloud/` directory is present.
+The public repo works **standalone** for self-hosting (OSS mode). Cloud features (billing, CI gate, GitHub sync) are activated when the cloud layer is available (`@decernhq/cloud` package or local `cloud/` for internal development).
 
 Marketing website and pricing are split in a separate repo:
 - Website: [decernhq/decern-website](https://github.com/decernhq/decern-website)
@@ -26,7 +26,7 @@ In `decern-core`, `/` and `/pricing` redirect to the website using `NEXT_PUBLIC_
 
 ### For team members
 
-After cloning the public repo, add the cloud layer (requires access to the private cloud repository):
+For internal development, add the cloud layer from the private repository:
 
 ```bash
 git clone <PRIVATE_CLOUD_REPO_URL> cloud
@@ -226,12 +226,12 @@ Il build esegue automaticamente `scripts/vercel-prebuild.mjs` prima di `next bui
 2. In **Settings → Environment Variables** aggiungi:
    - **`DECERN_PROTOCOL_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo protocol (fine-grained PAT consigliato).
    - **`DECERN_PROTOCOL_REPO_URL`** — URL HTTPS del repo protocol (es. `https://github.com/your-org/your-protocol-repo.git`).
-   - **`DECERN_CLOUD_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo privato cloud (fine-grained PAT consigliato).
-   - **`DECERN_CLOUD_REPO_URL`** — URL HTTPS del repo privato cloud (es. `https://github.com/your-org/your-cloud-repo.git`).
+   - **`DECERN_LICENSE_KEY`** — Licenza Business valida per abilitare il cloud in self-hosted.
+   - **`NPM_TOKEN`** — token read-only per installare `@decernhq/cloud` da registry privato (se usato in CI/build).
 3. Tutte le altre variabili (Supabase, Stripe, GitHub OAuth, ecc.) come in `.env.example`.
-4. Deploy: a ogni build Vercel clona `protocol/` e `cloud/`, crea i proxy API e compila l’app completa.
+4. Deploy: a ogni build Vercel clona `protocol/` (se configurato), genera i proxy API cloud (da `@decernhq/cloud` o `cloud/` locale) e compila l’app.
 
-Senza `DECERN_CLOUD_CLONE_TOKEN` il deploy produce solo il **core open source** (nessuna route Stripe / Decision Gate / GitHub in `app/api/`).
+Senza cloud layer disponibile, il deploy produce solo il **core open source** (nessuna route Stripe / Decision Gate / GitHub in `app/api/`).
 Senza `DECERN_PROTOCOL_CLONE_TOKEN` (e senza `protocol/` locale), il layer protocol non viene clonato.
 
 ### Supabase
@@ -239,12 +239,13 @@ Senza `DECERN_PROTOCOL_CLONE_TOKEN` (e senza `protocol/` locale), il layer proto
 1. Database is in Supabase Cloud
 2. Update `NEXT_PUBLIC_APP_URL` for production
 
-### Self-hosted (open source only)
+### Self-hosted
 
 1. Clone this repo
 2. Set up Supabase and env vars
 3. `npm run build && npm start`
-4. Cloud features (billing, gate, GitHub) will be inactive — stubs return noops
+4. Per modalità OSS: nessuna licenza cloud, feature cloud inattive (stubs/noops)
+5. Per Business self-hosted: installa `@decernhq/cloud` + imposta `DECERN_LICENSE_KEY`
 
 ## License
 
