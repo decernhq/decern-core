@@ -55,3 +55,6 @@ app/api/dev
 
 # Website
 website/
+
+#Gate
+gate/

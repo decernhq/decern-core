@@ -49,7 +49,7 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "team",
     name: "Team",
     description: "For growing teams",
-    price: 49,
+    price: 19,
     priceId: process.env.STRIPE_TEAM_PRICE_ID || "",
     features: [
       "1 workspace",
@@ -72,7 +72,7 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "business",
     name: "Business",
     description: "For organizations",
-    price: 99,
+    price: 59,
     priceId: process.env.STRIPE_BUSINESS_PRICE_ID || "",
     features: [
       "Unlimited workspaces",

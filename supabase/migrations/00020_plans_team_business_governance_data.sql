@@ -14,7 +14,7 @@ set
   updated_at = now()
 where id = 'free';
 
--- Insert new plans (team 49€, business 99€, governance)
+-- Insert new plans (team/business prices in EUR cents at migration time; 00036 updates to 19€ / 59€)
 insert into public.plans (id, name, description, price_cents, stripe_price_id, workspaces_limit, projects_limit, users_per_workspace_limit, decisions_limit, ai_generations_per_month)
 values
   ('team', 'Team', 'For growing teams', 4900, null, 1, -1, 10, -1, 500),
