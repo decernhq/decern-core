@@ -514,7 +514,22 @@
     "githubDisconnect": "Disconnect",
     "githubReconnect": "Reconnect",
     "githubDisconnected": "GitHub disconnected.",
-    "githubConnectedSuccess": "GitHub connected successfully."
+    "githubConnectedSuccess": "GitHub connected successfully.",
+    "aiLlmTitle": "AI generation LLM",
+    "aiLlmSubtitle": "Use your own OpenAI or Anthropic key for decision generation. When configured, generation does not consume fair-use quota.",
+    "aiLlmProvider": "Provider",
+    "aiLlmModel": "Model",
+    "aiLlmBaseUrl": "Base URL",
+    "aiLlmApiKey": "API key",
+    "aiLlmApiKeyPlaceholder": "Paste your API key",
+    "aiLlmApiKeyPlaceholderConfigured": "Leave empty to keep current key",
+    "aiLlmSaveButton": "Save LLM settings",
+    "aiLlmRemoveButton": "Remove BYO key",
+    "aiLlmConfigured": "BYO key configured",
+    "aiLlmNotConfigured": "Using fair-use fallback",
+    "aiLlmSaved": "LLM settings saved.",
+    "aiLlmCleared": "BYO key removed. Fair-use fallback restored.",
+    "aiLlmHint": "The API key is encrypted before storage and never shown in plain text."
   },
   "profile": {
     "displayName": "Display name",
@@ -559,7 +574,14 @@
     "invitation_not_found": "Invitation not found",
     "only_owner_revoke": "Only the owner can revoke an invitation",
     "revoke_failed": "Error revoking invitation",
-    "upgrade_failed": "Error during upgrade"
+    "upgrade_failed": "Error during upgrade",
+    "invalid_llm_provider": "Invalid LLM provider.",
+    "missing_llm_api_key": "API key is required.",
+    "invalid_llm_base_url": "Invalid base URL.",
+    "invalid_llm_model": "Invalid model name.",
+    "llm_encryption_failed": "Unable to encrypt the API key.",
+    "llm_settings_update_failed": "Unable to save LLM settings.",
+    "llm_settings_clear_failed": "Unable to remove LLM settings."
   },
   "buttons": {
     "upgrade": "Upgrade",

@@ -6,6 +6,7 @@ import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { ProfileNameForm } from "./profile-name-form";
 import { ProfileRoleForm } from "./profile-role-form";
 import { ProfileLocaleForm } from "./profile-locale-form";
+import { AiGenerationLlmSettingsForm } from "./ai-generation-llm-settings-form";
 import type { PlanId } from "@/types/billing";
 import { PLANS } from "@/types/billing";
 import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
@@ -37,6 +38,12 @@ export default async function SettingsPage() {
   const { data: ghConn } = await supabase
     .from("github_connections")
     .select("github_username")
+    .eq("user_id", user?.id ?? "")
+    .maybeSingle();
+
+  const { data: aiLlmSettings } = await supabase
+    .from("user_ai_llm_settings")
+    .select("provider, base_url, model")
     .eq("user_id", user?.id ?? "")
     .maybeSingle();
 
@@ -90,6 +97,24 @@ export default async function SettingsPage() {
       {IS_CLOUD && (
         <div className="mt-6">
           <GitHubConnectSection githubUsername={ghConn?.github_username ?? null} />
+        </div>
+      )}
+
+      {/* AI generation BYO LLM section (cloud only) */}
+      {IS_CLOUD && (
+        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-gray-900">{t("aiLlmTitle")}</h2>
+          <p className="mt-1 text-sm text-gray-600">{t("aiLlmSubtitle")}</p>
+          <div className="mt-4">
+            <AiGenerationLlmSettingsForm
+              initialProvider={
+                aiLlmSettings?.provider === "anthropic" ? "anthropic" : "openai"
+              }
+              initialBaseUrl={aiLlmSettings?.base_url ?? ""}
+              initialModel={aiLlmSettings?.model ?? ""}
+              configured={Boolean(aiLlmSettings)}
+            />
+          </div>
         </div>
       )}
 

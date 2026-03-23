@@ -514,7 +514,22 @@
     "githubDisconnect": "Scollega",
     "githubReconnect": "Ricollega",
     "githubDisconnected": "GitHub disconnesso.",
-    "githubConnectedSuccess": "GitHub collegato con successo."
+    "githubConnectedSuccess": "GitHub collegato con successo.",
+    "aiLlmTitle": "LLM per generazione decisioni",
+    "aiLlmSubtitle": "Usa una tua chiave OpenAI o Anthropic per la generazione. Quando configurata, la generazione non consuma quota fair-use.",
+    "aiLlmProvider": "Provider",
+    "aiLlmModel": "Modello",
+    "aiLlmBaseUrl": "Base URL",
+    "aiLlmApiKey": "Chiave API",
+    "aiLlmApiKeyPlaceholder": "Incolla la tua chiave API",
+    "aiLlmApiKeyPlaceholderConfigured": "Lascia vuoto per mantenere la chiave attuale",
+    "aiLlmSaveButton": "Salva impostazioni LLM",
+    "aiLlmRemoveButton": "Rimuovi chiave BYO",
+    "aiLlmConfigured": "Chiave BYO configurata",
+    "aiLlmNotConfigured": "Fallback fair-use attivo",
+    "aiLlmSaved": "Impostazioni LLM salvate.",
+    "aiLlmCleared": "Chiave BYO rimossa. Ripristinato fallback fair-use.",
+    "aiLlmHint": "La chiave API viene cifrata prima del salvataggio e non viene mai mostrata in chiaro."
   },
   "profile": {
     "displayName": "Nome utente",
@@ -559,7 +574,14 @@
     "invitation_not_found": "Invito non trovato",
     "only_owner_revoke": "Solo il proprietario può revocare un invito",
     "revoke_failed": "Errore durante la revoca",
-    "upgrade_failed": "Errore durante l'upgrade"
+    "upgrade_failed": "Errore durante l'upgrade",
+    "invalid_llm_provider": "Provider LLM non valido.",
+    "missing_llm_api_key": "La chiave API è obbligatoria.",
+    "invalid_llm_base_url": "Base URL non valido.",
+    "invalid_llm_model": "Nome modello non valido.",
+    "llm_encryption_failed": "Impossibile cifrare la chiave API.",
+    "llm_settings_update_failed": "Impossibile salvare le impostazioni LLM.",
+    "llm_settings_clear_failed": "Impossibile rimuovere le impostazioni LLM."
   },
   "buttons": {
     "upgrade": "Upgrade",

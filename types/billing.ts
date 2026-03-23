@@ -65,7 +65,7 @@ export const PLANS: Record<PlanId, Plan> = {
       projects_limit: -1,
       users_per_workspace_limit: 10,
       decisions_limit: -1,
-      ai_generations_per_month: 500,
+      ai_generations_per_month: 700,
     },
   },
   business: {
@@ -90,7 +90,7 @@ export const PLANS: Record<PlanId, Plan> = {
       projects_limit: -1,
       users_per_workspace_limit: 20,
       decisions_limit: -1,
-      ai_generations_per_month: 1500,
+      ai_generations_per_month: 1400,
     },
   },
   enterprise: {

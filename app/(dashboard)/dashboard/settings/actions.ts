@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getWorkspaceInvitationByToken } from "@/lib/queries/workspaces";
 import { checkCanInviteToWorkspace } from "@/lib/plan-limits";
+import { encryptLlmApiKey } from "@/lib/security/llm-credentials";
 
 const LOCALE_COOKIE = "NEXT_LOCALE";
 const VALID_LOCALES = ["en", "it"] as const;
@@ -228,6 +229,110 @@ export type UpdateProfileLocaleState = {
   error?: string;
   success?: boolean;
 };
+
+export type UpdateAiGenerationLlmState = {
+  error?: string;
+  success?: boolean;
+};
+
+const AI_LLM_PROVIDERS = ["openai", "anthropic"] as const;
+type AiLlmProvider = (typeof AI_LLM_PROVIDERS)[number];
+
+function defaultBaseUrlForProvider(provider: AiLlmProvider): string {
+  return provider === "anthropic" ? "https://api.anthropic.com" : "https://api.openai.com/v1";
+}
+
+function defaultModelForProvider(provider: AiLlmProvider): string {
+  return provider === "anthropic" ? "claude-3-5-sonnet-latest" : "gpt-4o-mini";
+}
+
+export async function updateAiGenerationLlmSettingsAction(
+  _prevState: UpdateAiGenerationLlmState,
+  formData: FormData
+): Promise<UpdateAiGenerationLlmState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  const providerRaw = String(formData.get("provider") ?? "").trim().toLowerCase();
+  if (!AI_LLM_PROVIDERS.includes(providerRaw as AiLlmProvider)) {
+    return { error: "invalid_llm_provider" };
+  }
+  const provider = providerRaw as AiLlmProvider;
+
+  const apiKey = String(formData.get("api_key") ?? "").trim();
+  if (!apiKey) return { error: "missing_llm_api_key" };
+
+  const baseUrlRaw = String(formData.get("base_url") ?? "").trim();
+  const modelRaw = String(formData.get("model") ?? "").trim();
+  const baseUrl = baseUrlRaw || defaultBaseUrlForProvider(provider);
+  const model = modelRaw || defaultModelForProvider(provider);
+
+  try {
+    // Validate URL upfront to avoid persisting broken config.
+    const parsed = new URL(baseUrl);
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      return { error: "invalid_llm_base_url" };
+    }
+  } catch {
+    return { error: "invalid_llm_base_url" };
+  }
+
+  if (model.length > 256) {
+    return { error: "invalid_llm_model" };
+  }
+
+  let encryptedApiKey: string;
+  try {
+    encryptedApiKey = encryptLlmApiKey(apiKey);
+  } catch (e) {
+    console.error("Error encrypting LLM API key:", e);
+    return { error: "llm_encryption_failed" };
+  }
+
+  const { error } = await supabase.from("user_ai_llm_settings").upsert(
+    {
+      user_id: user.id,
+      provider,
+      base_url: baseUrl,
+      model,
+      encrypted_api_key: encryptedApiKey,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  );
+
+  if (error) {
+    console.error("Error updating AI generation LLM settings:", error);
+    return { error: "llm_settings_update_failed" };
+  }
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
+
+export async function clearAiGenerationLlmSettingsAction(): Promise<UpdateAiGenerationLlmState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "not_authenticated" };
+
+  const { error } = await supabase
+    .from("user_ai_llm_settings")
+    .delete()
+    .eq("user_id", user.id);
+
+  if (error) {
+    console.error("Error clearing AI generation LLM settings:", error);
+    return { error: "llm_settings_clear_failed" };
+  }
+
+  revalidatePath("/dashboard/settings");
+  return { success: true };
+}
 
 export async function updateProfileLocaleAction(
   _prevState: UpdateProfileLocaleState,
