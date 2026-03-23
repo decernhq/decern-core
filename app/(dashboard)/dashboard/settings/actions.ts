@@ -250,6 +250,9 @@ export async function updateAiGenerationLlmSettingsAction(
   _prevState: UpdateAiGenerationLlmState,
   formData: FormData
 ): Promise<UpdateAiGenerationLlmState> {
+  if (process.env.NEXT_PUBLIC_SELF_HOSTED !== "true") {
+    return { error: "llm_settings_update_failed" };
+  }
   const supabase = await createClient();
   const {
     data: { user },
@@ -314,6 +317,9 @@ export async function updateAiGenerationLlmSettingsAction(
 }
 
 export async function clearAiGenerationLlmSettingsAction(): Promise<UpdateAiGenerationLlmState> {
+  if (process.env.NEXT_PUBLIC_SELF_HOSTED !== "true") {
+    return { error: "llm_settings_clear_failed" };
+  }
   const supabase = await createClient();
   const {
     data: { user },

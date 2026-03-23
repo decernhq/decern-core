@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@decernhq/cloud": "0.1.0",
-    "@decern/protocol": "github:decernhq/decern-protocol",
+    "@decern/protocol": "^0.1.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "clsx": "^2.1.1",

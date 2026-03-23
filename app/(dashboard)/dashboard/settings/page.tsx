@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getEffectivePlanId } from "@/lib/billing";
 import { getTranslations, getLocale, getMessages } from "next-intl/server";
-import { UpgradeButton } from "./upgrade-button";
-import { ManageSubscriptionButton } from "./manage-subscription-button";
 import { ProfileNameForm } from "./profile-name-form";
 import { ProfileRoleForm } from "./profile-role-form";
 import { ProfileLocaleForm } from "./profile-locale-form";
@@ -11,11 +9,23 @@ import type { PlanId } from "@/types/billing";
 import { PLANS } from "@/types/billing";
 import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
 import { IS_CLOUD } from "@/lib/cloud";
+import { websitePath } from "@/lib/website";
+
+function hasValidLlmEncryptionKey(): boolean {
+  const raw = process.env.DECERN_LLM_CREDENTIALS_ENCRYPTION_KEY?.trim();
+  if (!raw) return false;
+  try {
+    return Buffer.from(raw, "base64").length === 32;
+  } catch {
+    return false;
+  }
+}
 
 export default async function SettingsPage() {
   const supabase = await createClient();
   const t = await getTranslations("settings");
   const tCommon = await getTranslations("common");
+  const tButtons = await getTranslations("buttons");
   const tPricing = await getTranslations("pricing");
   const locale = await getLocale();
 
@@ -52,11 +62,16 @@ export default async function SettingsPage() {
   const isPaid = effectivePlanId === "team" || effectivePlanId === "business";
   const isEnterprise = effectivePlanId === "enterprise";
   const isGovernance = effectivePlanId === "governance";
+  const isSelfHostedMode = process.env.NEXT_PUBLIC_SELF_HOSTED === "true";
+  const canConfigureAiByoLlm = IS_CLOUD && isSelfHostedMode && hasValidLlmEncryptionKey();
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
   const isOverridden = ["free", "team", "business", "enterprise", "governance"].includes(planOverride ?? "");
 
   const tPlans = await getTranslations("plans");
   const planName = tPlans(`${effectivePlanId}.name`);
+  const manageSubscriptionUrl = websitePath("/pricing?source=core_dashboard_settings&manage=1");
+  const teamUpgradeUrl = websitePath("/pricing?plan=team&source=core_dashboard_settings");
+  const businessUpgradeUrl = websitePath("/pricing?plan=business&source=core_dashboard_settings");
   const messages = await getMessages();
   const planData = (messages?.plans as Record<string, { features?: string[] }>)?.[effectivePlanId];
   const featuresList =
@@ -101,7 +116,7 @@ export default async function SettingsPage() {
       )}
 
       {/* AI generation BYO LLM section (cloud only) */}
-      {IS_CLOUD && (
+      {canConfigureAiByoLlm && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-gray-900">{t("aiLlmTitle")}</h2>
           <p className="mt-1 text-sm text-gray-600">{t("aiLlmSubtitle")}</p>
@@ -164,13 +179,28 @@ export default async function SettingsPage() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               {isPaid ? (
-                <ManageSubscriptionButton />
+                <a
+                  href={manageSubscriptionUrl}
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                >
+                  {tButtons("manageSubscription")}
+                </a>
               ) : isEnterprise || isGovernance ? (
                 <p className="text-sm text-gray-500">{t("contactSupport")}</p>
               ) : (
                 <>
-                  <UpgradeButton planId="team" />
-                  <UpgradeButton planId="business" />
+                  <a
+                    href={teamUpgradeUrl}
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                  >
+                    {tButtons("upgradeToTeam")}
+                  </a>
+                  <a
+                    href={businessUpgradeUrl}
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                  >
+                    {tButtons("upgradeToBusiness")}
+                  </a>
                 </>
               )}
             </div>

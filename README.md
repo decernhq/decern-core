@@ -2,7 +2,7 @@
 
 Your team's technical decision register. Document, share and track architectural choices.
 
-**Repository:** [github.com/decernorg/decern](https://github.com/decernorg/decern)
+**Repository:** `decern-core`
 
 The app is available in **English** (default) and **Italian**. Logged-in users can set their language in **Dashboard → Settings → Language**; the choice is saved to their profile and used on all devices.
 
@@ -13,7 +13,7 @@ Decern follows an **open-core** model:
 | | Public repo | Private repo |
 |---|---|---|
 | **What** | Core decision register (projects, decisions, workspace, auth, UI) | Cloud features (Stripe, Decision Gate, GitHub integration, metered AI, billing) |
-| **Repo** | [decernorg/decern](https://github.com/decernorg/decern) | Team-only access |
+| **Repo** | decern-core | decern-cloud |
 | **License** | MIT | Proprietary |
 
 The public repo works **standalone** for self-hosting (OSS mode). Cloud features (billing, CI gate, GitHub sync) are activated when the cloud layer is available (`@decernhq/cloud` package or local `cloud/` for internal development).
@@ -26,14 +26,12 @@ In `decern-core`, `/` and `/pricing` redirect to the website using `NEXT_PUBLIC_
 
 ### For team members
 
-For internal development, add the cloud layer from the private repository:
+For internal development, the cloud layer can be provided by either:
 
-```bash
-git clone <PRIVATE_CLOUD_REPO_URL> cloud
-bash cloud/setup.sh
-```
+- local `cloud/` directory (private repo checked out locally), or
+- private npm package `@decernhq/cloud`.
 
-See `cloud/README.md` for full details.
+During build, `scripts/vercel-prebuild.mjs` automatically detects the available source and generates cloud API proxy routes.
 
 ## Stack
 
@@ -108,8 +106,8 @@ GITHUB_CLIENT_ID=...
 GITHUB_CLIENT_SECRET=...
 GITHUB_WEBHOOK_SECRET=...
 
-# OpenAI (fallback for Judge)
-OPENAI_API_KEY=sk-...
+# OpenAI (fallback for Judge and integrated generation path)
+OPEN_AI_API_KEY=sk-...
 ```
 
 </details>
@@ -133,7 +131,7 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 decern/
 ├── app/
-│   ├── (public)/              # Public pages (landing, login, signup, pricing)
+│   ├── (public)/              # Public app pages (login/signup; landing/pricing are on decern-website)
 │   ├── (dashboard)/           # Protected dashboard
 │   │   └── dashboard/
 │   │       ├── page.tsx       # Dashboard home
@@ -141,7 +139,7 @@ decern/
 │   │       ├── decisions/     # Decisions CRUD
 │   │       ├── workspace/     # Workspace, members, invites
 │   │       └── settings/      # User settings
-│   ├── api/                   # API routes (cloud routes via symlinks)
+│   ├── api/                   # API routes (cloud route proxies generated at build time)
 │   ├── layout.tsx
 │   └── globals.css
 ├── protocol/                  # 📐 Open source repo (git-ignored)
@@ -150,7 +148,7 @@ decern/
 │   ├── app/api/               #    Stripe, Decision Gate, GitHub, Cron, AI
 │   ├── lib/                   #    Cloud lib implementations
 │   ├── components/            #    Cloud UI components
-│   └── setup.sh               #    Route proxy generator
+│   └── ...                    #    Stripe, Decision Gate, GitHub, metering, billing
 ├── components/
 │   ├── ui/                    # Reusable UI primitives
 │   ├── dashboard/             # Dashboard layout components
@@ -192,7 +190,7 @@ decern/
 - [x] Subscription management (Free/Team/Business/Enterprise)
 - [x] Decision Gate API (validate + judge for CI/CD)
 - [x] GitHub integration (OAuth, repo sync, ADR commit/parse)
-- [x] AI generation from free text (metered per plan)
+- [x] AI generation from free text (token/cost-based fair use)
 - [x] Workspace policies (high impact, require approved, judge blocking)
 - [x] Judge metered billing (usage tracking, Stripe invoicing)
 
@@ -221,7 +219,7 @@ Additional tables support plans/limits, CI token (Decision Gate), workspace poli
 
 Il build esegue automaticamente `scripts/vercel-prebuild.mjs` prima di `next build`.
 
-1. Collega il repo **pubblico** `decernorg/decern` al progetto Vercel.
+1. Collega il repo `decern-core` al progetto Vercel.
 2. In **Settings → Environment Variables** aggiungi:
    - **`DECERN_PROTOCOL_CLONE_TOKEN`** — Personal Access Token (GitHub) con permesso **Contents: Read** sul repo protocol (fine-grained PAT consigliato).
    - **`DECERN_PROTOCOL_REPO_URL`** — URL HTTPS del repo protocol (es. `https://github.com/your-org/your-protocol-repo.git`).
