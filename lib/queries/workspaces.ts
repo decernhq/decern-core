@@ -1,16 +1,20 @@
 import { createClient } from "@/lib/supabase/server";
 import type { Profile, Workspace } from "@/types/database";
-import { getPlanLimits } from "@/lib/plan-limits";
+import type { WorkspaceAccessRole, WorkspaceDecisionRole } from "@/lib/workspace-roles";
 
 export type WorkspaceMemberWithProfile = {
   user_id: string;
   email: string;
   full_name: string | null;
+  workspace_role: WorkspaceAccessRole;
+  decision_role: WorkspaceDecisionRole;
 };
 
 export type WorkspaceInvitationPending = {
   id: string;
   email: string;
+  workspace_role: WorkspaceAccessRole;
+  decision_role: WorkspaceDecisionRole;
   token: string;
   expires_at: string;
   created_at: string;
@@ -98,22 +102,11 @@ export async function getAllWorkspacesForCurrentUser(): Promise<Workspace[]> {
 }
 
 /**
- * Workspace a cui l'utente può accedere con il piano attuale: i primi N per created_at (N = workspaces_limit).
- * Usato per cookie e per validare il cambio workspace (se provi a passare a un altro mostri "non hai il piano").
+ * Workspaces the current user can access (owned + memberships).
+ * Used for workspace cookie selection and switch validation.
  */
 export async function getWorkspacesForCurrentUser(): Promise<Workspace[]> {
-  const all = await getAllWorkspacesForCurrentUser();
-  if (all.length === 0) return [];
-
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const limits = await getPlanLimits(user.id);
-  if (limits && limits.workspaces_limit !== -1) {
-    return all.slice(0, limits.workspaces_limit);
-  }
-  return all;
+  return getAllWorkspacesForCurrentUser();
 }
 
 /**
@@ -140,7 +133,7 @@ export async function getWorkspaceMembersWithProfiles(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("workspace_members")
-    .select("user_id, profiles(email, full_name)")
+    .select("user_id, workspace_role, decision_role, profiles(email, full_name)")
     .eq("workspace_id", workspaceId);
 
   if (error) {
@@ -150,6 +143,8 @@ export async function getWorkspaceMembersWithProfiles(
 
   type Row = {
     user_id: string;
+    workspace_role: WorkspaceAccessRole;
+    decision_role: WorkspaceDecisionRole;
     profiles: Pick<Profile, "email" | "full_name"> | Pick<Profile, "email" | "full_name">[] | null;
   };
   return (data || []).map((row: Row) => {
@@ -158,6 +153,8 @@ export async function getWorkspaceMembersWithProfiles(
       user_id: row.user_id,
       email: profile?.email ?? "",
       full_name: profile?.full_name ?? null,
+      workspace_role: row.workspace_role,
+      decision_role: row.decision_role,
     };
   });
 }
@@ -171,7 +168,7 @@ export async function getWorkspaceInvitationsPending(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("workspace_invitations")
-    .select("id, email, token, expires_at, created_at")
+    .select("id, email, workspace_role, decision_role, token, expires_at, created_at")
     .eq("workspace_id", workspaceId)
     .eq("status", "pending")
     .gt("expires_at", new Date().toISOString())
@@ -192,6 +189,8 @@ export async function getWorkspaceInvitationByToken(token: string): Promise<{
   workspace_id: string;
   workspace_name: string;
   email: string;
+  workspace_role: WorkspaceAccessRole;
+  decision_role: WorkspaceDecisionRole;
   expires_at: string;
 } | null> {
   const supabase = await createClient();
@@ -206,6 +205,8 @@ export async function getWorkspaceInvitationByToken(token: string): Promise<{
     workspace_id: row.workspace_id,
     workspace_name: row.workspace_name,
     email: row.email,
+    workspace_role: row.workspace_role,
+    decision_role: row.decision_role,
     expires_at: row.expires_at,
   };
 }

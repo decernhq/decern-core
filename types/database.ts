@@ -80,18 +80,24 @@ export interface Database {
           id: string;
           workspace_id: string;
           user_id: string;
+          workspace_role: "admin" | "member";
+          decision_role: "approver" | "contributor" | "viewer";
           created_at: string;
         };
         Insert: {
           id?: string;
           workspace_id: string;
           user_id: string;
+          workspace_role?: "admin" | "member";
+          decision_role?: "approver" | "contributor" | "viewer";
           created_at?: string;
         };
         Update: {
           id?: string;
           workspace_id?: string;
           user_id?: string;
+          workspace_role?: "admin" | "member";
+          decision_role?: "approver" | "contributor" | "viewer";
           created_at?: string;
         };
       };
@@ -100,6 +106,8 @@ export interface Database {
           id: string;
           workspace_id: string;
           email: string;
+          workspace_role: "admin" | "member";
+          decision_role: "approver" | "contributor" | "viewer";
           invited_by: string;
           token: string;
           expires_at: string;
@@ -110,6 +118,8 @@ export interface Database {
           id?: string;
           workspace_id: string;
           email: string;
+          workspace_role?: "admin" | "member";
+          decision_role?: "approver" | "contributor" | "viewer";
           invited_by: string;
           token: string;
           expires_at: string;
@@ -120,6 +130,8 @@ export interface Database {
           id?: string;
           workspace_id?: string;
           email?: string;
+          workspace_role?: "admin" | "member";
+          decision_role?: "approver" | "contributor" | "viewer";
           invited_by?: string;
           token?: string;
           expires_at?: string;

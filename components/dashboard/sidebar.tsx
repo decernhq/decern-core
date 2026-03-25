@@ -69,14 +69,19 @@ export function Sidebar({
   workspaces,
   selectedWorkspaceId,
   planId,
+  canManageSelectedWorkspacePlan,
 }: {
   workspaces: Workspace[];
   selectedWorkspaceId: string | null;
   planId: PlanId;
+  canManageSelectedWorkspacePlan: boolean;
 }) {
   const pathname = usePathname();
   const navigation = useNavItems();
-  const showUpgrade = IS_CLOUD && (planId === "free" || planId === "team");
+  const showUpgrade =
+    IS_CLOUD &&
+    canManageSelectedWorkspacePlan &&
+    (planId === "free" || planId === "team");
   const upgradePlanId = planId === "free" ? "team" : "business";
 
   return (

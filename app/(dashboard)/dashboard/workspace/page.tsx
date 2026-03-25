@@ -11,7 +11,7 @@ import {
 import { getProfileById } from "@/lib/queries/profiles";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 import { getEffectivePlanId } from "@/lib/billing";
-import { PLANS } from "@/types/billing";
+import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { WorkspaceMembersSection } from "@/components/dashboard/workspace-members-section";
 import { WorkspaceList } from "@/components/dashboard/workspace-list";
 import { CreateWorkspaceForm } from "@/components/dashboard/create-workspace-form";
@@ -48,15 +48,7 @@ export default async function WorkspacePage() {
     );
   }
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("plan_id")
-    .eq("user_id", user.id)
-    .single();
-  const planId = getEffectivePlanId(subscription?.plan_id);
-  const canCreateWorkspaces = PLANS[planId].limits.workspaces_limit === -1;
-
-  const [members, invitations, ownerProfile, policiesRow] = await Promise.all([
+  const [members, invitations, ownerProfile, policiesRow, ownerSubscription, canCreateOwnWorkspaceResult] = await Promise.all([
     getWorkspaceMembersWithProfiles(workspace.id),
     getWorkspaceInvitationsPending(workspace.id),
     getProfileById(workspace.owner_id),
@@ -65,12 +57,20 @@ export default async function WorkspacePage() {
       .select("high_impact, require_linked_pr, require_approved, judge_blocking, judge_tolerance_percent")
       .eq("workspace_id", workspace.id)
       .maybeSingle(),
+    supabase
+      .from("subscriptions")
+      .select("plan_id")
+      .eq("user_id", workspace.owner_id)
+      .maybeSingle(),
+    checkCanCreateWorkspace(user.id),
   ]);
 
   const isOwner = user.id === workspace.owner_id;
+  const ownerPlanId = getEffectivePlanId(ownerSubscription.data?.plan_id);
+  const canCreateOwnWorkspace = canCreateOwnWorkspaceResult.allowed;
   /** Team can set Judge tolerance; Business+ can set all policies (validate + judge). */
   const showPolicies =
-    isOwner && (planId === "team" || BUSINESS_PLANS.includes(planId));
+    isOwner && (ownerPlanId === "team" || BUSINESS_PLANS.includes(ownerPlanId));
   const policiesInitial = {
     high_impact: policiesRow?.data?.high_impact ?? true,
     require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
@@ -92,7 +92,7 @@ export default async function WorkspacePage() {
         />
       </div>
 
-      {canCreateWorkspaces && (
+      {canCreateOwnWorkspace && (
         <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-gray-900">{t("createNew")}</h2>
           <p className="mt-1 text-sm text-gray-500">{t("createHint")}</p>
@@ -102,7 +102,7 @@ export default async function WorkspacePage() {
         </div>
       )}
 
-      {!canCreateWorkspaces && (
+      {isOwner && !canCreateOwnWorkspace && (
         <p className="mt-4 text-sm text-gray-500">
           {t("upgradeForWorkspaces")}{" "}
           <Link href="/dashboard/settings" className="font-medium text-brand-600 hover:text-brand-700">
@@ -125,7 +125,7 @@ export default async function WorkspacePage() {
           <h2 className="text-lg font-semibold text-gray-900">{t("policiesSectionTitle")}</h2>
           <p className="mt-1 text-sm text-gray-500">{t("policiesSectionSubtitle")}</p>
           <div className="mt-4">
-            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} planId={planId} />
+            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} planId={ownerPlanId} />
           </div>
         </div>
       )}
@@ -137,6 +137,7 @@ export default async function WorkspacePage() {
           ownerProfile={ownerProfile}
           members={members}
           invitations={invitations}
+          planId={ownerPlanId}
         />
       </div>
     </div>

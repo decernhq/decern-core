@@ -5,8 +5,8 @@ const COOKIE_MAX_AGE = 60 * 60 * 24 * 365; // 1 year
 
 /**
  * Restituisce l'id del workspace attualmente selezionato.
- * Se il piano ha un limite (es. 1 o 2), si può accedere solo ai primi N workspace per creazione:
- * se il cookie punta a un workspace fuori da quei N, si usa il primo accessibile (in ordine di creazione).
+ * Se il cookie punta a un workspace non accessibile (es. membership rimossa),
+ * si usa il primo workspace accessibile (in ordine di creazione).
  */
 export async function getSelectedWorkspaceId(): Promise<string | null> {
   const { getWorkspacesForCurrentUser } = await import("@/lib/queries/workspaces");

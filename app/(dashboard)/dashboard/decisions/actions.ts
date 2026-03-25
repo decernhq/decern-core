@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getEffectivePlanId } from "@/lib/billing";
 import { checkCanCreateDecision } from "@/lib/plan-limits";
 import {
   createOrUpdateFile,
@@ -19,6 +20,11 @@ import {
   adrCommitMessageDelete,
 } from "@/lib/github/adr-formatter";
 import {
+  normalizeWorkspaceDecisionRole,
+  supportsWorkspaceRoles,
+  type WorkspaceDecisionRole,
+} from "@/lib/workspace-roles";
+import {
   prepareDecisionData,
   isValidDecisionStatus,
   type ExternalLink,
@@ -28,6 +34,64 @@ export type ActionState = {
   error?: string;
   success?: boolean;
 };
+
+type DecisionGovernanceAccess = {
+  rolesEnabled: boolean;
+  canEditDecisions: boolean;
+  canApproveDecisions: boolean;
+};
+
+async function getDecisionGovernanceAccess(
+  workspaceId: string,
+  userId: string
+): Promise<DecisionGovernanceAccess | null> {
+  const supabase = await createClient();
+  const ws = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (ws.error || !ws.data) return null;
+
+  const [{ data: subscription }, { data: member }] = await Promise.all([
+    supabase
+      .from("subscriptions")
+      .select("plan_id")
+      .eq("user_id", ws.data.owner_id)
+      .maybeSingle(),
+    supabase
+      .from("workspace_members")
+      .select("decision_role")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+
+  const rolesEnabled = supportsWorkspaceRoles(getEffectivePlanId(subscription?.plan_id));
+  if (ws.data.owner_id === userId) {
+    return {
+      rolesEnabled,
+      canEditDecisions: true,
+      canApproveDecisions: true,
+    };
+  }
+
+  if (!member) return null;
+  if (!rolesEnabled) {
+    return {
+      rolesEnabled: false,
+      canEditDecisions: true,
+      canApproveDecisions: true,
+    };
+  }
+
+  const decisionRole: WorkspaceDecisionRole = normalizeWorkspaceDecisionRole(member.decision_role);
+  return {
+    rolesEnabled,
+    canEditDecisions: decisionRole === "contributor" || decisionRole === "approver",
+    canApproveDecisions: decisionRole === "approver",
+  };
+}
 
 async function getGitHubTokenForUser(userId: string) {
   const supabase = await createClient();
@@ -102,6 +166,20 @@ export async function createDecisionAction(
 
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
   if (ws.error || !ws.data) return { error: "Workspace not found" };
+
+  const governance = await getDecisionGovernanceAccess(workspaceId, user.id);
+  if (!governance) return { error: "Workspace access denied" };
+  if (governance.rolesEnabled && !governance.canEditDecisions) {
+    return { error: "Your role does not allow creating decisions" };
+  }
+  if (
+    governance.rolesEnabled &&
+    !governance.canApproveDecisions &&
+    (d.status === "approved" || d.status === "rejected")
+  ) {
+    return { error: "Only Approvers can create approved or rejected decisions" };
+  }
+
   const canCreate = await checkCanCreateDecision(ws.data.owner_id, workspaceId);
   if (!canCreate.allowed) return { error: canCreate.error };
 
@@ -215,11 +293,31 @@ export async function updateDecisionAction(
   // Get existing decision for adr_ref and project info
   const { data: existing } = await supabase
     .from("decisions")
-    .select("adr_ref, title, project_id, created_at")
+    .select("adr_ref, title, project_id, created_at, status")
     .eq("id", id)
     .single();
 
   if (!existing) return { error: "Decision not found" };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("workspace_id")
+    .eq("id", existing.project_id)
+    .single();
+  if (!project) return { error: "Project not found" };
+
+  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
+  if (!governance) return { error: "Workspace access denied" };
+  if (governance.rolesEnabled && !governance.canEditDecisions) {
+    return { error: "Your role does not allow editing decisions" };
+  }
+  if (
+    governance.rolesEnabled &&
+    existing.status !== d.status &&
+    !governance.canApproveDecisions
+  ) {
+    return { error: "Only Approvers can change decision status" };
+  }
 
   const { error } = await supabase
     .from("decisions")
@@ -331,6 +429,20 @@ export async function updateDecisionStatusAction(
     .select("adr_ref, title, project_id, context, options, decision, consequences, tags, external_links, pull_request_urls, created_at")
     .eq("id", decisionId)
     .single();
+  if (!existing) return { error: "Decision not found" };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("workspace_id")
+    .eq("id", existing.project_id)
+    .single();
+  if (!project) return { error: "Project not found" };
+
+  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
+  if (!governance) return { error: "Workspace access denied" };
+  if (governance.rolesEnabled && !governance.canApproveDecisions) {
+    return { error: "Only Approvers can change decision status" };
+  }
 
   // 1. Update Supabase cache
   const { error } = await supabase
@@ -404,9 +516,23 @@ export async function deleteDecisionAction(id: string): Promise<ActionState> {
     .select("project_id, adr_ref, title")
     .eq("id", id)
     .single();
+  if (!decision) return { error: "Decision not found" };
+
+  const { data: project } = await supabase
+    .from("projects")
+    .select("workspace_id")
+    .eq("id", decision.project_id)
+    .single();
+  if (!project) return { error: "Project not found" };
+
+  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
+  if (!governance) return { error: "Workspace access denied" };
+  if (governance.rolesEnabled && !governance.canEditDecisions) {
+    return { error: "Your role does not allow deleting decisions" };
+  }
 
   // 1. Delete file from GitHub
-  if (decision) {
+  {
     const projectInfo = await supabase
       .from("projects")
       .select("github_repo_full_name, github_default_branch")

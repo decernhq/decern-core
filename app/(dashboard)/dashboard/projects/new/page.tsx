@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
+import { getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
+import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
+import { getEffectivePlanId } from "@/lib/billing";
+import { normalizeWorkspaceDecisionRole, supportsWorkspaceRoles } from "@/lib/workspace-roles";
 import { ProjectForm } from "@/components/projects/project-form";
 import { createProjectAction } from "../actions";
 
@@ -8,10 +13,54 @@ export default async function NewProjectPage() {
   const t = await getTranslations("projects");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  let workspaceId = await getSelectedWorkspaceId();
+  if (!workspaceId) {
+    const workspace = await getOrCreateDefaultWorkspace();
+    workspaceId = workspace?.id ?? null;
+  }
+
+  if (!workspaceId) {
+    redirect("/dashboard/projects");
+  }
+
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+  if (!workspace) {
+    redirect("/dashboard/projects");
+  }
+
+  if (workspace.owner_id !== user.id) {
+    const [{ data: subscription }, { data: member }] = await Promise.all([
+      supabase
+        .from("subscriptions")
+        .select("plan_id")
+        .eq("user_id", workspace.owner_id)
+        .maybeSingle(),
+      supabase
+        .from("workspace_members")
+        .select("decision_role")
+        .eq("workspace_id", workspaceId)
+        .eq("user_id", user.id)
+        .maybeSingle(),
+    ]);
+    const rolesEnabled = supportsWorkspaceRoles(getEffectivePlanId(subscription?.plan_id));
+    if (rolesEnabled && normalizeWorkspaceDecisionRole(member?.decision_role) === "viewer") {
+      redirect("/dashboard/projects");
+    }
+  }
+
   const { data: ghConn } = await supabase
     .from("github_connections")
     .select("id")
-    .eq("user_id", user?.id ?? "")
+    .eq("user_id", user.id)
     .maybeSingle();
 
   return (

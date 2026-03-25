@@ -11,11 +11,13 @@ import { updateDecisionStatusAction } from "@/app/(dashboard)/dashboard/decision
 interface DecisionDetailStatusSelectProps {
   decisionId: string;
   currentStatus: DecisionStatus;
+  canApprove?: boolean;
 }
 
 export function DecisionDetailStatusSelect({
   decisionId,
   currentStatus,
+  canApprove = true,
 }: DecisionDetailStatusSelectProps) {
   const router = useRouter();
   const t = useTranslations("decisions");
@@ -45,7 +47,7 @@ export function DecisionDetailStatusSelect({
         type="button"
         variant="outline"
         onClick={handleClick}
-        disabled={updating}
+        disabled={updating || !canApprove}
         className={cn(
           "h-10",
           isApproved
@@ -59,6 +61,7 @@ export function DecisionDetailStatusSelect({
             ? t("removeFromApproved")
             : t("moveToApproved")}
       </Button>
+      {!canApprove && <p className="mt-1 text-xs text-amber-700">{t("approvalRestricted")}</p>}
       {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
     </div>
   );

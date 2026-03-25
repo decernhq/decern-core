@@ -34,6 +34,12 @@ export default async function DashboardLayout({
   }
 
   const planId = getEffectivePlanId(subscription?.data?.plan_id);
+  const selectedWorkspace = selectedWorkspaceId
+    ? workspaces.find((w) => w.id === selectedWorkspaceId) ?? null
+    : null;
+  const canManageSelectedWorkspacePlan = selectedWorkspace
+    ? selectedWorkspace.owner_id === user.id
+    : true;
 
   return (
     <div className="flex h-screen bg-app-bg">
@@ -41,6 +47,7 @@ export default async function DashboardLayout({
         workspaces={workspaces}
         selectedWorkspaceId={selectedWorkspaceId}
         planId={planId}
+        canManageSelectedWorkspacePlan={canManageSelectedWorkspacePlan}
       />
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader userEmail={user.email} />

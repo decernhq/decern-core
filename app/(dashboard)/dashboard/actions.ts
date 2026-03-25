@@ -7,6 +7,9 @@ import { getWorkspacesForCurrentUser, getOrCreateDefaultWorkspace } from "@/lib/
 import { WORKSPACE_COOKIE_NAME, WORKSPACE_COOKIE_OPTIONS } from "@/lib/workspace-cookie";
 import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { generateCiToken, hashCiToken } from "@/lib/ci-token";
+import { getEffectivePlanId } from "@/lib/billing";
+
+const BUSINESS_PLANS = ["business", "enterprise", "governance"] as const;
 
 /**
  * Create the default workspace (if missing), set the cookie and revalidate.
@@ -28,7 +31,7 @@ export async function prepareWorkspaceAction(): Promise<{ error?: string }> {
 
 /**
  * Set the selected workspace (cookie) and revalidate.
- * Allowed only if the workspace is among those accessible (first N by creation, based on plan).
+ * Allowed only if the workspace is among those accessible (owner or member).
  */
 export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ error?: string }> {
   const supabase = await createClient();
@@ -38,7 +41,7 @@ export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ e
   const workspaces = await getWorkspacesForCurrentUser();
   const canAccess = workspaces.some((w) => w.id === workspaceId);
   if (!canAccess) {
-    return { error: "Your plan does not include access to this workspace." };
+    return { error: "You don't have access to this workspace." };
   }
 
   const cookieStore = await cookies();
@@ -221,6 +224,14 @@ export async function updateWorkspacePoliciesAction(
     return { error: "Only the owner can update policies" };
   }
 
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("plan_id")
+    .eq("user_id", user.id)
+    .single();
+  const planId = getEffectivePlanId(subscription?.plan_id);
+  const canConfigureRequirePolicies = BUSINESS_PLANS.includes(planId);
+
   const tolerance =
     data.judge_tolerance_percent != null && data.judge_tolerance_percent >= 0 && data.judge_tolerance_percent <= 100
       ? data.judge_tolerance_percent
@@ -230,8 +241,9 @@ export async function updateWorkspacePoliciesAction(
     {
       workspace_id: workspaceId,
       high_impact: data.high_impact,
-      require_linked_pr: data.require_linked_pr,
-      require_approved: data.require_approved,
+      // Business+ only: Team/Free cannot persist require policy toggles.
+      require_linked_pr: canConfigureRequirePolicies ? data.require_linked_pr : false,
+      require_approved: canConfigureRequirePolicies ? data.require_approved : true,
       judge_blocking: data.judge_blocking,
       judge_tolerance_percent: tolerance,
       updated_at: new Date().toISOString(),

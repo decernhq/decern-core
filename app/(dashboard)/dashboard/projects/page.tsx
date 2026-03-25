@@ -1,14 +1,57 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
 import { getProjects, getDecisionCountsByProjectIds } from "@/lib/queries/projects";
+import { getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
+import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
+import { getEffectivePlanId } from "@/lib/billing";
+import { normalizeWorkspaceDecisionRole, supportsWorkspaceRoles } from "@/lib/workspace-roles";
 import { ProjectCard } from "@/components/projects/project-card";
 import { Button } from "@/components/ui/button";
 
 export default async function ProjectsPage() {
   const t = await getTranslations("projects");
+  const supabase = await createClient();
   const projects = await getProjects();
   const projectIds = projects.map((p) => p.id);
   const decisionCounts = await getDecisionCountsByProjectIds(projectIds);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let canCreateProjects = true;
+  let workspaceId = await getSelectedWorkspaceId();
+  if (!workspaceId) {
+    const workspace = await getOrCreateDefaultWorkspace();
+    workspaceId = workspace?.id ?? null;
+  }
+
+  if (workspaceId && user) {
+    const { data: workspace } = await supabase
+      .from("workspaces")
+      .select("owner_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+
+    if (workspace?.owner_id && workspace.owner_id !== user.id) {
+      const [{ data: subscription }, { data: member }] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("plan_id")
+          .eq("user_id", workspace.owner_id)
+          .maybeSingle(),
+        supabase
+          .from("workspace_members")
+          .select("decision_role")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+      const rolesEnabled = supportsWorkspaceRoles(getEffectivePlanId(subscription?.plan_id));
+      canCreateProjects =
+        !rolesEnabled || normalizeWorkspaceDecisionRole(member?.decision_role) !== "viewer";
+    }
+  }
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -17,9 +60,11 @@ export default async function ProjectsPage() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="mt-1 text-sm text-gray-600">{t("subtitle")}</p>
         </div>
-        <Link href="/dashboard/projects/new">
-          <Button>{t("newProject")}</Button>
-        </Link>
+        {canCreateProjects && (
+          <Link href="/dashboard/projects/new">
+            <Button>{t("newProject")}</Button>
+          </Link>
+        )}
       </div>
 
       {projects.length > 0 ? (
@@ -51,9 +96,11 @@ export default async function ProjectsPage() {
           </div>
           <h3 className="mt-4 text-sm font-medium text-gray-900">{t("noProjects")}</h3>
           <p className="mt-1 text-sm text-gray-500">{t("noProjectsHint")}</p>
-          <Link href="/dashboard/projects/new">
-            <Button className="mt-6">{t("createProject")}</Button>
-          </Link>
+          {canCreateProjects && (
+            <Link href="/dashboard/projects/new">
+              <Button className="mt-6">{t("createProject")}</Button>
+            </Link>
+          )}
         </div>
       )}
     </div>

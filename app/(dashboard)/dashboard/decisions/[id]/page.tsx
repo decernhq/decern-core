@@ -2,6 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { getDecisionWithProject } from "@/lib/queries/decisions";
+import { createClient } from "@/lib/supabase/server";
+import { getEffectivePlanId } from "@/lib/billing";
+import { normalizeWorkspaceDecisionRole, supportsWorkspaceRoles } from "@/lib/workspace-roles";
 import { Button } from "@/components/ui/button";
 import { CopyDecisionMarkdown } from "@/components/decisions/copy-decision-markdown";
 import { DecisionDetailStatusSelect } from "@/components/decisions/decision-detail-status-select";
@@ -26,10 +29,42 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
     notFound();
   }
 
+  const supabase = await createClient();
+  const { data: authData } = await supabase.auth.getUser();
+  const user = authData?.user;
+
   const project = decision.project as { id: string; name: string } | null;
+  const workspaceId = (decision as { workspace_id?: string }).workspace_id ?? null;
   const author = (decision as { author?: { full_name: string | null; email: string } | null }).author;
   const linkedDecision = decision.linked_decision as { id: string; title: string } | null;
   const supersededBy = (decision as { superseded_by?: { id: string; title: string }[] }).superseded_by ?? [];
+
+  let canApproveDecision = true;
+  if (workspaceId && user) {
+    const { data: workspace } = await supabase
+      .from("workspaces")
+      .select("owner_id")
+      .eq("id", workspaceId)
+      .single();
+
+    if (workspace?.owner_id && workspace.owner_id !== user.id) {
+      const [{ data: subscription }, { data: member }] = await Promise.all([
+        supabase
+          .from("subscriptions")
+          .select("plan_id")
+          .eq("user_id", workspace.owner_id)
+          .maybeSingle(),
+        supabase
+          .from("workspace_members")
+          .select("decision_role")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", user.id)
+          .maybeSingle(),
+      ]);
+      const rolesEnabled = supportsWorkspaceRoles(getEffectivePlanId(subscription?.plan_id));
+      canApproveDecision = !rolesEnabled || normalizeWorkspaceDecisionRole(member?.decision_role) === "approver";
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -44,6 +79,7 @@ export default async function DecisionPage({ params }: DecisionPageProps) {
           <DecisionDetailStatusSelect
             decisionId={id}
             currentStatus={decision.status as DecisionStatus}
+            canApprove={canApproveDecision}
           />
           <CopyDecisionMarkdown
             decision={{

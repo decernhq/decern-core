@@ -6,6 +6,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getOrCreateDefaultWorkspace } from "@/lib/queries/workspaces";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 import { checkCanCreateProject } from "@/lib/plan-limits";
+import { getEffectivePlanId } from "@/lib/billing";
+import {
+  normalizeWorkspaceDecisionRole,
+  supportsWorkspaceRoles,
+} from "@/lib/workspace-roles";
 import { ensureAdrFolder } from "@/lib/github/client";
 import { syncAdrFromRepo } from "@/lib/github/sync";
 
@@ -13,6 +18,52 @@ export type ActionState = {
   error?: string;
   success?: boolean;
 };
+
+type ProjectCreationAccess = {
+  allowed: boolean;
+  workspaceOwnerId: string | null;
+};
+
+async function getProjectCreationAccess(
+  workspaceId: string,
+  userId: string
+): Promise<ProjectCreationAccess> {
+  const supabase = await createClient();
+  const ws = await supabase
+    .from("workspaces")
+    .select("owner_id")
+    .eq("id", workspaceId)
+    .single();
+  if (ws.error || !ws.data) return { allowed: false, workspaceOwnerId: null };
+
+  if (ws.data.owner_id === userId) {
+    return { allowed: true, workspaceOwnerId: ws.data.owner_id };
+  }
+
+  const [{ data: subscription }, { data: member }] = await Promise.all([
+    supabase
+      .from("subscriptions")
+      .select("plan_id")
+      .eq("user_id", ws.data.owner_id)
+      .maybeSingle(),
+    supabase
+      .from("workspace_members")
+      .select("decision_role")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
+
+  if (!member) return { allowed: false, workspaceOwnerId: ws.data.owner_id };
+
+  const rolesEnabled = supportsWorkspaceRoles(getEffectivePlanId(subscription?.plan_id));
+  if (!rolesEnabled) return { allowed: true, workspaceOwnerId: ws.data.owner_id };
+
+  return {
+    allowed: normalizeWorkspaceDecisionRole(member.decision_role) !== "viewer",
+    workspaceOwnerId: ws.data.owner_id,
+  };
+}
 
 async function getGitHubToken(userId: string): Promise<string | null> {
   const supabase = await createClient();
@@ -54,9 +105,13 @@ export async function createProjectAction(
   }
   if (!workspaceId) return { error: "Workspace not available" };
 
-  const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
-  if (ws.error || !ws.data) return { error: "Workspace not found" };
-  const canCreate = await checkCanCreateProject(ws.data.owner_id, workspaceId);
+  const projectAccess = await getProjectCreationAccess(workspaceId, user.id);
+  if (!projectAccess.workspaceOwnerId) return { error: "Workspace not found" };
+  if (!projectAccess.allowed) {
+    return { error: "You don't have permission to create projects in this workspace." };
+  }
+
+  const canCreate = await checkCanCreateProject(projectAccess.workspaceOwnerId, workspaceId);
   if (!canCreate.allowed) return { error: canCreate.error };
 
   // If a GitHub repo was selected, ensure the /adr/ folder exists
