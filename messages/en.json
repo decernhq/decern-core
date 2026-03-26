@@ -125,7 +125,7 @@
     },
     "features": {
       "eyebrow": "Core capabilities",
-      "title": "Three things<mbr></mbr>the gate does",
+      "title": "Three things<mbr></mbr> the gate does",
       "feat1Title": "LLM Judge in your CI pipeline",
       "feat1Desc": "The Judge reads the decision and the PR diff. If the change goes beyond scope, the gate blocks with a clear, actionable reason.",
       "feat2Title": "Confidence scoring and thresholds",

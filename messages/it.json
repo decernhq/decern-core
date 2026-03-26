@@ -125,7 +125,7 @@
     },
     "features": {
       "eyebrow": "Capacità principali",
-      "title": "Tre cose<mbr></mbr>che fa il gate",
+      "title": "Tre cose<mbr></mbr> che fa il gate",
       "feat1Title": "LLM Judge nella tua pipeline CI",
       "feat1Desc": "Il Judge legge la decisione e il diff della PR. Se la modifica va fuori scope, il gate blocca con una motivazione chiara e azionabile.",
       "feat2Title": "Punteggio di confidenza e soglie",
