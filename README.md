@@ -25,7 +25,7 @@ On build (`npm run build`), `scripts/vercel-prebuild.mjs` handles integration:
 - uses local `protocol/` only if present, otherwise relies on `@decern/protocol` from npm
 - enables cloud from local `cloud/` first, then `node_modules/@decernhq/cloud`
 - generates `app/api/*` cloud proxy route files (re-export files, not symlinks)
-- disables cloud in self-hosted mode when `NEXT_PUBLIC_SELF_HOSTED=true` and `DECERN_LICENSE_KEY` is missing
+- enables cloud features whenever the cloud layer is present at build time
 
 ## Tech Stack
 

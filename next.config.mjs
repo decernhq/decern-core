@@ -11,13 +11,11 @@ const resolvedCloudDir = existsSync(localCloudDir)
   : existsSync(packageCloudDir)
     ? packageCloudDir
     : null;
-const selfHostedEnv = process.env.NEXT_PUBLIC_SELF_HOSTED === "true";
-const hasSelfHostedLicense = Boolean(process.env.DECERN_LICENSE_KEY?.trim());
-const canUseCloud = !selfHostedEnv || hasSelfHostedLicense;
-const isCloud = canUseCloud && Boolean(resolvedCloudDir);
+const isCloud = Boolean(resolvedCloudDir);
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  ...(process.env.DOCKER_BUILD === "true" ? { output: "standalone" } : {}),
   transpilePackages: ["@decern/protocol", "@decernhq/cloud"],
   env: {
     NEXT_PUBLIC_IS_CLOUD: isCloud ? "true" : "false",

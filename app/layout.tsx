@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 
 const themeScript = `
-(function(){var k='theme';var t=localStorage.getItem(k)||'light';document.documentElement.classList.toggle('dark',t==='dark');})();
+(function(){var k='theme';var t=localStorage.getItem(k)||'dark';document.documentElement.classList.toggle('dark',t==='dark');})();
 `;
 
 export default async function RootLayout({
