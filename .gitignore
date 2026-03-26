@@ -56,5 +56,8 @@ app/api/dev
 # Website
 website/
 
-#Gate
+# Gate
 gate/
+
+# QA demo (internal testing)
+decern-gate-demo/
