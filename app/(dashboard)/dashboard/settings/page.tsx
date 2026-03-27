@@ -4,22 +4,11 @@ import { getTranslations, getLocale, getMessages } from "next-intl/server";
 import { ProfileNameForm } from "./profile-name-form";
 import { ProfileRoleForm } from "./profile-role-form";
 import { ProfileLocaleForm } from "./profile-locale-form";
-import { AiGenerationLlmSettingsForm } from "./ai-generation-llm-settings-form";
 import type { PlanId } from "@/types/billing";
 import { PLANS } from "@/types/billing";
 import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
 import { IS_CLOUD } from "@/lib/cloud";
 import { websitePath } from "@/lib/website";
-
-function hasValidLlmEncryptionKey(): boolean {
-  const raw = process.env.DECERN_LLM_CREDENTIALS_ENCRYPTION_KEY?.trim();
-  if (!raw) return false;
-  try {
-    return Buffer.from(raw, "base64").length === 32;
-  } catch {
-    return false;
-  }
-}
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -51,19 +40,11 @@ export default async function SettingsPage() {
     .eq("user_id", user?.id ?? "")
     .maybeSingle();
 
-  const { data: aiLlmSettings } = await supabase
-    .from("user_ai_llm_settings")
-    .select("provider, base_url, model")
-    .eq("user_id", user?.id ?? "")
-    .maybeSingle();
-
   const effectivePlanId = getEffectivePlanId(subscription?.plan_id) as PlanId;
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
   const isPaid = effectivePlanId === "team" || effectivePlanId === "business";
   const isEnterprise = effectivePlanId === "enterprise";
   const isGovernance = effectivePlanId === "governance";
-  const isSelfHostedMode = process.env.NEXT_PUBLIC_SELF_HOSTED === "true";
-  const canConfigureAiByoLlm = IS_CLOUD && isSelfHostedMode && hasValidLlmEncryptionKey();
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
   const isOverridden = ["free", "team", "business", "enterprise", "governance"].includes(planOverride ?? "");
 
@@ -112,24 +93,6 @@ export default async function SettingsPage() {
       {IS_CLOUD && (
         <div className="mt-6">
           <GitHubConnectSection githubUsername={ghConn?.github_username ?? null} />
-        </div>
-      )}
-
-      {/* AI generation BYO LLM section (cloud only) */}
-      {canConfigureAiByoLlm && (
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6">
-          <h2 className="text-lg font-semibold text-gray-900">{t("aiLlmTitle")}</h2>
-          <p className="mt-1 text-sm text-gray-600">{t("aiLlmSubtitle")}</p>
-          <div className="mt-4">
-            <AiGenerationLlmSettingsForm
-              initialProvider={
-                aiLlmSettings?.provider === "anthropic" ? "anthropic" : "openai"
-              }
-              initialBaseUrl={aiLlmSettings?.base_url ?? ""}
-              initialModel={aiLlmSettings?.model ?? ""}
-              configured={Boolean(aiLlmSettings)}
-            />
-          </div>
         </div>
       )}
 
@@ -232,9 +195,6 @@ export default async function SettingsPage() {
               </li>
             ))}
           </ul>
-          {(effectivePlanId === "team" || effectivePlanId === "business") && (
-            <p className="mt-2 text-xs text-gray-400">* {tPricing("byoLLM")}</p>
-          )}
         </div>
       )}
     </div>

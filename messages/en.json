@@ -220,24 +220,23 @@
     "free": "Free",
     "custom": "Custom",
     "active": "Active",
-    "byoLLM": "Integrated LLM (fair use) / BYO LLM",
     "choosePlan": "Choose {planName}"
   },
   "plans": {
     "free": {
       "name": "Free",
       "description": "To get started",
-      "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory, BYO only)", "CI Observation (no blocking)"]
+      "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)", "CI Observation (no blocking)"]
     },
     "team": {
       "name": "Team",
       "description": "For growing teams",
-      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "CI Blocking for High Impact changes", "Judge tolerance"]
+      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)", "CI Blocking for High Impact changes", "Judge tolerance"]
     },
     "business": {
       "name": "Business",
       "description": "For organizations",
-      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)*", "CI Blocking for High Impact changes", "Judge tolerance", "Advanced Policies", "Roles"]
+      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)", "CI Blocking for High Impact changes", "Judge tolerance", "Advanced Policies", "Roles"]
     },
     "enterprise": {
       "name": "Enterprise",
@@ -522,22 +521,7 @@
     "githubDisconnect": "Disconnect",
     "githubReconnect": "Reconnect",
     "githubDisconnected": "GitHub disconnected.",
-    "githubConnectedSuccess": "GitHub connected successfully.",
-    "aiLlmTitle": "AI generation LLM",
-    "aiLlmSubtitle": "Use your own OpenAI or Anthropic key for decision generation. When configured, generation does not consume fair-use quota.",
-    "aiLlmProvider": "Provider",
-    "aiLlmModel": "Model",
-    "aiLlmBaseUrl": "Base URL",
-    "aiLlmApiKey": "API key",
-    "aiLlmApiKeyPlaceholder": "Paste your API key",
-    "aiLlmApiKeyPlaceholderConfigured": "Leave empty to keep current key",
-    "aiLlmSaveButton": "Save LLM settings",
-    "aiLlmRemoveButton": "Remove BYO key",
-    "aiLlmConfigured": "BYO key configured",
-    "aiLlmNotConfigured": "Using fair-use fallback",
-    "aiLlmSaved": "LLM settings saved.",
-    "aiLlmCleared": "BYO key removed. Fair-use fallback restored.",
-    "aiLlmHint": "The API key is encrypted before storage and never shown in plain text."
+    "githubConnectedSuccess": "GitHub connected successfully."
   },
   "profile": {
     "displayName": "Display name",
@@ -582,14 +566,7 @@
     "invitation_not_found": "Invitation not found",
     "only_owner_revoke": "Only the owner can revoke an invitation",
     "revoke_failed": "Error revoking invitation",
-    "upgrade_failed": "Error during upgrade",
-    "invalid_llm_provider": "Invalid LLM provider.",
-    "missing_llm_api_key": "API key is required.",
-    "invalid_llm_base_url": "Invalid base URL.",
-    "invalid_llm_model": "Invalid model name.",
-    "llm_encryption_failed": "Unable to encrypt the API key.",
-    "llm_settings_update_failed": "Unable to save LLM settings.",
-    "llm_settings_clear_failed": "Unable to remove LLM settings."
+    "upgrade_failed": "Error during upgrade"
   },
   "buttons": {
     "upgrade": "Upgrade",
