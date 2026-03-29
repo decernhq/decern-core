@@ -1,6 +1,6 @@
 import type { PlanId } from "@/types/billing";
 
-const VALID_PLAN_IDS: PlanId[] = ["free", "team", "business", "enterprise", "governance"];
+const VALID_PLAN_IDS: PlanId[] = ["free", "team", "business", "enterprise"];
 
 /** Map legacy DB plan_id to current PlanId (for backward compat if any old row remains) */
 const LEGACY_MAP: Record<string, PlanId> = {

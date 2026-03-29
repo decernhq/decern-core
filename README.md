@@ -1,6 +1,6 @@
 # decern-core
 
-Open-source Decern application for team decision management: capture architectural decisions, collaborate in workspaces, and enforce decision governance through CI.
+Open-source Decern application for team decision management: capture architectural decisions, collaborate in workspaces, and enforce decision policies through CI.
 
 ## Repository Role
 
@@ -8,7 +8,7 @@ This repository is the `decern-core` app (Next.js + Supabase). In the Decern eco
 
 - `decern-core` (this repo): authenticated app, dashboard, workspace/project/decision management
 - `decern-protocol`: stateless shared logic (ADR parsing/formatting, policy and judge helpers)
-- `decern-gate`: CI CLI that enforces decision governance on high-impact changes
+- `decern-gate`: CI CLI that enforces decision policies on high-impact changes
 - `decern-website`: public marketing and pricing website
 - `decern-cloud`: private cloud feature layer (billing, GitHub sync, judge, cloud APIs)
 
@@ -85,7 +85,6 @@ npm run dev
 - `npm run lint` - run linting
 - `npm run qa:seed` - seed QA prerequisites for gate demo
 - `npm run qa:run` - run full QA demo runner
-- `npm run qa:governance` - run governance role QA runner
 - `npm run qa:all` - seed + full QA run
 
 ## Cloud Notes

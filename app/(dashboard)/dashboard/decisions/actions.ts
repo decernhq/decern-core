@@ -35,16 +35,16 @@ export type ActionState = {
   success?: boolean;
 };
 
-type DecisionGovernanceAccess = {
+type DecisionRoleAccess = {
   rolesEnabled: boolean;
   canEditDecisions: boolean;
   canApproveDecisions: boolean;
 };
 
-async function getDecisionGovernanceAccess(
+async function getDecisionRoleAccess(
   workspaceId: string,
   userId: string
-): Promise<DecisionGovernanceAccess | null> {
+): Promise<DecisionRoleAccess | null> {
   const supabase = await createClient();
   const ws = await supabase
     .from("workspaces")
@@ -167,14 +167,14 @@ export async function createDecisionAction(
   const ws = await supabase.from("workspaces").select("owner_id").eq("id", workspaceId).single();
   if (ws.error || !ws.data) return { error: "Workspace not found" };
 
-  const governance = await getDecisionGovernanceAccess(workspaceId, user.id);
-  if (!governance) return { error: "Workspace access denied" };
-  if (governance.rolesEnabled && !governance.canEditDecisions) {
+  const roleAccess = await getDecisionRoleAccess(workspaceId, user.id);
+  if (!roleAccess) return { error: "Workspace access denied" };
+  if (roleAccess.rolesEnabled && !roleAccess.canEditDecisions) {
     return { error: "Your role does not allow creating decisions" };
   }
   if (
-    governance.rolesEnabled &&
-    !governance.canApproveDecisions &&
+    roleAccess.rolesEnabled &&
+    !roleAccess.canApproveDecisions &&
     (d.status === "approved" || d.status === "rejected")
   ) {
     return { error: "Only Approvers can create approved or rejected decisions" };
@@ -306,15 +306,15 @@ export async function updateDecisionAction(
     .single();
   if (!project) return { error: "Project not found" };
 
-  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
-  if (!governance) return { error: "Workspace access denied" };
-  if (governance.rolesEnabled && !governance.canEditDecisions) {
+  const roleAccess = await getDecisionRoleAccess(project.workspace_id, user.id);
+  if (!roleAccess) return { error: "Workspace access denied" };
+  if (roleAccess.rolesEnabled && !roleAccess.canEditDecisions) {
     return { error: "Your role does not allow editing decisions" };
   }
   if (
-    governance.rolesEnabled &&
+    roleAccess.rolesEnabled &&
     existing.status !== d.status &&
-    !governance.canApproveDecisions
+    !roleAccess.canApproveDecisions
   ) {
     return { error: "Only Approvers can change decision status" };
   }
@@ -438,9 +438,9 @@ export async function updateDecisionStatusAction(
     .single();
   if (!project) return { error: "Project not found" };
 
-  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
-  if (!governance) return { error: "Workspace access denied" };
-  if (governance.rolesEnabled && !governance.canApproveDecisions) {
+  const roleAccess = await getDecisionRoleAccess(project.workspace_id, user.id);
+  if (!roleAccess) return { error: "Workspace access denied" };
+  if (roleAccess.rolesEnabled && !roleAccess.canApproveDecisions) {
     return { error: "Only Approvers can change decision status" };
   }
 
@@ -525,9 +525,9 @@ export async function deleteDecisionAction(id: string): Promise<ActionState> {
     .single();
   if (!project) return { error: "Project not found" };
 
-  const governance = await getDecisionGovernanceAccess(project.workspace_id, user.id);
-  if (!governance) return { error: "Workspace access denied" };
-  if (governance.rolesEnabled && !governance.canEditDecisions) {
+  const roleAccess = await getDecisionRoleAccess(project.workspace_id, user.id);
+  if (!roleAccess) return { error: "Workspace access denied" };
+  if (roleAccess.rolesEnabled && !roleAccess.canEditDecisions) {
     return { error: "Your role does not allow deleting decisions" };
   }
 

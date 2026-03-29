@@ -2,7 +2,7 @@
  * Billing types for Stripe integration and plan limits
  */
 
-export type PlanId = "free" | "team" | "business" | "enterprise" | "governance";
+export type PlanId = "free" | "team" | "business" | "enterprise";
 
 export interface PlanLimits {
   workspaces_limit: number;
@@ -17,7 +17,7 @@ export interface Plan {
   name: string;
   description: string;
   price: number; // monthly price in EUR
-  priceId: string | null; // Stripe Price ID (null for free/enterprise/governance)
+  priceId: string | null; // Stripe Price ID (null for free/enterprise)
   features: string[];
   limits: PlanLimits;
 }
@@ -100,21 +100,6 @@ export const PLANS: Record<PlanId, Plan> = {
     price: 0,
     priceId: null,
     features: ["Custom limits", "Dedicated Support", "Dedicated Hosting"],
-    limits: {
-      workspaces_limit: -1,
-      projects_limit: -1,
-      users_per_workspace_limit: -1,
-      decisions_limit: -1,
-      ai_generations_per_month: -1,
-    },
-  },
-  governance: {
-    id: "governance",
-    name: "Governance / On Prem",
-    description: "Let's Talk",
-    price: 0,
-    priceId: null,
-    features: ["Custom limits", "Dedicated Support", "On Prem"],
     limits: {
       workspaces_limit: -1,
       projects_limit: -1,

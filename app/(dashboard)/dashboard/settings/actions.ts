@@ -329,7 +329,7 @@ export async function revokeWorkspaceInvitationAction(invitationId: string): Pro
 }
 
 /** Update workspace and decision roles for a workspace member (Business+). */
-export async function updateWorkspaceMemberGovernanceRolesAction(
+export async function updateWorkspaceMemberRolesAction(
   workspaceId: string,
   memberUserId: string,
   nextWorkspaceRoleRaw: string,
@@ -380,7 +380,7 @@ export async function updateWorkspaceMemberGovernanceRolesAction(
     .eq("workspace_id", workspaceId)
     .eq("user_id", memberUserId);
   if (error) {
-    console.error("Error updating workspace member governance roles:", error);
+    console.error("Error updating workspace member roles:", error);
     return { error: "Error updating member role" };
   }
 

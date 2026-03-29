@@ -9,7 +9,7 @@ import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { generateCiToken, hashCiToken } from "@/lib/ci-token";
 import { getEffectivePlanId } from "@/lib/billing";
 
-const BUSINESS_PLANS = ["business", "enterprise", "governance"] as const;
+const BUSINESS_PLANS = ["business", "enterprise"] as const;
 
 /**
  * Create the default workspace (if missing), set the cookie and revalidate.

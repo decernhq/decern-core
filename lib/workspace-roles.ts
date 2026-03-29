@@ -8,7 +8,7 @@ export type WorkspaceDecisionRole = (typeof WORKSPACE_DECISION_ROLES)[number];
 
 const DEFAULT_WORKSPACE_ACCESS_ROLE: WorkspaceAccessRole = "member";
 const DEFAULT_WORKSPACE_DECISION_ROLE: WorkspaceDecisionRole = "contributor";
-const ROLE_ENABLED_PLANS: PlanId[] = ["business", "enterprise", "governance"];
+const ROLE_ENABLED_PLANS: PlanId[] = ["business", "enterprise"];
 
 export function supportsWorkspaceRoles(planId: PlanId): boolean {
   return ROLE_ENABLED_PLANS.includes(planId);

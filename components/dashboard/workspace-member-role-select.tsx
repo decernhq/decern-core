@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { updateWorkspaceMemberGovernanceRolesAction } from "@/app/(dashboard)/dashboard/settings/actions";
+import { updateWorkspaceMemberRolesAction } from "@/app/(dashboard)/dashboard/settings/actions";
 import type { WorkspaceAccessRole, WorkspaceDecisionRole } from "@/lib/workspace-roles";
 
 export function WorkspaceMemberRoleSelect({
@@ -35,7 +35,7 @@ export function WorkspaceMemberRoleSelect({
     setDecisionRole(nextDecisionRole);
     setError(null);
     setLoading(true);
-    const result = await updateWorkspaceMemberGovernanceRolesAction(
+    const result = await updateWorkspaceMemberRolesAction(
       workspaceId,
       userId,
       nextWorkspaceRole,

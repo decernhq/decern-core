@@ -44,9 +44,8 @@ export default async function SettingsPage() {
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
   const isPaid = effectivePlanId === "team" || effectivePlanId === "business";
   const isEnterprise = effectivePlanId === "enterprise";
-  const isGovernance = effectivePlanId === "governance";
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
-  const isOverridden = ["free", "team", "business", "enterprise", "governance"].includes(planOverride ?? "");
+  const isOverridden = ["free", "team", "business", "enterprise"].includes(planOverride ?? "");
 
   const tPlans = await getTranslations("plans");
   const planName = tPlans(`${effectivePlanId}.name`);
@@ -114,12 +113,12 @@ export default async function SettingsPage() {
               </div>
               <span
                 className={`rounded-full px-3 py-1 text-sm font-medium ${
-                  isPaid || isEnterprise || isGovernance
+                  isPaid || isEnterprise
                     ? "bg-brand-100 text-brand-700"
                     : "bg-gray-100 text-gray-700"
                 }`}
               >
-                {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : isGovernance ? "Governance" : tPricing("free")}
+                {isPaid ? tPricing("active") : isEnterprise ? "Enterprise" : tPricing("free")}
               </span>
             </div>
 
@@ -148,7 +147,7 @@ export default async function SettingsPage() {
                 >
                   {tButtons("manageSubscription")}
                 </a>
-              ) : isEnterprise || isGovernance ? (
+              ) : isEnterprise ? (
                 <p className="text-sm text-gray-500">{t("contactSupport")}</p>
               ) : (
                 <>

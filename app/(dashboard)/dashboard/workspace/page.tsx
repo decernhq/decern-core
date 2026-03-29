@@ -20,7 +20,7 @@ import { WorkspacePoliciesForm } from "@/components/dashboard/workspace-policies
 import { IS_CLOUD } from "@/lib/cloud";
 import Link from "next/link";
 
-const BUSINESS_PLANS = ["business", "enterprise", "governance"];
+const BUSINESS_PLANS = ["business", "enterprise"];
 
 export default async function WorkspacePage() {
   const supabase = await createClient();
