@@ -59,7 +59,9 @@ const nextConfig = {
         // Fallback: cloud components import @/components/ui/button, @/lib/utils etc.
         // back into core. When cloud is in node_modules the tsconfig @/ alias
         // doesn't apply, so we add an explicit webpack alias to the project root.
-        "@/": resolve(".") + "/",
+        // Key must be "@" (not "@/") because enhanced-resolve checks
+        // request.startsWith(alias + "/"), so "@/" would look for "@//" which never matches.
+        "@": resolve("."),
       };
     }
     return config;
