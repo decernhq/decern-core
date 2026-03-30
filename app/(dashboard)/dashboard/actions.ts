@@ -230,7 +230,7 @@ export async function updateWorkspacePoliciesAction(
     .eq("user_id", user.id)
     .single();
   const planId = getEffectivePlanId(subscription?.plan_id);
-  const canConfigureRequirePolicies = BUSINESS_PLANS.includes(planId);
+  const canConfigureRequirePolicies = (BUSINESS_PLANS as readonly string[]).includes(planId);
 
   const tolerance =
     data.judge_tolerance_percent != null && data.judge_tolerance_percent >= 0 && data.judge_tolerance_percent <= 100
