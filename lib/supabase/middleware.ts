@@ -40,19 +40,34 @@ export async function updateSession(request: NextRequest) {
   // Protected routes - redirect to login if not authenticated
   if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
     const url = request.nextUrl.clone();
+    const plan = url.searchParams.get("plan");
     url.pathname = "/login";
-    url.searchParams.set("next", request.nextUrl.pathname);
+    // Preserve plan param so the login→dashboard flow triggers checkout
+    const destination = plan
+      ? `${request.nextUrl.pathname}?plan=${plan}`
+      : request.nextUrl.pathname;
+    url.searchParams.set("next", destination);
+    url.searchParams.delete("plan");
     return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated users away from auth pages (preserve ?next= for invite flow)
+  // Redirect authenticated users away from auth pages
   if (
     user &&
     (request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup")
   ) {
     const url = request.nextUrl.clone();
     const nextPath = url.searchParams.get("next");
-    url.pathname = nextPath && nextPath.startsWith("/dashboard") ? nextPath : "/dashboard";
+    const plan = url.searchParams.get("plan");
+
+    if (nextPath && nextPath.startsWith("/dashboard")) {
+      url.pathname = nextPath;
+    } else if (plan) {
+      url.pathname = "/dashboard";
+      url.searchParams.set("plan", plan);
+    } else {
+      url.pathname = "/dashboard";
+    }
     url.searchParams.delete("next");
     return NextResponse.redirect(url);
   }
