@@ -14,7 +14,8 @@ import { USER_ROLES } from "@/lib/constants/roles";
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const emailParam = searchParams.get("email");
-  const nextParam = searchParams.get("next");
+  const planParam = searchParams.get("plan");
+  const nextParam = searchParams.get("next") ?? (planParam ? `/dashboard?plan=${planParam}` : null);
   const supabase = createClient();
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
@@ -155,7 +156,7 @@ export default function SignupPage() {
         <p className="mt-6 text-center text-sm text-gray-600">
           {t("alreadyHaveAccount")}{" "}
           <Link
-            href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"}
+            href={planParam ? `/login?plan=${planParam}` : nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"}
             className="font-medium text-brand-600 hover:text-brand-500"
           >
             {t("signIn")}

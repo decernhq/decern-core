@@ -13,7 +13,8 @@ import { FormMessage, type Message } from "@/components/ui/form-message";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next");
+  const planParam = searchParams.get("plan");
+  const next = searchParams.get("next") ?? (planParam ? `/dashboard?plan=${planParam}` : null);
   const supabase = createClient();
   const t = useTranslations("auth");
   const tCommon = useTranslations("common");
@@ -91,7 +92,7 @@ export default function LoginPage() {
 
         <p className="mt-6 text-center text-sm text-gray-600">
           {t("noAccount")}{" "}
-          <Link href="/signup" className="font-medium text-brand-600 hover:text-brand-500">
+          <Link href={planParam ? `/signup?plan=${planParam}` : "/signup"} className="font-medium text-brand-600 hover:text-brand-500">
             {t("register")}
           </Link>
         </p>
