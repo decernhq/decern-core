@@ -48,10 +48,8 @@ export default function SignupPage() {
       return;
     }
 
-    const redirectUrl =
-      nextParam && nextParam.startsWith("/")
-        ? `${window.location.origin}${nextParam}`
-        : `${window.location.origin}/dashboard`;
+    const finalDestination = nextParam && nextParam.startsWith("/") ? nextParam : "/dashboard";
+    const redirectUrl = `${window.location.origin}/auth/callback?next=${encodeURIComponent(finalDestination)}`;
 
     const { error } = await supabase.auth.signUp({
       email: email.trim(),

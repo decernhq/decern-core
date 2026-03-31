@@ -190,9 +190,9 @@ export default async function DashboardPage() {
       </div>
 
       {stats.totalProjects === 0 && (
-        <div className="rounded-xl border border-brand-200 bg-brand-50 p-6">
-          <h2 className="text-lg font-semibold text-brand-900">{t("howToStart")}</h2>
-          <ol className="mt-4 space-y-3 text-sm text-brand-800">
+        <div className="rounded-xl border border-brand-200 bg-brand-50 p-6 dark:border-brand-800 dark:bg-brand-950">
+          <h2 className="text-lg font-semibold text-brand-900 dark:text-brand-100">{t("howToStart")}</h2>
+          <ol className="mt-4 space-y-3 text-sm text-brand-800 dark:text-brand-200">
             <li className="flex gap-3">
               <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-medium text-white">
                 1
