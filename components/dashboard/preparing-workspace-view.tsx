@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { prepareWorkspaceAction } from "@/app/(dashboard)/dashboard/actions";
 
 export function PreparingWorkspaceView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations("workspace");
   const [error, setError] = useState<string | null>(null);
 
@@ -20,14 +21,15 @@ export function PreparingWorkspaceView() {
         setError(result.error);
         return;
       }
-      router.push("/dashboard");
+      const plan = searchParams.get("plan");
+      router.push(plan ? `/dashboard?plan=${plan}` : "/dashboard");
     }
 
     run();
     return () => {
       cancelled = true;
     };
-  }, [router]);
+  }, [router, searchParams]);
 
   if (error) {
     return (
