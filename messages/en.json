@@ -266,7 +266,20 @@
     "step1": "Create a project. Group decisions by application or service.",
     "step2": "Document a decision. Context, options and final decision.",
     "step3": "Share with the team. The \"why\" behind technical choices.",
-    "user": "User"
+    "user": "User",
+    "onboarding": {
+      "title": "Get started with Decern",
+      "progress": "{completed} of {total} completed",
+      "dismiss": "Dismiss",
+      "createProject": "Create your first project",
+      "createProjectHint": "Group decisions by application or service.",
+      "createDecision": "Document your first decision",
+      "createDecisionHint": "Capture context, options and the final choice.",
+      "setupGate": "Add Decern Gate to CI",
+      "setupGateHint": "Block high-impact changes without a linked decision.",
+      "connectGithub": "Connect GitHub",
+      "connectGithubHint": "Sync ADR files and link pull requests."
+    }
   },
   "projects": {
     "title": "Projects",

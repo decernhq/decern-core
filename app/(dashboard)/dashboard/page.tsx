@@ -3,7 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getTranslations, getLocale } from "next-intl/server";
 import { getDashboardStats, getDecisions } from "@/lib/queries/decisions";
 import { getProjects } from "@/lib/queries/projects";
+import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 import { Button } from "@/components/ui/button";
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
+import { IS_CLOUD } from "@/lib/cloud";
 import { cn } from "@/lib/utils";
 import { STATUS_COLORS } from "@/lib/constants/decision-status";
 import type { DecisionStatus } from "@/types/decision";
@@ -15,11 +18,22 @@ export default async function DashboardPage() {
   const locale = await getLocale();
   const dateLocale = locale === "it" ? "it-IT" : "en-US";
 
-  const [{ data: { user } }, stats, projects, decisions] = await Promise.all([
+  const [{ data: { user } }, stats, projects, decisions, workspaceId] = await Promise.all([
     supabase.auth.getUser(),
     getDashboardStats(),
     getProjects(),
     getDecisions(),
+    getSelectedWorkspaceId(),
+  ]);
+
+  // Onboarding: check CI token and GitHub connection
+  const [{ data: ws }, { data: ghConn }] = await Promise.all([
+    workspaceId
+      ? supabase.from("workspaces").select("ci_token_hash").eq("id", workspaceId).single()
+      : { data: null },
+    user?.id
+      ? supabase.from("github_connections").select("github_username").eq("user_id", user.id).maybeSingle()
+      : { data: null },
   ]);
 
   function getStatusLabel(status: DecisionStatus | string) {
@@ -49,6 +63,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-8">
+      <OnboardingChecklist
+        hasProjects={projects.length > 0}
+        hasDecisions={decisions.length > 0}
+        hasCiToken={!!ws?.ci_token_hash}
+        hasGithub={!!ghConn}
+        isCloud={IS_CLOUD}
+      />
       <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
         <h1 className="text-2xl font-bold text-gray-900">
           {t("welcome")}

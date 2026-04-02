@@ -266,7 +266,20 @@
     "step1": "Crea un progetto. Raggruppa le decisioni per applicazione o servizio.",
     "step2": "Documenta una decisione. Contesto, opzioni e decisione finale.",
     "step3": "Condividi col team. Il \"perché\" dietro le scelte tecniche.",
-    "user": "Utente"
+    "user": "Utente",
+    "onboarding": {
+      "title": "Inizia con Decern",
+      "progress": "{completed} di {total} completati",
+      "dismiss": "Chiudi",
+      "createProject": "Crea il primo progetto",
+      "createProjectHint": "Raggruppa le decisioni per applicazione o servizio.",
+      "createDecision": "Documenta la prima decisione",
+      "createDecisionHint": "Cattura contesto, opzioni e la scelta finale.",
+      "setupGate": "Aggiungi Decern Gate al CI",
+      "setupGateHint": "Blocca i cambiamenti ad alto impatto senza una decisione collegata.",
+      "connectGithub": "Connetti GitHub",
+      "connectGithubHint": "Sincronizza i file ADR e collega le pull request."
+    }
   },
   "projects": {
     "title": "Progetti",
