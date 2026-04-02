@@ -9,6 +9,7 @@ import { PLANS } from "@/types/billing";
 import { GitHubConnectSection } from "@/components/dashboard/github-connect-section";
 import { IS_CLOUD } from "@/lib/cloud";
 import { websitePath } from "@/lib/website";
+import { ManageSubscriptionButton } from "@/app/(dashboard)/dashboard/settings/manage-subscription-button";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -141,12 +142,7 @@ export default async function SettingsPage() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               {isPaid ? (
-                <a
-                  href={manageSubscriptionUrl}
-                  className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
-                >
-                  {tButtons("manageSubscription")}
-                </a>
+                <ManageSubscriptionButton />
               ) : isEnterprise ? (
                 <p className="text-sm text-gray-500">{t("contactSupport")}</p>
               ) : (
