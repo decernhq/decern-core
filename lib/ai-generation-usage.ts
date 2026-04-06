@@ -28,7 +28,7 @@ export function getAiGenerationFairUseMonthlyCapCents(planId: PlanId): number | 
     return parseCap(process.env.AI_GENERATION_FAIR_USE_TEAM_CAP_CENTS, 200);
   }
   if (planId === "business") {
-    return parseCap(process.env.AI_GENERATION_FAIR_USE_BUSINESS_CAP_CENTS, 400);
+    return parseCap(process.env.AI_GENERATION_FAIR_USE_BUSINESS_CAP_CENTS, 900);
   }
   return null;
 }

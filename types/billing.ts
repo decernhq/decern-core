@@ -31,7 +31,7 @@ export const PLANS: Record<PlanId, Plan> = {
     priceId: null,
     features: [
       "1 workspace",
-      "1 project",
+      "Unlimited projects",
       "Unlimited decisions",
       "AI decision generation (fair use)",
       "LLM as a judge (advisory)*",
@@ -39,7 +39,7 @@ export const PLANS: Record<PlanId, Plan> = {
     ],
     limits: {
       workspaces_limit: 1,
-      projects_limit: 1,
+      projects_limit: -1,
       users_per_workspace_limit: 1,
       decisions_limit: -1,
       ai_generations_per_month: 10,
@@ -49,7 +49,7 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "team",
     name: "Team",
     description: "For growing teams",
-    price: 19,
+    price: 29,
     priceId: process.env.STRIPE_TEAM_PRICE_ID || "",
     features: [
       "1 workspace",
@@ -72,7 +72,7 @@ export const PLANS: Record<PlanId, Plan> = {
     id: "business",
     name: "Business",
     description: "For organizations",
-    price: 59,
+    price: 149,
     priceId: process.env.STRIPE_BUSINESS_PRICE_ID || "",
     features: [
       "Unlimited workspaces",
