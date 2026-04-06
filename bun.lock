@@ -5,7 +5,7 @@
       "name": "decern",
       "dependencies": {
         "@decern/protocol": "^0.1.1",
-        "@decernhq/cloud": "0.1.5",
+        "@decernhq/cloud": "0.1.6",
         "@supabase/ssr": "^0.5.2",
         "@supabase/supabase-js": "^2.47.10",
         "clsx": "^2.1.1",
@@ -78,7 +78,7 @@
 
     "@decern/protocol": ["@decern/protocol@0.1.1", "", {}, "sha512-M6ufzAWh+ZS2D5Klz8ZJSgy5AfeQbPq6zcw203TJRSNCtyWeex8chiPv1HquDqIoTj60t0fJECpZO7LufYs6Og=="],
 
-    "@decernhq/cloud": ["@decernhq/cloud@0.1.5", "https://npm.pkg.github.com/download/@decernhq/cloud/0.1.5/206c45389f537354e3b71ae39ae726b1a265bf1d", {}, "sha512-TLYatnvMemcJ8ARH8OdxzfuYA8T8/KQK2ZBYOh1vSyWajK+5x/00xgST6gcXM73cJB+ZFrPu3dMzfw3Yi1zl5Q=="],
+    "@decernhq/cloud": ["@decernhq/cloud@0.1.6", "https://npm.pkg.github.com/download/@decernhq/cloud/0.1.6/4474e9e8d33daa4a33df0ec05323d2aef1545fc2", {}, "sha512-wM9691uPCoI9G42ecEa8L0+XWVJdM+zFb1W8tyQNpgf0ME5bGoerfjVj/03p8xzPTPycZq97k1szQPB+IaUPNg=="],
 
     "@emnapi/core": ["@emnapi/core@1.8.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg=="],
 
