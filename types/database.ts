@@ -326,6 +326,59 @@ export interface Database {
           updated_at?: string;
         };
       };
+      judge_gate_runs: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          decision_id: string | null;
+          decision_adr_ref: string | null;
+          decision_title: string | null;
+          pr_title: string | null;
+          pr_url: string | null;
+          base_sha: string | null;
+          head_sha: string | null;
+          allowed: boolean;
+          advisory: boolean;
+          confidence_percent: number | null;
+          reason: string | null;
+          advisory_message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          decision_id?: string | null;
+          decision_adr_ref?: string | null;
+          decision_title?: string | null;
+          pr_title?: string | null;
+          pr_url?: string | null;
+          base_sha?: string | null;
+          head_sha?: string | null;
+          allowed: boolean;
+          advisory?: boolean;
+          confidence_percent?: number | null;
+          reason?: string | null;
+          advisory_message?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          decision_id?: string | null;
+          decision_adr_ref?: string | null;
+          decision_title?: string | null;
+          pr_title?: string | null;
+          pr_url?: string | null;
+          base_sha?: string | null;
+          head_sha?: string | null;
+          allowed?: boolean;
+          advisory?: boolean;
+          confidence_percent?: number | null;
+          reason?: string | null;
+          advisory_message?: string | null;
+          created_at?: string;
+        };
+      };
     };
     Enums: {
       decision_status: "proposed" | "approved" | "superseded" | "rejected";
@@ -354,4 +407,5 @@ export type UpdateProject = Database["public"]["Tables"]["projects"]["Update"];
 export type InsertDecision = Database["public"]["Tables"]["decisions"]["Insert"];
 export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"];
 export type JudgeUsage = Database["public"]["Tables"]["judge_usage"]["Row"];
+export type JudgeGateRun = Database["public"]["Tables"]["judge_gate_runs"]["Row"];
 export type GitHubConnection = Database["public"]["Tables"]["github_connections"]["Row"];

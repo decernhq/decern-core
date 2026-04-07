@@ -31,6 +31,7 @@
     "dashboard": "Dashboard",
     "projects": "Progetti",
     "decisions": "Decisioni",
+    "gateRuns": "Gate runs",
     "workspace": "Workspace",
     "policies": "Policy",
     "settings": "Impostazioni",
@@ -280,6 +281,30 @@
       "connectGithub": "Connetti GitHub",
       "connectGithubHint": "Sincronizza i file ADR e collega le pull request."
     }
+  },
+  "gateRuns": {
+    "title": "Gate runs",
+    "subtitle": "Ogni chiamata del Judge dalla CI, con verdetto e confidence.",
+    "hero": "{percent}% allineati questo mese, {flagged} PR fuori scope",
+    "heroSub": "{period} · {total} run",
+    "statTotal": "Totale",
+    "statFlagged": "Flaggati",
+    "statAligned": "Allineati",
+    "statAvgConfidence": "Confidence media",
+    "emptyTitle": "Nessun gate run questo mese",
+    "emptyBody": "Quando la tua CI esegue decern-gate su un workspace con Judge attivo, le run compariranno qui.",
+    "recentTitle": "Run recenti",
+    "recentEmpty": "Nessuna run da mostrare.",
+    "colPr": "Pull request",
+    "colDecision": "Decisione",
+    "colVerdict": "Verdetto",
+    "colConfidence": "Confidence",
+    "colReason": "Motivo",
+    "verdictPass": "Pass",
+    "verdictFlag": "Flagged",
+    "advisoryBadge": "Advisory",
+    "untitledPr": "(senza titolo)",
+    "decisionFallback": "Decisione"
   },
   "projects": {
     "title": "Progetti",

@@ -31,6 +31,7 @@
     "dashboard": "Dashboard",
     "projects": "Projects",
     "decisions": "Decisions",
+    "gateRuns": "Gate runs",
     "workspace": "Workspace",
     "policies": "Policies",
     "settings": "Settings",
@@ -280,6 +281,30 @@
       "connectGithub": "Connect GitHub",
       "connectGithubHint": "Sync ADR files and link pull requests."
     }
+  },
+  "gateRuns": {
+    "title": "Gate runs",
+    "subtitle": "Every Judge call from your CI, with verdict and confidence.",
+    "hero": "{percent}% aligned this month, {flagged} PRs flagged out of scope",
+    "heroSub": "{period} · {total} runs",
+    "statTotal": "Total",
+    "statFlagged": "Flagged",
+    "statAligned": "Aligned",
+    "statAvgConfidence": "Avg confidence",
+    "emptyTitle": "No gate runs yet this month",
+    "emptyBody": "Once your CI runs decern-gate against a Judge-enabled workspace, runs will appear here.",
+    "recentTitle": "Recent runs",
+    "recentEmpty": "No runs to show.",
+    "colPr": "Pull request",
+    "colDecision": "Decision",
+    "colVerdict": "Verdict",
+    "colConfidence": "Confidence",
+    "colReason": "Reason",
+    "verdictPass": "Pass",
+    "verdictFlag": "Flagged",
+    "advisoryBadge": "Advisory",
+    "untitledPr": "(no title)",
+    "decisionFallback": "Decision"
   },
   "projects": {
     "title": "Projects",
