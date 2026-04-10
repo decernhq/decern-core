@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { FloatingNewDecisionButton } from "@/components/dashboard/floating-new-decision-button";
 import { PreparingWorkspaceView } from "@/components/dashboard/preparing-workspace-view";
 import { getAllWorkspacesForCurrentUser } from "@/lib/queries/workspaces";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
@@ -83,7 +82,6 @@ export default async function DashboardLayout({
         <DashboardHeader userEmail={user.email} />
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
-      <FloatingNewDecisionButton />
       <AutoCheckout currentPlan={planId} />
     </div>
   );
