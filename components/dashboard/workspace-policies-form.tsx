@@ -8,8 +8,9 @@ export type WorkspacePoliciesInitial = {
   high_impact: boolean;
   require_linked_pr: boolean;
   require_approved: boolean;
-  judge_blocking: boolean;
   judge_tolerance_percent: number | null;
+  judge_mode: "blocking" | "advisory" | "deterministic_only";
+  evidence_retention_days: number;
 };
 
 export function WorkspacePoliciesForm({

@@ -54,7 +54,7 @@ export default async function WorkspacePage() {
     getProfileById(workspace.owner_id),
     supabase
       .from("workspace_policies")
-      .select("high_impact, require_linked_pr, require_approved, judge_blocking, judge_tolerance_percent")
+      .select("high_impact, require_linked_pr, require_approved, judge_tolerance_percent, judge_mode, evidence_retention_days")
       .eq("workspace_id", workspace.id)
       .maybeSingle(),
     supabase
@@ -75,8 +75,9 @@ export default async function WorkspacePage() {
     high_impact: policiesRow?.data?.high_impact ?? true,
     require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
     require_approved: policiesRow?.data?.require_approved ?? true,
-    judge_blocking: policiesRow?.data?.judge_blocking ?? true,
     judge_tolerance_percent: policiesRow?.data?.judge_tolerance_percent ?? null,
+    judge_mode: (policiesRow?.data?.judge_mode as "blocking" | "advisory" | "deterministic_only") ?? "blocking",
+    evidence_retention_days: (policiesRow?.data as Record<string, unknown>)?.evidence_retention_days as number ?? 730,
   };
 
   return (
@@ -106,7 +107,7 @@ export default async function WorkspacePage() {
         <p className="mt-4 text-sm text-gray-500">
           {t("upgradeForWorkspaces")}{" "}
           <Link href="/dashboard/settings" className="font-medium text-brand-600 hover:text-brand-700">
-            {t("businessPlan")}
+            {t("enterprisePlan")}
           </Link>.
         </p>
       )}

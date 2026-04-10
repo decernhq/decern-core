@@ -39,7 +39,7 @@
   },
   "policiesPage": {
     "title": "Policy",
-    "subtitle": "Configura le regole di validazione e enforcement per questo workspace (piano Team e Business)."
+    "subtitle": "Configura le regole di validazione e enforcement per questo workspace."
   },
   "home": {
     "tagline": "Il registro delle decisioni tecniche del tuo team.",
@@ -120,7 +120,7 @@
       "t1Title": "Porta il tuo provider LLM",
       "t1Desc": "OpenAI, Claude o qualsiasi endpoint compatibile OpenAI. La tua API key, il tuo budget, la tua latenza.",
       "t2Title": "Prima observation, poi blocking",
-      "t2Desc": "Parti in modalità report-only sul piano Free. Abilita il blocking su Team o Business quando il team è allineato.",
+      "t2Desc": "Parti in modalità report-only sul piano Free. Abilita il blocking su Enterprise quando il team è allineato.",
       "t3Title": "Output auditabili e deterministici",
       "t3Desc": "Ogni run del gate produce riferimento decisione, verdetto di scope e codice motivazione. Pronto per review e compliance."
     },
@@ -211,7 +211,7 @@
   },
   "pricing": {
     "title": "Prezzi semplici e trasparenti",
-    "subtitle": "Scegli il piano più adatto: da Free a Business ed Enterprise.",
+    "subtitle": "Free per iniziare, Enterprise per il controllo completo.",
     "perMonth": "/mese",
     "mostPopular": "Più popolare",
     "startFree": "Inizia gratis",
@@ -469,9 +469,9 @@
     "subtitle": "Gestisci membri e inviti. Gli utenti invitati vedranno tutti i progetti del workspace.",
     "loadError": "Impossibile caricare il workspace.",
     "createNew": "Crea nuovo workspace",
-    "createHint": "Con il piano Business puoi creare più workspace per organizzare team e progetti.",
+    "createHint": "Con il piano Enterprise puoi creare più workspace per organizzare team e progetti.",
     "upgradeForWorkspaces": "Per creare più workspace passa al",
-    "businessPlan": "piano Business",
+    "enterprisePlan": "piano Enterprise",
     "membersAndInvites": "Workspace – Membri e inviti",
     "membersHint": "Gli utenti invitati al workspace vedranno tutti i progetti. Gestisci inviti e membri qui.",
     "owner": "Proprietario",
@@ -489,14 +489,13 @@
     "requireLinkedPRHint": "La decisione deve avere almeno una PR collegata per passare la validazione.",
     "requireApproved": "Richiedi status approvato",
     "requireApprovedHint": "La decisione deve essere approvata per passare la validazione.",
-    "judgeBlocking": "Judge in blocco",
-    "judgeBlockingHint": "Se attivo, il judge LLM può bloccare il gate (Team e Business); se disattivo è solo advisory.",
     "judgeTolerancePercent": "Tolleranza judge (%)",
     "judgeToleranceHint": "Opzionale 0–100. Lascia vuoto per il default.",
     "judgeMode": "Modalità judge",
-    "judgeModeAdvisory": "Advisory (LLM contribuisce al verdetto)",
-    "judgeModeDeterministic": "Solo deterministico (LLM advisory, verdetto da regole)",
-    "judgeModeHint": "In modalità solo deterministico, il Judge gira ma non blocca mai. Il verdetto è calcolato solo dai check deterministici.",
+    "judgeModeBlocking": "Blocking (il judge può bloccare il gate)",
+    "judgeModeAdvisory": "Advisory (il judge avvisa ma non blocca)",
+    "judgeModeDeterministic": "Solo deterministico (verdetto da regole, judge registrato)",
+    "judgeModeHint": "Blocking: il judge può bloccare. Advisory: il judge avvisa. Solo deterministico: verdetto da regole, il judge è registrato ma non influisce sul verdetto.",
     "evidenceRetention": "Retention evidence (giorni)",
     "evidenceRetentionHint": "Giorni di retention dei record di evidence prima dell'archiviazione. Minimo 30, default 730 (2 anni).",
     "policiesSaved": "Policy salvate.",

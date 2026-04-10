@@ -145,9 +145,8 @@ export interface Database {
           require_linked_pr: boolean;
           require_approved: boolean;
           high_impact: boolean;
-          judge_blocking: boolean;
           judge_tolerance_percent: number | null;
-          judge_mode: "advisory" | "deterministic_only";
+          judge_mode: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days: number;
           created_at: string;
           updated_at: string;
@@ -157,9 +156,8 @@ export interface Database {
           require_linked_pr?: boolean;
           require_approved?: boolean;
           high_impact?: boolean;
-          judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
-          judge_mode?: "advisory" | "deterministic_only";
+          judge_mode?: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days?: number;
           created_at?: string;
           updated_at?: string;
@@ -169,9 +167,8 @@ export interface Database {
           require_linked_pr?: boolean;
           require_approved?: boolean;
           high_impact?: boolean;
-          judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
-          judge_mode?: "advisory" | "deterministic_only";
+          judge_mode?: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days?: number;
           created_at?: string;
           updated_at?: string;

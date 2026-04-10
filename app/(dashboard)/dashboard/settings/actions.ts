@@ -342,7 +342,7 @@ export async function updateWorkspaceMemberRolesAction(
   const access = await getWorkspaceAccessContext(workspaceId, user.id);
   if (!access) return { error: "Workspace not found" };
   if (!access.rolesEnabled) {
-    return { error: "Workspace roles are available on Business plan and above" };
+    return { error: "Workspace roles are available on the Enterprise plan" };
   }
 
   const nextWorkspaceRole = normalizeWorkspaceAccessRole(nextWorkspaceRoleRaw);

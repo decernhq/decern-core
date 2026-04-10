@@ -207,9 +207,8 @@ export async function updateWorkspacePoliciesAction(
     high_impact: boolean;
     require_linked_pr: boolean;
     require_approved: boolean;
-    judge_blocking: boolean;
     judge_tolerance_percent: number | null;
-    judge_mode?: "advisory" | "deterministic_only";
+    judge_mode?: "blocking" | "advisory" | "deterministic_only";
     evidence_retention_days?: number;
   }
 ): Promise<UpdateWorkspacePoliciesResult> {
@@ -248,12 +247,11 @@ export async function updateWorkspacePoliciesAction(
     {
       workspace_id: workspaceId,
       high_impact: data.high_impact,
-      // Business+ only: Team/Free cannot persist require policy toggles.
+      // Enterprise only: Free cannot persist require policy toggles.
       require_linked_pr: canConfigureRequirePolicies ? data.require_linked_pr : false,
       require_approved: canConfigureRequirePolicies ? data.require_approved : true,
-      judge_blocking: data.judge_blocking,
       judge_tolerance_percent: tolerance,
-      judge_mode: canConfigureRequirePolicies ? (data.judge_mode ?? "advisory") : "advisory",
+      judge_mode: data.judge_mode ?? "blocking",
       evidence_retention_days: canConfigureRequirePolicies ? retentionDays : 730,
       updated_at: new Date().toISOString(),
     },
