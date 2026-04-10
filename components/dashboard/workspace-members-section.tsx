@@ -34,7 +34,12 @@ export async function WorkspaceMembersSection({
   const t = await getTranslations("workspace");
   const isOwner = currentUserId === ownerProfile?.id;
   const rolesEnabled = supportsWorkspaceRoles(planId);
-  const currentMember = members.find((m) => m.user_id === currentUserId);
+  // Filter out the owner from the members list — they are shown separately
+  // and must not have leave/role-change controls.
+  const nonOwnerMembers = ownerProfile
+    ? members.filter((m) => m.user_id !== ownerProfile.id)
+    : members;
+  const currentMember = nonOwnerMembers.find((m) => m.user_id === currentUserId);
   const isAdmin = rolesEnabled && currentMember?.workspace_role === "admin";
   const canManageMembers = isOwner || isAdmin;
 
@@ -61,7 +66,7 @@ export async function WorkspaceMembersSection({
             {t("owner")}
           </span>
         </li>
-        {members.map((m) => (
+        {nonOwnerMembers.map((m) => (
           <li key={m.user_id} className="flex items-center justify-between border-t border-gray-100 py-2">
             <span className="text-gray-900">{displayName(m)}</span>
             <div className="flex items-center gap-2">

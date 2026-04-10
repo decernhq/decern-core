@@ -257,6 +257,11 @@ export async function removeWorkspaceMemberAction(
   const isOwner = access.actorIsOwner;
   const isSelf = userId === user.id;
 
+  // The workspace owner cannot be removed or leave.
+  if (userId === access.ownerId) {
+    return { error: "The workspace owner cannot be removed" };
+  }
+
   if (!isOwner && !isSelf) {
     const canManageAsAdmin = access.rolesEnabled && access.actorWorkspaceRole === "admin";
     if (!canManageAsAdmin) return { error: "You cannot remove this member" };
@@ -343,6 +348,11 @@ export async function updateWorkspaceMemberRolesAction(
   if (!access) return { error: "Workspace not found" };
   if (!access.rolesEnabled) {
     return { error: "Workspace roles are available on the Enterprise plan" };
+  }
+
+  // The workspace owner's roles cannot be changed.
+  if (memberUserId === access.ownerId) {
+    return { error: "The workspace owner's roles cannot be changed" };
   }
 
   const nextWorkspaceRole = normalizeWorkspaceAccessRole(nextWorkspaceRoleRaw);
