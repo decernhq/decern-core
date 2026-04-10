@@ -59,9 +59,16 @@ const nextConfig = {
         cloudAliases[resolve(root, stub)] = cloudAbsolute;
       }
 
+      // Resolve @decern/protocol subpath imports to the local protocol dist
+      const protocolDir = resolve("./protocol/dist");
       config.resolve.alias = {
         ...cloudAliases,
         ...config.resolve.alias,
+        "@decern/protocol/evidence": resolve(protocolDir, "evidence/index.js"),
+        "@decern/protocol/policies": resolve(protocolDir, "policies/index.js"),
+        "@decern/protocol/models": resolve(protocolDir, "models/index.js"),
+        "@decern/protocol/adr": resolve(protocolDir, "adr/index.js"),
+        "@decern/protocol": resolve(protocolDir, "index.js"),
         // Fallback: cloud components import @/components/ui/button, @/lib/utils etc.
         // back into core. When cloud is in node_modules the tsconfig @/ alias
         // doesn't apply, so we add an explicit webpack alias to the project root.
