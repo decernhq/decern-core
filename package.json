@@ -17,8 +17,8 @@
     "qa:judge": "bash decern-gate-demo/qa-demo/run-judge.sh"
   },
   "dependencies": {
-    "@decern/protocol": "^0.1.1",
-    "@decernhq/cloud": "0.1.7",
+    "@decern/protocol": "^0.2.0",
+    "@decernhq/cloud": "0.2.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "clsx": "^2.1.1",
@@ -37,7 +37,7 @@
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^5.1.3",
     "autoprefixer": "^10.4.20",
-    "decern-gate": "^0.1.14",
+    "decern-gate": "^0.2.0",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.21",
     "postcss": "^8.4.49",

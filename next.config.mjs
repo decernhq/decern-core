@@ -44,6 +44,10 @@ const nextConfig = {
         "components/dashboard/workspace-policies-form": "components/dashboard/workspace-policies-form.tsx",
         "components/dashboard/auto-checkout": "components/dashboard/auto-checkout.tsx",
         "components/projects/github-repo-selector": "components/projects/github-repo-selector.tsx",
+        "lib/evidence/chain": "lib/evidence/chain.ts",
+        "lib/evidence/signer-factory": "lib/evidence/signer-factory.ts",
+        "lib/evidence/build-record": "lib/evidence/build-record.ts",
+        "lib/evidence/access-log": "lib/evidence/access-log.ts",
         "app/(dashboard)/dashboard/settings/upgrade-button": "app/(dashboard)/dashboard/settings/upgrade-button.tsx",
         "app/(dashboard)/dashboard/settings/manage-subscription-button": "app/(dashboard)/dashboard/settings/manage-subscription-button.tsx",
       };

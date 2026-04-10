@@ -147,6 +147,8 @@ export interface Database {
           high_impact: boolean;
           judge_blocking: boolean;
           judge_tolerance_percent: number | null;
+          judge_mode: "advisory" | "deterministic_only";
+          evidence_retention_days: number;
           created_at: string;
           updated_at: string;
         };
@@ -157,6 +159,8 @@ export interface Database {
           high_impact?: boolean;
           judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
+          judge_mode?: "advisory" | "deterministic_only";
+          evidence_retention_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -167,6 +171,8 @@ export interface Database {
           high_impact?: boolean;
           judge_blocking?: boolean;
           judge_tolerance_percent?: number | null;
+          judge_mode?: "advisory" | "deterministic_only";
+          evidence_retention_days?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -222,6 +228,7 @@ export interface Database {
           external_links: { url: string; label?: string }[];
           pull_request_urls: string[];
           linked_decision_id: string | null;
+          checks: Json | null;
           created_by: string | null;
           created_at: string;
           updated_at: string;
@@ -241,6 +248,7 @@ export interface Database {
           external_links?: { url: string; label?: string }[];
           pull_request_urls?: string[];
           linked_decision_id?: string | null;
+          checks?: Json | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -260,6 +268,7 @@ export interface Database {
           external_links?: { url: string; label?: string }[];
           pull_request_urls?: string[];
           linked_decision_id?: string | null;
+          checks?: Json | null;
           created_by?: string | null;
           created_at?: string;
           updated_at?: string;
@@ -379,6 +388,116 @@ export interface Database {
           created_at?: string;
         };
       };
+      evidence_records: {
+        Row: {
+          evidence_id: string;
+          schema_version: string;
+          timestamp_utc: string;
+          timestamp_source: string;
+          workspace_id: string;
+          repository_identifier: string;
+          pull_request_id: string;
+          commit_sha: string;
+          base_commit_sha: string;
+          author_identity: Json;
+          ci_provider: string;
+          decision_id: string;
+          decision_version: string;
+          decision_content_hash: string;
+          diff_hash: string;
+          diff_size_bytes: number;
+          diff_files_touched: string[];
+          judge_invocation: Json | null;
+          deterministic_checks: Json;
+          verdict: string;
+          reason_code: string;
+          reason_detail: string;
+          override_data: Json | null;
+          previous_evidence_hash: string | null;
+          current_evidence_hash: string;
+          signature: Json;
+          created_at: string;
+        };
+        Insert: {
+          evidence_id: string;
+          schema_version?: string;
+          timestamp_utc: string;
+          timestamp_source?: string;
+          workspace_id: string;
+          repository_identifier: string;
+          pull_request_id: string;
+          commit_sha: string;
+          base_commit_sha: string;
+          author_identity: Json;
+          ci_provider: string;
+          decision_id: string;
+          decision_version?: string;
+          decision_content_hash: string;
+          diff_hash: string;
+          diff_size_bytes?: number;
+          diff_files_touched?: string[];
+          judge_invocation?: Json | null;
+          deterministic_checks?: Json;
+          verdict: string;
+          reason_code: string;
+          reason_detail?: string;
+          override_data?: Json | null;
+          previous_evidence_hash?: string | null;
+          current_evidence_hash: string;
+          signature: Json;
+          created_at?: string;
+        };
+        Update: {
+          reason_detail?: string;
+          judge_invocation?: Json | null;
+          deterministic_checks?: Json;
+          override_data?: Json | null;
+        };
+      };
+      evidence_chain_tips: {
+        Row: {
+          workspace_id: string;
+          tip_evidence_id: string;
+          tip_hash: string;
+          updated_at: string;
+        };
+        Insert: {
+          workspace_id: string;
+          tip_evidence_id: string;
+          tip_hash: string;
+          updated_at?: string;
+        };
+        Update: {
+          tip_evidence_id?: string;
+          tip_hash?: string;
+          updated_at?: string;
+        };
+      };
+      evidence_access_log: {
+        Row: {
+          access_id: string;
+          timestamp_utc: string;
+          actor_identity: Json;
+          workspace_id: string;
+          evidence_ids_accessed: string[] | null;
+          query_descriptor: string | null;
+          access_method: string;
+          source_ip: string | null;
+          user_agent: string | null;
+        };
+        Insert: {
+          access_id?: string;
+          timestamp_utc?: string;
+          actor_identity: Json;
+          workspace_id: string;
+          evidence_ids_accessed?: string[] | null;
+          query_descriptor?: string | null;
+          access_method: string;
+          source_ip?: string | null;
+          user_agent?: string | null;
+        };
+        Update: Record<string, never>;
+      };
     };
     Enums: {
       decision_status: "proposed" | "approved" | "superseded" | "rejected";
@@ -409,3 +528,6 @@ export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"]
 export type JudgeUsage = Database["public"]["Tables"]["judge_usage"]["Row"];
 export type JudgeGateRun = Database["public"]["Tables"]["judge_gate_runs"]["Row"];
 export type GitHubConnection = Database["public"]["Tables"]["github_connections"]["Row"];
+export type EvidenceRecordRow = Database["public"]["Tables"]["evidence_records"]["Row"];
+export type EvidenceChainTip = Database["public"]["Tables"]["evidence_chain_tips"]["Row"];
+export type EvidenceAccessLogRow = Database["public"]["Tables"]["evidence_access_log"]["Row"];

@@ -209,6 +209,8 @@ export async function updateWorkspacePoliciesAction(
     require_approved: boolean;
     judge_blocking: boolean;
     judge_tolerance_percent: number | null;
+    judge_mode?: "advisory" | "deterministic_only";
+    evidence_retention_days?: number;
   }
 ): Promise<UpdateWorkspacePoliciesResult> {
   const supabase = await createClient();
@@ -237,6 +239,11 @@ export async function updateWorkspacePoliciesAction(
       ? data.judge_tolerance_percent
       : null;
 
+  const retentionDays =
+    data.evidence_retention_days != null && data.evidence_retention_days >= 30
+      ? data.evidence_retention_days
+      : 730;
+
   const { error } = await supabase.from("workspace_policies").upsert(
     {
       workspace_id: workspaceId,
@@ -246,6 +253,8 @@ export async function updateWorkspacePoliciesAction(
       require_approved: canConfigureRequirePolicies ? data.require_approved : true,
       judge_blocking: data.judge_blocking,
       judge_tolerance_percent: tolerance,
+      judge_mode: canConfigureRequirePolicies ? (data.judge_mode ?? "advisory") : "advisory",
+      evidence_retention_days: canConfigureRequirePolicies ? retentionDays : 730,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "workspace_id" }
