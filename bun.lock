@@ -4,8 +4,8 @@
     "": {
       "name": "decern",
       "dependencies": {
-        "@decern/protocol": "^0.2.0",
-        "@decernhq/cloud": "0.2.2",
+        "@decern/protocol": "^0.2.1",
+        "@decernhq/cloud": "0.2.3",
         "@supabase/ssr": "^0.5.2",
         "@supabase/supabase-js": "^2.47.10",
         "clsx": "^2.1.1",
@@ -76,9 +76,9 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@decern/protocol": ["@decern/protocol@0.2.0", "", {}, "sha512-a3NhdD6eP5m4ZT3mGeijFlN3C17FFutKK7jUjk9gLGhbtBXcSqJqb8Y98oq5gWI8HCIMdGgB2wKPKqnmClsbng=="],
+    "@decern/protocol": ["@decern/protocol@0.2.1", "", {}, "sha512-msfcfIwwjotavlTv3J3ZQzruiJgcWdWeyvhWJo3iVvtdplNW8oP1ELIGq55FP8F41Hel34kz4fsfS900NAUnHQ=="],
 
-    "@decernhq/cloud": ["@decernhq/cloud@0.2.2", "https://npm.pkg.github.com/download/@decernhq/cloud/0.2.2/5098b245ae89035d15dca31ed70b4bdf61b90576", {}, "sha512-Lr+GyKpunjeoyV3EmEXZ+8ZIqqEWfKVxQKdgf0Kulpdg3rLi2LxN2xvV/skj+Y3WPf/P0FvzYfi0AJfDmKTcfw=="],
+    "@decernhq/cloud": ["@decernhq/cloud@0.2.3", "https://npm.pkg.github.com/download/@decernhq/cloud/0.2.3/d8581d813ebd04fff1f205fe936df6e286bf6f04", {}, "sha512-xMxuO7BCVVfgSt2ie1EmrJQriFPYLsC8i+FVKOYk1jux7RJUsoH2P8dIJulGev3U1iFLBhHhMNv9dykt2B9ZFg=="],
 
     "@emnapi/core": ["@emnapi/core@1.8.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg=="],
 
