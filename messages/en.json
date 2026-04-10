@@ -30,7 +30,8 @@
     "enter": "Enter",
     "dashboard": "Dashboard",
     "projects": "Projects",
-    "decisions": "Decisions",
+    "adrs": "ADRs",
+    "signals": "Signals",
     "gateRuns": "Gate runs",
     "workspace": "Workspace",
     "policies": "Policies",
@@ -270,6 +271,27 @@
       "connectGithub": "Connect GitHub",
       "connectGithubHint": "Sync ADR files and link pull requests."
     }
+  },
+  "adrs": {
+    "title": "Architecture Decisions (ADRs)",
+    "subtitle": "ADRs synced from your repository. Source of truth is /docs/adr/ in your repo.",
+    "emptyTitle": "No ADRs synced yet",
+    "emptyBody": "Run decern init in your repo to bootstrap your first ADRs, or add them manually to /docs/adr/.",
+    "colId": "ID",
+    "colTitle": "Title",
+    "colStatus": "Status",
+    "colEnforcement": "Enforcement",
+    "colScope": "Scope"
+  },
+  "signals": {
+    "title": "Signals",
+    "subtitle": "New architectural decisions detected in PRs that are not covered by any existing ADR.",
+    "emptyTitle": "No signals yet",
+    "emptyBody": "Signals appear when the gate detects changes not covered by any ADR (Case C).",
+    "openTitle": "Open",
+    "resolvedTitle": "Resolved",
+    "open": "Open",
+    "untitled": "Untitled signal"
   },
   "gateRuns": {
     "title": "Gate runs",

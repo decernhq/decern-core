@@ -30,7 +30,8 @@
     "enter": "Entra",
     "dashboard": "Dashboard",
     "projects": "Progetti",
-    "decisions": "Decisioni",
+    "adrs": "ADR",
+    "signals": "Segnali",
     "gateRuns": "Gate runs",
     "workspace": "Workspace",
     "policies": "Policy",
@@ -271,9 +272,30 @@
       "connectGithubHint": "Sincronizza i file ADR e collega le pull request."
     }
   },
+  "adrs": {
+    "title": "Decisioni architetturali (ADR)",
+    "subtitle": "ADR sincronizzate dal repository. La fonte di verità è /docs/adr/ nel repo.",
+    "emptyTitle": "Nessuna ADR sincronizzata",
+    "emptyBody": "Lancia decern init nel repo per creare le prime ADR, o aggiungile manualmente in /docs/adr/.",
+    "colId": "ID",
+    "colTitle": "Titolo",
+    "colStatus": "Stato",
+    "colEnforcement": "Enforcement",
+    "colScope": "Scope"
+  },
+  "signals": {
+    "title": "Segnali",
+    "subtitle": "Nuove decisioni architetturali rilevate nelle PR non coperte da nessuna ADR.",
+    "emptyTitle": "Nessun segnale",
+    "emptyBody": "I segnali appaiono quando il gate rileva modifiche non coperte da nessuna ADR (Caso C).",
+    "openTitle": "Aperti",
+    "resolvedTitle": "Risolti",
+    "open": "Aperto",
+    "untitled": "Segnale senza titolo"
+  },
   "gateRuns": {
     "title": "Gate runs",
-    "subtitle": "Ogni chiamata del Judge dalla CI, con verdetto e confidence.",
+    "subtitle": "Ogni controllo del gate dalla CI, con verdetto e dettagli.",
     "hero": "{percent}% allineati questo mese, {flagged} PR fuori scope",
     "heroSub": "{period} · {total} run",
     "statTotal": "Totale",
