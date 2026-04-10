@@ -299,12 +299,21 @@
     "colDecision": "Decisione",
     "colVerdict": "Verdetto",
     "colConfidence": "Confidence",
-    "colReason": "Motivo",
+    "colDetails": "Dettagli",
+    "detailsLink": "Apri",
     "verdictPass": "Pass",
     "verdictFlag": "Flagged",
     "advisoryBadge": "Advisory",
     "untitledPr": "(senza titolo)",
-    "decisionFallback": "Decisione"
+    "decisionFallback": "Decisione",
+    "modalDecision": "Decisione",
+    "modalConfidence": "Confidence",
+    "modalPrUrl": "URL pull request",
+    "modalBaseSha": "Base SHA",
+    "modalHeadSha": "Head SHA",
+    "modalReason": "Motivo",
+    "modalAdvisory": "Messaggio advisory",
+    "modalClose": "Chiudi"
   },
   "projects": {
     "title": "Progetti",

@@ -299,12 +299,21 @@
     "colDecision": "Decision",
     "colVerdict": "Verdict",
     "colConfidence": "Confidence",
-    "colReason": "Reason",
+    "colDetails": "Details",
+    "detailsLink": "View",
     "verdictPass": "Pass",
     "verdictFlag": "Flagged",
     "advisoryBadge": "Advisory",
     "untitledPr": "(no title)",
-    "decisionFallback": "Decision"
+    "decisionFallback": "Decision",
+    "modalDecision": "Decision",
+    "modalConfidence": "Confidence",
+    "modalPrUrl": "Pull request URL",
+    "modalBaseSha": "Base SHA",
+    "modalHeadSha": "Head SHA",
+    "modalReason": "Reason",
+    "modalAdvisory": "Advisory message",
+    "modalClose": "Close"
   },
   "projects": {
     "title": "Projects",

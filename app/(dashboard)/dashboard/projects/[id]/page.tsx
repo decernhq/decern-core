@@ -119,7 +119,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             </thead>
             <tbody className="divide-y divide-gray-200 bg-white">
               {decisions.map((decision) => (
-                <tr key={decision.id} className="hover:bg-gray-50">
+                <tr key={decision.id} className="transition-colors hover:bg-gray-50/40">
                   <td className="whitespace-nowrap px-6 py-4">
                     {decision.adr_ref ? (
                       <span className="font-mono text-sm text-gray-600">{decision.adr_ref}</span>

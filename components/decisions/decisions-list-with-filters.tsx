@@ -641,7 +641,7 @@ export function DecisionsListWithFilters({
                   const hasMoreTags = tags.length > TAGS_VISIBLE;
                   const isTagsPopoverOpen = openTagsPopoverId === decision.id;
                   return (
-                    <tr key={decision.id} className="hover:bg-gray-50">
+                    <tr key={decision.id} className="transition-colors hover:bg-gray-50/40">
                       {visibleColumnKeys.includes("adr") && (
                         <td className="whitespace-nowrap px-3 py-2">
                           {decision.adr_ref ? (

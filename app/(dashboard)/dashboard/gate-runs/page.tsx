@@ -1,12 +1,10 @@
-import Link from "next/link";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { getGateRunStatsThisMonth, getRecentGateRuns } from "@/lib/queries/gate-runs";
+import { GateRunsTable } from "@/components/dashboard/gate-runs-table";
 import { cn } from "@/lib/utils";
 
 export default async function GateRunsPage() {
   const t = await getTranslations("gateRuns");
-  const locale = await getLocale();
-  const dateLocale = locale === "it" ? "it-IT" : "en-US";
 
   const [stats, runs] = await Promise.all([
     getGateRunStatsThisMonth(),
@@ -22,156 +20,124 @@ export default async function GateRunsPage() {
         <p className="mt-1 text-sm text-gray-500">{t("subtitle")}</p>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
-        {hasRuns ? (
-          <>
-            <p className="text-3xl font-bold text-gray-900 sm:text-4xl">
+      {hasRuns ? (
+        <>
+          <div className="rounded-xl border border-gray-200 bg-white p-5 sm:p-6">
+            <p className="text-lg font-semibold text-gray-900 sm:text-xl">
               {t("hero", { percent: stats.alignedPercent, flagged: stats.flagged })}
             </p>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="mt-1 text-sm text-gray-500">
               {t("heroSub", { period: stats.periodLabel, total: stats.total })}
             </p>
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
-              <Stat label={t("statTotal")} value={String(stats.total)} />
-              <Stat label={t("statFlagged")} value={String(stats.flagged)} tone="rose" />
-              <Stat label={t("statAligned")} value={`${stats.alignedPercent}%`} tone="emerald" />
-              <Stat
-                label={t("statAvgConfidence")}
-                value={stats.avgConfidencePercent != null ? `${stats.avgConfidencePercent}%` : "—"}
-              />
-            </div>
-          </>
-        ) : (
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              label={t("statTotal")}
+              value={String(stats.total)}
+              accent="gray"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+                </svg>
+              }
+            />
+            <StatCard
+              label={t("statFlagged")}
+              value={String(stats.flagged)}
+              accent="rose"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 21V4.5a.75.75 0 0 1 .75-.75h11.69a.75.75 0 0 1 .53 1.28L13.5 8.25l2.47 3.22a.75.75 0 0 1-.53 1.28H4.5" />
+                </svg>
+              }
+            />
+            <StatCard
+              label={t("statAligned")}
+              value={`${stats.alignedPercent}%`}
+              accent="emerald"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              }
+            />
+            <StatCard
+              label={t("statAvgConfidence")}
+              value={stats.avgConfidencePercent != null ? `${stats.avgConfidencePercent}%` : "—"}
+              accent="brand"
+              icon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-5 w-5" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                </svg>
+              }
+            />
+          </div>
+        </>
+      ) : (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 sm:p-8">
           <div className="text-center">
             <p className="text-base font-semibold text-gray-900">{t("emptyTitle")}</p>
             <p className="mt-2 text-sm text-gray-500">{t("emptyBody")}</p>
           </div>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-900">{t("recentTitle")}</h2>
         </div>
-        {runs.length === 0 ? (
-          <p className="p-6 text-sm text-gray-500">{t("recentEmpty")}</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                <tr>
-                  <th className="px-6 py-3">{t("colPr")}</th>
-                  <th className="px-6 py-3">{t("colDecision")}</th>
-                  <th className="px-6 py-3">{t("colVerdict")}</th>
-                  <th className="px-6 py-3">{t("colConfidence")}</th>
-                  <th className="px-6 py-3">{t("colReason")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {runs.map((run) => {
-                  const verdictPass = run.allowed === true;
-                  const reasonText =
-                    run.advisory_message?.trim() ||
-                    run.reason?.trim() ||
-                    "—";
-                  return (
-                    <tr key={run.id} className="text-gray-700">
-                      <td className="px-6 py-3 align-top">
-                        <div className="font-medium text-gray-900">
-                          {run.pr_url ? (
-                            <a
-                              href={run.pr_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-brand-700 hover:underline"
-                            >
-                              {run.pr_title?.trim() || t("untitledPr")}
-                            </a>
-                          ) : (
-                            run.pr_title?.trim() || t("untitledPr")
-                          )}
-                        </div>
-                        <div className="mt-0.5 text-xs text-gray-500">
-                          {new Date(run.created_at).toLocaleString(dateLocale, {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          })}
-                        </div>
-                      </td>
-                      <td className="px-6 py-3 align-top">
-                        {run.decision_id ? (
-                          <Link
-                            href={`/dashboard/decisions/${run.decision_id}`}
-                            className="font-medium text-brand-700 hover:underline"
-                          >
-                            {run.decision_adr_ref || run.decision_title || t("decisionFallback")}
-                          </Link>
-                        ) : (
-                          <span className="text-gray-500">
-                            {run.decision_adr_ref || run.decision_title || "—"}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-3 align-top">
-                        <span
-                          className={cn(
-                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                            verdictPass
-                              ? "bg-emerald-50 text-emerald-700"
-                              : "bg-rose-50 text-rose-700"
-                          )}
-                        >
-                          {verdictPass ? t("verdictPass") : t("verdictFlag")}
-                        </span>
-                        {run.advisory && (
-                          <span className="ml-1 inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                            {t("advisoryBadge")}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-3 align-top text-gray-700">
-                        {run.confidence_percent != null ? `${run.confidence_percent}%` : "—"}
-                      </td>
-                      <td className="px-6 py-3 align-top text-gray-600">
-                        <p className="line-clamp-1">{reasonText}</p>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      )}
+
+      <GateRunsTable runs={runs} />
     </div>
   );
 }
 
-function Stat({
+type Accent = "gray" | "rose" | "emerald" | "brand";
+
+const ACCENT_STYLES: Record<Accent, { chip: string; ring: string }> = {
+  gray: {
+    chip: "bg-gray-50 text-gray-600",
+    ring: "ring-gray-200",
+  },
+  rose: {
+    chip: "bg-rose-50 text-rose-600",
+    ring: "ring-rose-200",
+  },
+  emerald: {
+    chip: "bg-emerald-50 text-emerald-600",
+    ring: "ring-emerald-200",
+  },
+  brand: {
+    chip: "bg-brand-50 text-brand-600",
+    ring: "ring-brand-200",
+  },
+};
+
+function StatCard({
   label,
   value,
-  tone,
+  accent,
+  icon,
 }: {
   label: string;
   value: string;
-  tone?: "rose" | "emerald";
+  accent: Accent;
+  icon: React.ReactNode;
 }) {
-  const toneClass =
-    tone === "rose"
-      ? "border-rose-200 bg-rose-50 text-rose-900"
-      : tone === "emerald"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-        : "border-gray-200 bg-gray-50 text-gray-900";
-  const labelClass =
-    tone === "rose"
-      ? "text-rose-600"
-      : tone === "emerald"
-        ? "text-emerald-600"
-        : "text-gray-500";
+  const styles = ACCENT_STYLES[accent];
   return (
-    <div className={cn("rounded-lg border p-4", toneClass)}>
-      <p className={cn("text-xs font-medium uppercase tracking-wide", labelClass)}>{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
+    <div className="group rounded-xl border border-gray-200 bg-white p-5 transition hover:border-gray-300 hover:shadow-sm">
+      <div className="flex items-start justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+          {label}
+        </p>
+        <span
+          className={cn(
+            "inline-flex h-9 w-9 items-center justify-center rounded-lg ring-1 ring-inset",
+            styles.chip,
+            styles.ring
+          )}
+        >
+          {icon}
+        </span>
+      </div>
+      <p className="mt-4 text-3xl font-bold text-gray-900 tabular-nums">{value}</p>
     </div>
   );
 }
