@@ -69,8 +69,16 @@ function ensureCloudApiProxies(sourceApiDir) {
   console.log("[vercel-prebuild] Done. Cloud API routes are now active.");
 }
 
-if (fs.existsSync(path.join(root, "protocol"))) {
-  console.log("[vercel-prebuild] Using local protocol/...");
+if (fs.existsSync(path.join(root, "protocol", "src"))) {
+  console.log("[vercel-prebuild] Building local protocol/...");
+  const { execSync } = await import("node:child_process");
+  try {
+    execSync("npm run build", { cwd: path.join(root, "protocol"), stdio: "inherit" });
+    console.log("[vercel-prebuild] Protocol build complete.");
+  } catch (e) {
+    console.error("[vercel-prebuild] Protocol build failed:", e.message);
+    process.exit(1);
+  }
 } else {
   console.log("[vercel-prebuild] No local protocol/ directory. Using @decern/protocol from npm.");
 }

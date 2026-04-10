@@ -13,6 +13,10 @@ const resolvedCloudDir = existsSync(localCloudDir)
     : null;
 const isCloud = Boolean(resolvedCloudDir);
 
+// Resolve @decern/protocol: prefer local dist, fallback to node_modules
+const localProtocolDist = resolve("./protocol/dist");
+const hasLocalProtocol = existsSync(resolve(localProtocolDist, "index.js"));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   ...(process.env.DOCKER_BUILD === "true" ? { output: "standalone" } : {}),
@@ -24,6 +28,21 @@ const nextConfig = {
     // serverActions are stable in Next.js 14
   },
   webpack: (config) => {
+    // Always resolve @decern/protocol subpath imports to local dist if available
+    if (hasLocalProtocol) {
+      const protocolAliases = {
+        "@decern/protocol/evidence$": resolve(localProtocolDist, "evidence/index.js"),
+        "@decern/protocol/policies$": resolve(localProtocolDist, "policies/index.js"),
+        "@decern/protocol/models$": resolve(localProtocolDist, "models/index.js"),
+        "@decern/protocol/adr$": resolve(localProtocolDist, "adr/index.js"),
+        "@decern/protocol$": resolve(localProtocolDist, "index.js"),
+      };
+      config.resolve.alias = {
+        ...protocolAliases,
+        ...config.resolve.alias,
+      };
+    }
+
     if (isCloud && resolvedCloudDir) {
       const root = resolve(".");
       const cloudMap = {
@@ -59,16 +78,9 @@ const nextConfig = {
         cloudAliases[resolve(root, stub)] = cloudAbsolute;
       }
 
-      // Resolve @decern/protocol subpath imports to the local protocol dist
-      const protocolDir = resolve("./protocol/dist");
       config.resolve.alias = {
         ...cloudAliases,
         ...config.resolve.alias,
-        "@decern/protocol/evidence": resolve(protocolDir, "evidence/index.js"),
-        "@decern/protocol/policies": resolve(protocolDir, "policies/index.js"),
-        "@decern/protocol/models": resolve(protocolDir, "models/index.js"),
-        "@decern/protocol/adr": resolve(protocolDir, "adr/index.js"),
-        "@decern/protocol": resolve(protocolDir, "index.js"),
         // Fallback: cloud components import @/components/ui/button, @/lib/utils etc.
         // back into core. When cloud is in node_modules the tsconfig @/ alias
         // doesn't apply, so we add an explicit webpack alias to the project root.
