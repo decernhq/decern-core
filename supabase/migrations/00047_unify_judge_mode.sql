@@ -1,12 +1,14 @@
 -- Unify judge_blocking + judge_mode into a single judge_mode column.
 -- New values: 'blocking' | 'advisory' | 'deterministic_only'
---
--- Migration logic:
--- - judge_blocking=false → 'advisory'
--- - judge_blocking=true + judge_mode='advisory' → 'blocking'
--- - judge_blocking=true + judge_mode='deterministic_only' → 'deterministic_only'
 
--- First, migrate existing data
+-- Step 1: Drop the OLD constraint first (only allowed 'advisory' and 'deterministic_only')
+ALTER TABLE public.workspace_policies DROP CONSTRAINT IF EXISTS workspace_policies_judge_mode_check;
+
+-- Step 2: Add the NEW constraint that allows all 3 values
+ALTER TABLE public.workspace_policies ADD CONSTRAINT workspace_policies_judge_mode_check
+  CHECK (judge_mode IN ('blocking', 'advisory', 'deterministic_only'));
+
+-- Step 3: Migrate existing data based on judge_blocking
 UPDATE public.workspace_policies
 SET judge_mode = CASE
   WHEN judge_blocking = false THEN 'advisory'
@@ -15,10 +17,5 @@ SET judge_mode = CASE
   ELSE 'blocking'
 END;
 
--- Update check constraint to allow 3 values
-ALTER TABLE public.workspace_policies DROP CONSTRAINT IF EXISTS workspace_policies_judge_mode_check;
-ALTER TABLE public.workspace_policies ADD CONSTRAINT workspace_policies_judge_mode_check
-  CHECK (judge_mode IN ('blocking', 'advisory', 'deterministic_only'));
-
--- Set default to 'blocking' (enterprise default)
+-- Step 4: Set default to 'blocking'
 ALTER TABLE public.workspace_policies ALTER COLUMN judge_mode SET DEFAULT 'blocking';
