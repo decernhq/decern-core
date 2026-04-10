@@ -1,6 +1,6 @@
 /**
  * Pricing checkout button – stub for self-hosted / open-source mode.
- * Real implementation lives in cloud/components/pricing-checkout-button.tsx.
+ * No self-service checkout; enterprise requires contact.
  */
 "use client";
 
@@ -11,7 +11,7 @@ export function PricingCheckoutButton({
   className,
   size,
 }: {
-  planId: "team" | "business";
+  planId?: string;
   planName: string;
   className?: string;
   size?: "sm" | "md" | "lg";

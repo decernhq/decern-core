@@ -32,12 +32,8 @@ function loadEnv() {
   }
 }
 
-function planIdFromStripePriceId(priceId: string): "team" | "business" {
-  const teamId = process.env.STRIPE_TEAM_PRICE_ID?.trim();
-  const businessId = process.env.STRIPE_BUSINESS_PRICE_ID?.trim();
-  if (businessId && priceId === businessId) return "business";
-  if (teamId && priceId === teamId) return "team";
-  return "team";
+function planIdFromStripePriceId(_priceId: string): "enterprise" {
+  return "enterprise";
 }
 
 async function main() {
@@ -102,16 +98,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Prefer the subscription that has the highest plan (business > team)
-  const teamPriceId = process.env.STRIPE_TEAM_PRICE_ID?.trim();
-  const businessPriceId = process.env.STRIPE_BUSINESS_PRICE_ID?.trim();
-  const byPlanRank = (s: Stripe.Subscription) => {
-    const priceId = s.items.data[0]?.price?.id ?? "";
-    if (businessPriceId && priceId === businessPriceId) return 2;
-    if (teamPriceId && priceId === teamPriceId) return 1;
-    return 0;
-  };
-  active.sort((a, b) => byPlanRank(b) - byPlanRank(a));
+  // All paid subscriptions map to enterprise now
   const sub = active[0];
   const priceId = sub.items.data[0]?.price?.id ?? "";
   const planId = planIdFromStripePriceId(priceId);
