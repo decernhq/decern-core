@@ -9,7 +9,7 @@ import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { generateCiToken, hashCiToken } from "@/lib/ci-token";
 import { getEffectivePlanId } from "@/lib/billing";
 
-const BUSINESS_PLANS = ["business", "enterprise"] as const;
+const ENTERPRISE_PLANS = ["enterprise"] as const;
 
 /**
  * Create the default workspace (if missing), set the cookie and revalidate.
@@ -232,7 +232,7 @@ export async function updateWorkspacePoliciesAction(
     .eq("user_id", user.id)
     .single();
   const planId = getEffectivePlanId(subscription?.plan_id);
-  const canConfigureRequirePolicies = (BUSINESS_PLANS as readonly string[]).includes(planId);
+  const canConfigureRequirePolicies = (ENTERPRISE_PLANS as readonly string[]).includes(planId);
 
   const tolerance =
     data.judge_tolerance_percent != null && data.judge_tolerance_percent >= 0 && data.judge_tolerance_percent <= 100

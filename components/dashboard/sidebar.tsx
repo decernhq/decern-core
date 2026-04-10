@@ -90,8 +90,7 @@ export function Sidebar({
   const showUpgrade =
     IS_CLOUD &&
     canManageSelectedWorkspacePlan &&
-    (planId === "free" || planId === "team");
-  const upgradePlanId = planId === "free" ? "team" : "business";
+    planId === "free";
 
   return (
     <aside className="flex h-full w-64 flex-col border-r border-app-border bg-app-card">
@@ -132,7 +131,7 @@ export function Sidebar({
       </nav>
       {showUpgrade && (
         <div className="border-t border-app-border p-3">
-          <UpgradeButton planId={upgradePlanId} className="w-full" size="sm" />
+          <UpgradeButton className="w-full" size="sm" />
         </div>
       )}
     </aside>

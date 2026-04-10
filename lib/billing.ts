@@ -1,20 +1,15 @@
 import type { PlanId } from "@/types/billing";
 
-const VALID_PLAN_IDS: PlanId[] = ["free", "team", "business", "enterprise"];
+const VALID_PLAN_IDS: PlanId[] = ["free", "enterprise"];
 
-/** Map legacy DB plan_id to current PlanId (for backward compat if any old row remains) */
+/** Map legacy/removed plan IDs to current PlanId */
 const LEGACY_MAP: Record<string, PlanId> = {
-  pro: "team",
-  ultra: "business",
+  pro: "enterprise",
+  ultra: "enterprise",
+  team: "enterprise",
+  business: "enterprise",
 };
 
-/**
- * Restituisce il piano effettivo, in ordine di priorità:
- * 1. PLAN_OVERRIDE env var (dev / self-hosted)
- * 2. Self-hosted → enterprise (il gate è l'accesso al container registry)
- * 3. Valore dal DB (con mapping legacy)
- * 4. Fallback: free
- */
 export function getEffectivePlanId(dbPlanId: string | null | undefined): PlanId {
   const override = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
   if (override && VALID_PLAN_IDS.includes(override as PlanId)) return override as PlanId;

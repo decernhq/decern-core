@@ -24,12 +24,7 @@ export function getAiGenerationFairUseMonthlyCapCents(planId: PlanId): number | 
   if (planId === "free") {
     return parseCap(process.env.AI_GENERATION_FAIR_USE_FREE_CAP_CENTS, 100);
   }
-  if (planId === "team") {
-    return parseCap(process.env.AI_GENERATION_FAIR_USE_TEAM_CAP_CENTS, 200);
-  }
-  if (planId === "business") {
-    return parseCap(process.env.AI_GENERATION_FAIR_USE_BUSINESS_CAP_CENTS, 900);
-  }
+  // Enterprise: no fair-use cap (BYO or custom agreement)
   return null;
 }
 

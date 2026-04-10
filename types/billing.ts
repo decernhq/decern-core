@@ -1,8 +1,9 @@
 /**
- * Billing types for Stripe integration and plan limits
+ * Billing types for plan limits.
+ * Only two plans: Free and Enterprise (Self-Hosted).
  */
 
-export type PlanId = "free" | "team" | "business" | "enterprise";
+export type PlanId = "free" | "enterprise";
 
 export interface PlanLimits {
   workspaces_limit: number;
@@ -16,8 +17,8 @@ export interface Plan {
   id: PlanId;
   name: string;
   description: string;
-  price: number; // monthly price in EUR
-  priceId: string | null; // Stripe Price ID (null for free/enterprise)
+  price: number;
+  priceId: string | null;
   features: string[];
   limits: PlanLimits;
 }
@@ -34,72 +35,32 @@ export const PLANS: Record<PlanId, Plan> = {
       "Unlimited projects",
       "Unlimited decisions",
       "AI decision generation (fair use)",
-      "LLM as a judge (advisory)*",
+      "LLM as a Judge (advisory, BYO only)",
       "CI Observation (no blocking)",
     ],
     limits: {
       workspaces_limit: 1,
       projects_limit: -1,
-      users_per_workspace_limit: 1,
+      users_per_workspace_limit: 5,
       decisions_limit: -1,
       ai_generations_per_month: 10,
     },
   },
-  team: {
-    id: "team",
-    name: "Team",
-    description: "For growing teams",
-    price: 29,
-    priceId: process.env.STRIPE_TEAM_PRICE_ID || "",
-    features: [
-      "1 workspace",
-      "Unlimited projects",
-      "Unlimited decisions",
-      "AI decision generation (fair use)",
-      "LLM as a Judge (blocking)*",
-      "CI Blocking for High Impact changes",
-      "Judge tolerance",
-    ],
-    limits: {
-      workspaces_limit: 1,
-      projects_limit: -1,
-      users_per_workspace_limit: 10,
-      decisions_limit: -1,
-      ai_generations_per_month: 700,
-    },
-  },
-  business: {
-    id: "business",
-    name: "Business",
-    description: "For organizations",
-    price: 149,
-    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || "",
-    features: [
-      "Unlimited workspaces",
-      "Unlimited projects",
-      "Unlimited decisions",
-      "AI decision generation (fair use)",
-      "LLM as a Judge (blocking)*",
-      "CI Blocking for High Impact changes",
-      "Judge tolerance",
-      "Advanced Policies",
-      "Roles",
-    ],
-    limits: {
-      workspaces_limit: -1,
-      projects_limit: -1,
-      users_per_workspace_limit: 20,
-      decisions_limit: -1,
-      ai_generations_per_month: 1400,
-    },
-  },
   enterprise: {
     id: "enterprise",
-    name: "Enterprise",
-    description: "Let's Talk",
+    name: "Enterprise / Self-Hosted",
+    description: "Full control",
     price: 0,
     priceId: null,
-    features: ["Custom limits", "Dedicated Support", "Dedicated Hosting"],
+    features: [
+      "Unlimited workspaces, projects, decisions",
+      "Blocking mode + advanced policies",
+      "Roles & permissions",
+      "SSO (SAML, OIDC)",
+      "Self-hosted deployment (VPC, air-gapped)",
+      "BYO LLM enforced",
+      "Dedicated support with SLA",
+    ],
     limits: {
       workspaces_limit: -1,
       projects_limit: -1,

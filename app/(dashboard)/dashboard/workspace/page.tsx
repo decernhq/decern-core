@@ -20,7 +20,7 @@ import { WorkspacePoliciesForm } from "@/components/dashboard/workspace-policies
 import { IS_CLOUD } from "@/lib/cloud";
 import Link from "next/link";
 
-const BUSINESS_PLANS = ["business", "enterprise"];
+const ENTERPRISE_PLANS = ["enterprise"];
 
 export default async function WorkspacePage() {
   const supabase = await createClient();
@@ -68,9 +68,9 @@ export default async function WorkspacePage() {
   const isOwner = user.id === workspace.owner_id;
   const ownerPlanId = getEffectivePlanId(ownerSubscription.data?.plan_id);
   const canCreateOwnWorkspace = canCreateOwnWorkspaceResult.allowed;
-  /** Team can set Judge tolerance; Business+ can set all policies (validate + judge). */
+  /** Enterprise can set all policies (validate + judge). */
   const showPolicies =
-    isOwner && (ownerPlanId === "team" || BUSINESS_PLANS.includes(ownerPlanId));
+    isOwner && ENTERPRISE_PLANS.includes(ownerPlanId);
   const policiesInitial = {
     high_impact: policiesRow?.data?.high_impact ?? true,
     require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,

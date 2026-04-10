@@ -3,7 +3,7 @@
  * Real implementation lives in cloud/lib/decision-gate-policies.ts.
  */
 
-export type PlanId = "free" | "team" | "business" | "enterprise";
+export type PlanId = "free" | "enterprise";
 
 export interface ValidatePolicyParams {
   highImpact: boolean;
@@ -46,4 +46,4 @@ export function isJudgeAdvisory(_planId: PlanId): boolean {
   return true;
 }
 
-export const JUDGE_ALLOWED_PLANS = new Set<PlanId>(["free", "team", "business", "enterprise"]);
+export const JUDGE_ALLOWED_PLANS = new Set<PlanId>(["free", "enterprise"]);

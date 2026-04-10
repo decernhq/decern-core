@@ -138,8 +138,7 @@
       "eyebrow": "Prezzi",
       "title": "Parti gratis. Blocking quando sei pronto.",
       "freeDesc": "Observation mode, check illimitati, generazione AI. Valida il valore senza rischi.",
-      "teamDesc": "Blocking mode, soglie di confidenza e controlli per team in crescita.",
-      "businessDesc": "Gestione multi-workspace, policy avanzate e ruoli.",
+      "enterpriseDesc": "Controllo completo: blocking, policy avanzate, ruoli, self-hosted.",
       "ctaPrimary": "Vedi tutti i prezzi"
     },
     "faq": {
@@ -229,20 +228,10 @@
       "description": "Per iniziare",
       "features": ["1 workspace", "1 progetto", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (advisory)", "CI Observation (no blocking)"]
     },
-    "team": {
-      "name": "Team",
-      "description": "Per team in crescita",
-      "features": ["1 workspace", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (può bloccare)", "CI Blocking per High Impact changes", "Judge tolerance"]
-    },
-    "business": {
-      "name": "Business",
-      "description": "Per le organizzazioni",
-      "features": ["Workspace illimitati", "Progetti illimitati", "Decisioni illimitate", "Generazione decisioni AI (fair use)", "LLM come giudice (può bloccare)", "CI Blocking per High Impact changes", "Judge tolerance", "Policy avanzate", "Ruoli"]
-    },
     "enterprise": {
-      "name": "Enterprise",
-      "description": "Let's Talk",
-      "features": ["Limiti personalizzati", "Supporto dedicato", "Dedicated Hosting"]
+      "name": "Enterprise / Self-Hosted",
+      "description": "Controllo completo",
+      "features": ["Workspace, progetti e decisioni illimitati", "Blocking mode + policy avanzate", "Ruoli e permessi", "Deploy self-hosted (VPC, air-gapped)", "BYO LLM obbligatorio", "Supporto dedicato con SLA"]
     }
   },
   "dashboard": {
@@ -618,8 +607,7 @@
   },
   "buttons": {
     "upgrade": "Upgrade",
-    "upgradeToTeam": "Passa a Team",
-    "upgradeToBusiness": "Passa a Business",
+    "upgradeToEnterprise": "Contatta il team vendite",
     "upgradeLoading": "Caricamento...",
     "manageSubscription": "Gestisci abbonamento"
   },

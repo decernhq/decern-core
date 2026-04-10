@@ -5,11 +5,9 @@
 "use client";
 
 export function UpgradeButton({
-  planId: _planId,
   className: _className,
   size: _size,
 }: {
-  planId?: "team" | "business";
   className?: string;
   size?: "sm" | "md" | "lg";
 }) {

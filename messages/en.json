@@ -138,8 +138,7 @@
       "eyebrow": "Pricing",
       "title": "Start free. Unlock blocking when ready.",
       "freeDesc": "Observation mode, unlimited checks, AI generation. Validate value with zero risk.",
-      "teamDesc": "Blocking mode, confidence thresholds, and controls for growing teams.",
-      "businessDesc": "Multi-workspace management, advanced policies, and roles.",
+      "enterpriseDesc": "Full control: blocking, advanced policies, roles, self-hosted.",
       "ctaPrimary": "See full pricing"
     },
     "faq": {
@@ -229,20 +228,10 @@
       "description": "To get started",
       "features": ["1 workspace", "1 project", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a judge (advisory)", "CI Observation (no blocking)"]
     },
-    "team": {
-      "name": "Team",
-      "description": "For growing teams",
-      "features": ["1 workspace", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)", "CI Blocking for High Impact changes", "Judge tolerance"]
-    },
-    "business": {
-      "name": "Business",
-      "description": "For organizations",
-      "features": ["Unlimited workspaces", "Unlimited projects", "Unlimited decisions", "AI decision generation (fair use)", "LLM as a Judge (blocking)", "CI Blocking for High Impact changes", "Judge tolerance", "Advanced Policies", "Roles"]
-    },
     "enterprise": {
-      "name": "Enterprise",
-      "description": "Let's Talk",
-      "features": ["Custom limits", "Dedicated Support", "Dedicated Hosting"]
+      "name": "Enterprise / Self-Hosted",
+      "description": "Full control",
+      "features": ["Unlimited workspaces, projects, decisions", "Blocking mode + advanced policies", "Roles & permissions", "Self-hosted deployment (VPC, air-gapped)", "BYO LLM enforced", "Dedicated support with SLA"]
     }
   },
   "dashboard": {
@@ -618,8 +607,7 @@
   },
   "buttons": {
     "upgrade": "Upgrade",
-    "upgradeToTeam": "Upgrade to Team",
-    "upgradeToBusiness": "Upgrade to Business",
+    "upgradeToEnterprise": "Contact sales",
     "upgradeLoading": "Loading...",
     "manageSubscription": "Manage subscription"
   },

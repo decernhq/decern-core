@@ -43,16 +43,15 @@ export default async function SettingsPage() {
 
   const effectivePlanId = getEffectivePlanId(subscription?.plan_id) as PlanId;
   const currentPlan = PLANS[effectivePlanId] || PLANS.free;
-  const isPaid = effectivePlanId === "team" || effectivePlanId === "business";
+  const isPaid = effectivePlanId === "enterprise";
   const isEnterprise = effectivePlanId === "enterprise";
   const planOverride = process.env.PLAN_OVERRIDE?.trim().toLowerCase();
-  const isOverridden = ["free", "team", "business", "enterprise"].includes(planOverride ?? "");
+  const isOverridden = ["free", "enterprise"].includes(planOverride ?? "");
 
   const tPlans = await getTranslations("plans");
   const planName = tPlans(`${effectivePlanId}.name`);
   const manageSubscriptionUrl = websitePath("/pricing?source=core_dashboard_settings&manage=1");
-  const teamUpgradeUrl = websitePath("/pricing?plan=team&source=core_dashboard_settings");
-  const businessUpgradeUrl = websitePath("/pricing?plan=business&source=core_dashboard_settings");
+  const enterpriseUpgradeUrl = websitePath("/pricing?source=core_dashboard_settings");
   const messages = await getMessages();
   const planData = (messages?.plans as Record<string, { features?: string[] }>)?.[effectivePlanId];
   const featuresList =
@@ -141,25 +140,15 @@ export default async function SettingsPage() {
             )}
 
             <div className="mt-6 flex flex-wrap gap-3">
-              {isPaid ? (
-                <ManageSubscriptionButton />
-              ) : isEnterprise ? (
+              {isEnterprise ? (
                 <p className="text-sm text-gray-500">{t("contactSupport")}</p>
               ) : (
-                <>
-                  <a
-                    href={teamUpgradeUrl}
-                    className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
-                  >
-                    {tButtons("upgradeToTeam")}
-                  </a>
-                  <a
-                    href={businessUpgradeUrl}
-                    className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
-                  >
-                    {tButtons("upgradeToBusiness")}
-                  </a>
-                </>
+                <a
+                  href={enterpriseUpgradeUrl}
+                  className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-600 px-4 text-sm font-medium text-white transition-colors hover:bg-brand-700"
+                >
+                  {tButtons("upgradeToEnterprise")}
+                </a>
               )}
             </div>
           </div>
