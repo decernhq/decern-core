@@ -1,4 +1,5 @@
 export const THEME_STORAGE_KEY = "theme";
+export const THEME_COOKIE_NAME = "theme";
 export type Theme = "light" | "dark";
 
 export function getStoredTheme(): Theme {
@@ -12,6 +13,11 @@ export function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch {
+    // ignore
+  }
+  try {
+    document.cookie = `${THEME_COOKIE_NAME}=${theme};path=/;max-age=31536000;SameSite=Lax`;
   } catch {
     // ignore
   }
