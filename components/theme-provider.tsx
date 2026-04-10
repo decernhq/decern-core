@@ -16,12 +16,15 @@ const ThemeContext = createContext<{
   toggleTheme: () => void;
 } | null>(null);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("dark");
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "dark";
+  // Read from DOM class (set by inline script in layout.tsx) — always correct
+  if (document.documentElement.classList.contains("dark")) return "dark";
+  return "light";
+}
 
-  useEffect(() => {
-    setThemeState(getStoredTheme());
-  }, []);
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 
   const setTheme = useCallback((next: Theme) => {
     setThemeState(next);
