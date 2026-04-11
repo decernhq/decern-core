@@ -1,5 +1,3 @@
-export * from "./decision";
-export * from "./project";
 export type {
   Database,
   Json,
@@ -7,15 +5,13 @@ export type {
   Workspace,
   WorkspaceMember,
   WorkspaceInvitation,
-  DbDecision,
   InsertWorkspace,
   UpdateWorkspace,
   InsertWorkspaceMember,
   InsertWorkspaceInvitation,
   UpdateWorkspaceInvitation,
-  InsertProject,
-  UpdateProject,
-  InsertDecision,
-  UpdateDecision,
+  EvidenceRecordRow,
+  EvidenceChainTip,
+  EvidenceAccessLogRow,
 } from "./database";
 export * from "./billing";

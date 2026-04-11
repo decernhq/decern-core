@@ -174,103 +174,6 @@ export interface Database {
           updated_at?: string;
         };
       };
-      projects: {
-        Row: {
-          id: string;
-          name: string;
-          description: string | null;
-          owner_id: string;
-          workspace_id: string;
-          github_repo_full_name: string | null;
-          github_default_branch: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          description?: string | null;
-          owner_id: string;
-          workspace_id: string;
-          github_repo_full_name?: string | null;
-          github_default_branch?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          description?: string | null;
-          owner_id?: string;
-          workspace_id?: string;
-          github_repo_full_name?: string | null;
-          github_default_branch?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      decisions: {
-        Row: {
-          id: string;
-          project_id: string;
-          workspace_id: string;
-          adr_ref: string;
-          title: string;
-          status: "proposed" | "approved" | "superseded" | "rejected";
-          context: string;
-          options: string[];
-          decision: string;
-          consequences: string;
-          tags: string[];
-          external_links: { url: string; label?: string }[];
-          pull_request_urls: string[];
-          linked_decision_id: string | null;
-          checks: Json | null;
-          created_by: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          project_id: string;
-          workspace_id?: string;
-          adr_ref?: string;
-          title: string;
-          status?: "proposed" | "approved" | "superseded" | "rejected";
-          context?: string;
-          options?: string[];
-          decision?: string;
-          consequences?: string;
-          tags?: string[];
-          external_links?: { url: string; label?: string }[];
-          pull_request_urls?: string[];
-          linked_decision_id?: string | null;
-          checks?: Json | null;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          project_id?: string;
-          workspace_id?: string;
-          adr_ref?: string;
-          title?: string;
-          status?: "proposed" | "approved" | "superseded" | "rejected";
-          context?: string;
-          options?: string[];
-          decision?: string;
-          consequences?: string;
-          tags?: string[];
-          external_links?: { url: string; label?: string }[];
-          pull_request_urls?: string[];
-          linked_decision_id?: string | null;
-          checks?: Json | null;
-          created_by?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
       github_connections: {
         Row: {
           id: string;
@@ -301,88 +204,6 @@ export interface Database {
           scope?: string;
           created_at?: string;
           updated_at?: string;
-        };
-      };
-      judge_usage: {
-        Row: {
-          workspace_id: string;
-          period: string;
-          input_tokens: number;
-          output_tokens: number;
-          billed_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          workspace_id: string;
-          period: string;
-          input_tokens?: number;
-          output_tokens?: number;
-          billed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          workspace_id?: string;
-          period?: string;
-          input_tokens?: number;
-          output_tokens?: number;
-          billed_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      judge_gate_runs: {
-        Row: {
-          id: string;
-          workspace_id: string;
-          decision_id: string | null;
-          decision_adr_ref: string | null;
-          decision_title: string | null;
-          pr_title: string | null;
-          pr_url: string | null;
-          base_sha: string | null;
-          head_sha: string | null;
-          allowed: boolean;
-          advisory: boolean;
-          confidence_percent: number | null;
-          reason: string | null;
-          advisory_message: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          workspace_id: string;
-          decision_id?: string | null;
-          decision_adr_ref?: string | null;
-          decision_title?: string | null;
-          pr_title?: string | null;
-          pr_url?: string | null;
-          base_sha?: string | null;
-          head_sha?: string | null;
-          allowed: boolean;
-          advisory?: boolean;
-          confidence_percent?: number | null;
-          reason?: string | null;
-          advisory_message?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          workspace_id?: string;
-          decision_id?: string | null;
-          decision_adr_ref?: string | null;
-          decision_title?: string | null;
-          pr_title?: string | null;
-          pr_url?: string | null;
-          base_sha?: string | null;
-          head_sha?: string | null;
-          allowed?: boolean;
-          advisory?: boolean;
-          confidence_percent?: number | null;
-          reason?: string | null;
-          advisory_message?: string | null;
-          created_at?: string;
         };
       };
       evidence_records: {
@@ -495,10 +316,73 @@ export interface Database {
         };
         Update: Record<string, never>;
       };
+      adr_cache: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          repository_identifier: string;
+          title: string;
+          status: string;
+          enforcement: string;
+          scope: string[];
+          content_hash: string;
+          synced_at: string;
+        };
+        Insert: {
+          id: string;
+          workspace_id: string;
+          repository_identifier: string;
+          title: string;
+          status?: string;
+          enforcement?: string;
+          scope?: string[];
+          content_hash: string;
+          synced_at?: string;
+        };
+        Update: {
+          title?: string;
+          status?: string;
+          enforcement?: string;
+          scope?: string[];
+          content_hash?: string;
+          synced_at?: string;
+        };
+      };
+      case_c_signals: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          repository_identifier: string;
+          pr_url: string | null;
+          pr_title: string | null;
+          description: string;
+          suggested_adr_title: string | null;
+          files_involved: string[];
+          status: string;
+          evidence_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          repository_identifier: string;
+          pr_url?: string | null;
+          pr_title?: string | null;
+          description: string;
+          suggested_adr_title?: string | null;
+          files_involved?: string[];
+          status?: string;
+          evidence_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: string;
+          suggested_adr_title?: string | null;
+          description?: string;
+        };
+      };
     };
-    Enums: {
-      decision_status: "proposed" | "approved" | "superseded" | "rejected";
-    };
+    Enums: Record<string, never>;
   };
 }
 
@@ -508,8 +392,6 @@ export type Workspace = Database["public"]["Tables"]["workspaces"]["Row"];
 export type WorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Row"];
 export type WorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Row"];
 export type WorkspacePolicies = Database["public"]["Tables"]["workspace_policies"]["Row"];
-export type Project = Database["public"]["Tables"]["projects"]["Row"];
-export type DbDecision = Database["public"]["Tables"]["decisions"]["Row"];
 
 export type InsertWorkspace = Database["public"]["Tables"]["workspaces"]["Insert"];
 export type UpdateWorkspace = Database["public"]["Tables"]["workspaces"]["Update"];
@@ -518,12 +400,6 @@ export type UpdateWorkspacePolicies = Database["public"]["Tables"]["workspace_po
 export type InsertWorkspaceMember = Database["public"]["Tables"]["workspace_members"]["Insert"];
 export type InsertWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Insert"];
 export type UpdateWorkspaceInvitation = Database["public"]["Tables"]["workspace_invitations"]["Update"];
-export type InsertProject = Database["public"]["Tables"]["projects"]["Insert"];
-export type UpdateProject = Database["public"]["Tables"]["projects"]["Update"];
-export type InsertDecision = Database["public"]["Tables"]["decisions"]["Insert"];
-export type UpdateDecision = Database["public"]["Tables"]["decisions"]["Update"];
-export type JudgeUsage = Database["public"]["Tables"]["judge_usage"]["Row"];
-export type JudgeGateRun = Database["public"]["Tables"]["judge_gate_runs"]["Row"];
 export type GitHubConnection = Database["public"]["Tables"]["github_connections"]["Row"];
 export type EvidenceRecordRow = Database["public"]["Tables"]["evidence_records"]["Row"];
 export type EvidenceChainTip = Database["public"]["Tables"]["evidence_chain_tips"]["Row"];

@@ -5,14 +5,13 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 
 interface OnboardingStep {
-  key: string;
+  key: "createAdrs" | "setupGate" | "connectGithub";
   done: boolean;
   href: string;
 }
 
 interface OnboardingChecklistProps {
-  hasProjects: boolean;
-  hasDecisions: boolean;
+  hasAdrs: boolean;
   hasCiToken: boolean;
   hasGithub: boolean;
   isCloud: boolean;
@@ -21,25 +20,23 @@ interface OnboardingChecklistProps {
 const DISMISSED_KEY = "decern_onboarding_dismissed";
 
 export function OnboardingChecklist({
-  hasProjects,
-  hasDecisions,
+  hasAdrs,
   hasCiToken,
   hasGithub,
   isCloud,
 }: OnboardingChecklistProps) {
   const t = useTranslations("dashboard.onboarding");
-  const [dismissed, setDismissed] = useState(true); // default true to avoid flash
+  const [dismissed, setDismissed] = useState(true);
 
   useEffect(() => {
     setDismissed(localStorage.getItem(DISMISSED_KEY) === "true");
   }, []);
 
   const steps: OnboardingStep[] = [
-    { key: "createProject", done: hasProjects, href: "/dashboard/projects/new" },
-    { key: "createDecision", done: hasDecisions, href: "/dashboard/decisions/new" },
+    { key: "createAdrs", done: hasAdrs, href: "/dashboard/adrs" },
     { key: "setupGate", done: hasCiToken, href: "/dashboard/workspace" },
     ...(isCloud
-      ? [{ key: "connectGithub", done: hasGithub, href: "/dashboard/settings" }]
+      ? [{ key: "connectGithub" as const, done: hasGithub, href: "/dashboard/settings" }]
       : []),
   ];
 
@@ -73,7 +70,6 @@ export function OnboardingChecklist({
         </button>
       </div>
 
-      {/* Progress bar */}
       <div className="mt-3 h-1.5 w-full rounded-full bg-brand-200 dark:bg-brand-800">
         <div
           className="h-1.5 rounded-full bg-brand-600 transition-all duration-500"
@@ -101,10 +97,10 @@ export function OnboardingChecklist({
               )}
               <div>
                 <span className={step.done ? "line-through" : "font-medium"}>
-                  {t(step.key as "createProject" | "createDecision" | "setupGate" | "connectGithub")}
+                  {t(step.key)}
                 </span>
                 <p className="text-xs text-brand-600 dark:text-brand-400">
-                  {t(`${step.key}Hint` as "createProjectHint" | "createDecisionHint" | "setupGateHint" | "connectGithubHint")}
+                  {t(`${step.key}Hint`)}
                 </p>
               </div>
             </Link>

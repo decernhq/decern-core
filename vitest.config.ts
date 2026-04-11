@@ -27,10 +27,6 @@ const cloudAliases = isCloud
   ? {
       "@/lib/stripe": path.resolve(cloudDir, "lib/stripe.ts"),
       "@/lib/ci-token": path.resolve(cloudDir, "lib/ci-token.ts"),
-      "@/lib/decision-gate-policies": path.resolve(cloudDir, "lib/decision-gate-policies.ts"),
-      "@/lib/judge-billing": path.resolve(cloudDir, "lib/judge-billing.ts"),
-      "@/lib/judge-pricing": path.resolve(cloudDir, "lib/judge-pricing.ts"),
-      "@/lib/judge-usage": path.resolve(cloudDir, "lib/judge-usage.ts"),
       "@/lib/github/client": path.resolve(cloudDir, "lib/github/client.ts"),
       "@/lib/github/sync": path.resolve(cloudDir, "lib/github/sync.ts"),
       "@/lib/github/adr-parser": path.resolve(cloudDir, "lib/github/adr-parser.ts"),

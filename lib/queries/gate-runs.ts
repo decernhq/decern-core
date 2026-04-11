@@ -1,24 +1,45 @@
 import { createClient } from "@/lib/supabase/server";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
-import type { JudgeGateRun } from "@/types/database";
+
+export type GateRun = {
+  evidence_id: string;
+  timestamp_utc: string;
+  verdict: "pass" | "warn" | "block";
+  reason_code: string;
+  reason_detail: string;
+  pull_request_id: string;
+  commit_sha: string;
+  repository_identifier: string;
+  ci_provider: string;
+  diff_files_touched: string[];
+  deterministic_checks: unknown[];
+  author_identity: {
+    provider?: string;
+    id?: string;
+    email?: string;
+    display_name?: string;
+  } | null;
+};
 
 export type GateRunStats = {
   total: number;
-  flagged: number;
-  alignedPercent: number;
-  avgConfidencePercent: number | null;
+  passed: number;
+  warned: number;
+  blocked: number;
+  passedPercent: number;
   periodLabel: string;
 };
 
 const EMPTY_STATS: GateRunStats = {
   total: 0,
-  flagged: 0,
-  alignedPercent: 0,
-  avgConfidencePercent: null,
+  passed: 0,
+  warned: 0,
+  blocked: 0,
+  passedPercent: 0,
   periodLabel: "",
 };
 
-/** Returns first day of current calendar month at 00:00 UTC. */
+/** First day of current calendar month at 00:00 UTC. */
 function getCurrentMonthStartIso(): string {
   const now = new Date();
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0)).toISOString();
@@ -26,7 +47,7 @@ function getCurrentMonthStartIso(): string {
 
 /**
  * Stats for the selected workspace, current calendar month.
- * Aligned = allowed runs (effectively passed). Flagged = !allowed runs.
+ * Reads from evidence_records (v2 source of truth).
  */
 export async function getGateRunStatsThisMonth(): Promise<GateRunStats> {
   const workspaceId = await getSelectedWorkspaceId();
@@ -35,10 +56,10 @@ export async function getGateRunStatsThisMonth(): Promise<GateRunStats> {
   const supabase = await createClient();
   const since = getCurrentMonthStartIso();
   const { data, error } = await supabase
-    .from("judge_gate_runs")
-    .select("allowed, confidence_percent")
+    .from("evidence_records")
+    .select("verdict")
     .eq("workspace_id", workspaceId)
-    .gte("created_at", since);
+    .gte("timestamp_utc", since);
 
   if (error) {
     console.error("Error fetching gate run stats:", error);
@@ -47,37 +68,30 @@ export async function getGateRunStatsThisMonth(): Promise<GateRunStats> {
 
   const rows = data ?? [];
   const total = rows.length;
-  const aligned = rows.filter((r) => r.allowed === true).length;
-  const flagged = total - aligned;
-  const alignedPercent = total === 0 ? 0 : Math.round((aligned / total) * 100);
-
-  const confidences = rows
-    .map((r) => r.confidence_percent)
-    .filter((v): v is number => typeof v === "number");
-  const avgConfidencePercent =
-    confidences.length === 0
-      ? null
-      : Math.round(confidences.reduce((a, b) => a + b, 0) / confidences.length);
+  const passed = rows.filter((r) => r.verdict === "pass").length;
+  const warned = rows.filter((r) => r.verdict === "warn").length;
+  const blocked = rows.filter((r) => r.verdict === "block").length;
+  const passedPercent = total === 0 ? 0 : Math.round((passed / total) * 100);
 
   const monthName = new Date(since).toLocaleString("en-US", { month: "long", year: "numeric" });
 
-  return { total, flagged, alignedPercent, avgConfidencePercent, periodLabel: monthName };
+  return { total, passed, warned, blocked, passedPercent, periodLabel: monthName };
 }
 
 /**
- * Most recent gate runs for the selected workspace (across all decisions).
- * Capped at `limit` rows, newest first.
+ * Most recent gate runs for the selected workspace.
+ * Reads from evidence_records (v2 source of truth).
  */
-export async function getRecentGateRuns(limit = 20): Promise<JudgeGateRun[]> {
+export async function getRecentGateRuns(limit = 20): Promise<GateRun[]> {
   const workspaceId = await getSelectedWorkspaceId();
   if (!workspaceId) return [];
 
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("judge_gate_runs")
-    .select("*")
+    .from("evidence_records")
+    .select("evidence_id, timestamp_utc, verdict, reason_code, reason_detail, pull_request_id, commit_sha, repository_identifier, ci_provider, diff_files_touched, deterministic_checks, author_identity")
     .eq("workspace_id", workspaceId)
-    .order("created_at", { ascending: false })
+    .order("timestamp_utc", { ascending: false })
     .limit(limit);
 
   if (error) {
@@ -85,5 +99,18 @@ export async function getRecentGateRuns(limit = 20): Promise<JudgeGateRun[]> {
     return [];
   }
 
-  return (data ?? []) as JudgeGateRun[];
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    evidence_id: r.evidence_id as string,
+    timestamp_utc: r.timestamp_utc as string,
+    verdict: r.verdict as "pass" | "warn" | "block",
+    reason_code: r.reason_code as string,
+    reason_detail: (r.reason_detail as string) ?? "",
+    pull_request_id: (r.pull_request_id as string) ?? "",
+    commit_sha: (r.commit_sha as string) ?? "",
+    repository_identifier: (r.repository_identifier as string) ?? "",
+    ci_provider: (r.ci_provider as string) ?? "",
+    diff_files_touched: (r.diff_files_touched as string[]) ?? [],
+    deterministic_checks: (r.deterministic_checks as unknown[]) ?? [],
+    author_identity: r.author_identity as GateRun["author_identity"],
+  }));
 }

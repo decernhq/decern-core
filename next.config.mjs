@@ -48,11 +48,7 @@ const nextConfig = {
       const cloudMap = {
         "lib/stripe": "lib/stripe.ts",
         "lib/ci-token": "lib/ci-token.ts",
-        "lib/decision-gate-policies": "lib/decision-gate-policies.ts",
         "lib/sync-subscription": "lib/sync-subscription.ts",
-        "lib/judge-billing": "lib/judge-billing.ts",
-        "lib/judge-pricing": "lib/judge-pricing.ts",
-        "lib/judge-usage": "lib/judge-usage.ts",
         "lib/github/client": "lib/github/client.ts",
         "lib/github/sync": "lib/github/sync.ts",
         "lib/github/adr-parser": "lib/github/adr-parser.ts",

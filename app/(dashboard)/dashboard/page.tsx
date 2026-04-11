@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getTranslations } from "next-intl/server";
-import { getProjects } from "@/lib/queries/projects";
 import { getSelectedWorkspaceId } from "@/lib/workspace-cookie";
 import { Button } from "@/components/ui/button";
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist";
@@ -11,9 +10,8 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const t = await getTranslations("dashboard");
 
-  const [{ data: { user } }, projects, workspaceId] = await Promise.all([
+  const [{ data: { user } }, workspaceId] = await Promise.all([
     supabase.auth.getUser(),
-    getProjects(),
     getSelectedWorkspaceId(),
   ]);
 
@@ -26,7 +24,6 @@ export default async function DashboardPage() {
       : { data: null },
   ]);
 
-  // Counts from new tables
   const [{ count: adrCount }, { count: signalCount }, { count: evidenceCount }] = await Promise.all([
     workspaceId ? supabase.from("adr_cache").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId) : { count: 0 },
     workspaceId ? supabase.from("case_c_signals").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId).eq("status", "open") : { count: 0 },
@@ -42,8 +39,7 @@ export default async function DashboardPage() {
   return (
     <div className="mx-auto max-w-5xl space-y-8">
       <OnboardingChecklist
-        hasProjects={projects.length > 0}
-        hasDecisions={(adrCount ?? 0) > 0}
+        hasAdrs={(adrCount ?? 0) > 0}
         hasCiToken={!!ws?.ci_token_hash}
         hasGithub={!!ghConn}
         isCloud={IS_CLOUD}
@@ -55,7 +51,7 @@ export default async function DashboardPage() {
           {t("hello")} <span className="font-medium text-app-text">{displayName}</span>
         </p>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-8 grid gap-3 sm:grid-cols-3">
           <Link href="/dashboard/adrs" className="rounded-lg border border-app-border bg-app-bg p-4 transition hover:border-brand-300">
             <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">{t("adrs")}</p>
             <p className="mt-1 text-2xl font-semibold text-app-text">{adrCount ?? 0}</p>
@@ -65,12 +61,8 @@ export default async function DashboardPage() {
             <p className="mt-1 text-2xl font-semibold text-amber-600 dark:text-amber-400">{signalCount ?? 0}</p>
           </Link>
           <Link href="/dashboard/gate-runs" className="rounded-lg border border-app-border bg-app-bg p-4 transition hover:border-brand-300">
-            <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">{t("evidenceRecords")}</p>
+            <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">{t("gateRuns")}</p>
             <p className="mt-1 text-2xl font-semibold text-app-text">{evidenceCount ?? 0}</p>
-          </Link>
-          <Link href="/dashboard/projects" className="rounded-lg border border-app-border bg-app-bg p-4 transition hover:border-brand-300">
-            <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">{t("projects")}</p>
-            <p className="mt-1 text-2xl font-semibold text-app-text">{projects.length}</p>
           </Link>
         </div>
 
