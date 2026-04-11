@@ -273,7 +273,16 @@
     "colEnforcement": "Enforcement",
     "colScope": "Scope",
     "filterRepo": "Repo",
-    "filterAll": "All"
+    "filterAll": "All",
+    "drawerClose": "Close",
+    "drawerRepository": "Repository",
+    "drawerSupersedes": "Supersedes",
+    "drawerDate": "Date",
+    "drawerContext": "Context",
+    "drawerDecision": "Decision",
+    "drawerConsequences": "Consequences",
+    "drawerRawBody": "Raw markdown",
+    "drawerBodyMissing": "Body not cached yet. Run `decern adr sync` in this repo to upload the full ADR content."
   },
   "signals": {
     "title": "Signals",

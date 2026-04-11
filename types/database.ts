@@ -326,6 +326,7 @@ export interface Database {
           enforcement: string;
           scope: string[];
           content_hash: string;
+          body: string | null;
           synced_at: string;
         };
         Insert: {
@@ -337,6 +338,7 @@ export interface Database {
           enforcement?: string;
           scope?: string[];
           content_hash: string;
+          body?: string | null;
           synced_at?: string;
         };
         Update: {
@@ -345,6 +347,7 @@ export interface Database {
           enforcement?: string;
           scope?: string[];
           content_hash?: string;
+          body?: string | null;
           synced_at?: string;
         };
       };
