@@ -14,12 +14,10 @@
  *   node scripts/bump-versions.mjs --no-publish  # commit/push but skip publish
  */
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execSync } from "node:child_process";
-import { createInterface } from "node:readline/promises";
-import { stdin as input, stdout as output } from "node:process";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -59,18 +57,63 @@ function runInteractive(cmd, cwd) {
   execSync(cmd, { cwd, stdio: "inherit" });
 }
 
-const rl = createInterface({ input, output });
+/**
+ * Read a secret from the terminal with hidden input (no echo). Supports
+ * Backspace and Ctrl+C. Requires a TTY; throws otherwise.
+ */
+function readHiddenInput(promptText) {
+  return new Promise((resolve, reject) => {
+    const stdin = process.stdin;
+    const stdout = process.stdout;
+    if (!stdin.isTTY) {
+      reject(new Error("stdin is not a TTY — cannot read hidden input"));
+      return;
+    }
+    stdout.write(promptText);
+    const wasRaw = stdin.isRaw;
+    stdin.setRawMode(true);
+    stdin.resume();
+    stdin.setEncoding("utf8");
 
-async function prompt(message) {
-  await rl.question(message);
+    let buffer = "";
+    const onData = (chunk) => {
+      for (const ch of chunk) {
+        if (ch === "\n" || ch === "\r" || ch === "\u0004") {
+          stdin.removeListener("data", onData);
+          stdin.setRawMode(wasRaw);
+          stdin.pause();
+          stdout.write("\n");
+          resolve(buffer);
+          return;
+        }
+        if (ch === "\u0003") {
+          // Ctrl+C
+          stdin.removeListener("data", onData);
+          stdin.setRawMode(wasRaw);
+          stdin.pause();
+          stdout.write("\n");
+          process.exit(130);
+        }
+        if (ch === "\u007f" || ch === "\b") {
+          // Backspace
+          if (buffer.length > 0) buffer = buffer.slice(0, -1);
+          continue;
+        }
+        // Ignore other control chars (arrow keys, etc.)
+        if (ch.charCodeAt(0) < 0x20) continue;
+        buffer += ch;
+      }
+    };
+    stdin.on("data", onData);
+  });
 }
 
 /**
  * Publish a sub-repo to npm. Pauses for user interaction depending on the
  * publish mode:
  *   - "login": runs `npm login` (user completes the interactive flow), then publishes.
- *   - "token": prompts the user to set up an NPM token (env var or ~/.npmrc),
- *              waits for Enter, then publishes.
+ *   - "token": prompts the user to paste an NPM token inline (hidden input),
+ *              writes a temporary .npmrc, publishes, then restores the original .npmrc.
  */
 async function publishSubrepo(dir, name, publishMode) {
   if (publishMode === "login") {
@@ -85,12 +128,33 @@ async function publishSubrepo(dir, name, publishMode) {
 
   if (publishMode === "token") {
     console.log();
-    await prompt(
-      `${name}: set the NPM token (export NPM_TOKEN or edit ~/.npmrc), then press Enter to publish... `
-    );
-    console.log(`${name}: running \`npm publish\`...`);
-    runInteractive("npm publish", dir);
-    console.log(`${name}: published`);
+    const token = await readHiddenInput(`${name}: paste npm token (hidden), then press Enter: `);
+    if (!token.trim()) {
+      throw new Error(`${name}: empty token, aborting publish`);
+    }
+
+    const npmrcPath = resolve(dir, ".npmrc");
+    const hadNpmrc = existsSync(npmrcPath);
+    const originalNpmrc = hadNpmrc ? readFileSync(npmrcPath, "utf8") : "";
+    const prefix = originalNpmrc === "" || originalNpmrc.endsWith("\n") ? "" : "\n";
+    const authLine = `//registry.npmjs.org/:_authToken=${token.trim()}\n`;
+
+    try {
+      writeFileSync(npmrcPath, originalNpmrc + prefix + authLine, { mode: 0o600 });
+      console.log(`${name}: running \`npm publish\`...`);
+      runInteractive("npm publish", dir);
+      console.log(`${name}: published`);
+    } finally {
+      if (hadNpmrc) {
+        writeFileSync(npmrcPath, originalNpmrc);
+      } else {
+        try {
+          unlinkSync(npmrcPath);
+        } catch {
+          // ignore
+        }
+      }
+    }
     return;
   }
 
@@ -177,7 +241,10 @@ for (const t of targets) {
       console.log(`[dry-run] ${t.dir}: git add + commit "chore: bump version to ${next}" + push`);
     }
     if (!noPublish) {
-      const how = t.publishMode === "login" ? "npm login → npm publish" : "pause for NPM token → npm publish";
+      const how =
+        t.publishMode === "login"
+          ? "npm login → npm publish"
+          : "prompt for NPM token (hidden input) → temp .npmrc → npm publish → restore .npmrc";
       console.log(`[dry-run] ${t.dir}: ${how}`);
     }
     continue;
@@ -191,7 +258,6 @@ for (const t of targets) {
       commitAndPushSubrepo(subRepoDir, t.dir, next);
     } catch (err) {
       console.error(`error: ${t.dir} git step failed: ${err.message}`);
-      rl.close();
       process.exit(1);
     }
   }
@@ -201,7 +267,6 @@ for (const t of targets) {
       await publishSubrepo(subRepoDir, t.dir, t.publishMode);
     } catch (err) {
       console.error(`error: ${t.dir} publish failed: ${err.message}`);
-      rl.close();
       process.exit(1);
     }
   }
@@ -240,8 +305,6 @@ if (dryRun) {
 }
 
 // ── 3. Summary ───────────────────────────────────────────────────────────
-rl.close();
-
 console.log();
 console.log(dryRun ? "Dry run complete. No files written." : "Version bump complete.");
 console.log("Next steps (manual):");
