@@ -4,8 +4,8 @@
     "": {
       "name": "decern",
       "dependencies": {
-        "@decern/protocol": "^0.3.2",
-        "@decernhq/cloud": "0.3.3",
+        "@decern/protocol": "^0.3.3",
+        "@decernhq/cloud": "0.3.4",
         "@supabase/ssr": "^0.5.2",
         "@supabase/supabase-js": "^2.47.10",
         "@tailwindcss/forms": "^0.5.11",
@@ -25,7 +25,7 @@
         "@types/react-dom": "^18.3.5",
         "@vitejs/plugin-react": "^5.1.3",
         "autoprefixer": "^10.4.20",
-        "decern-gate": "^0.3.5",
+        "decern-gate": "^0.3.6",
         "eslint": "^8.57.1",
         "eslint-config-next": "14.2.21",
         "postcss": "^8.4.49",
@@ -77,9 +77,9 @@
 
     "@babel/types": ["@babel/types@7.29.0", "", { "dependencies": { "@babel/helper-string-parser": "^7.27.1", "@babel/helper-validator-identifier": "^7.28.5" } }, "sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A=="],
 
-    "@decern/protocol": ["@decern/protocol@0.3.2", "", {}, "sha512-x4IWXQ10FLbZr2YP3I5234UrdzD3Ve8hWTGTItdB/OBoPVdjiEU67SaxvXpMcsRhyP4RGUhtc1uzMcQFVrvRVg=="],
+    "@decern/protocol": ["@decern/protocol@0.3.3", "", {}, "sha512-UoT2ua0RFtB4R88CNvja37P1K94AU+6vR5xJFulqIikm1zwmgyAAw39XjphIAVs/MdtT6n7NFt6Py8sF3rywiw=="],
 
-    "@decernhq/cloud": ["@decernhq/cloud@0.3.3", "https://npm.pkg.github.com/download/@decernhq/cloud/0.3.3/30c674979263f09397644c36e5be0b13b9d01789", {}, "sha512-f/oqDEPfBKPtGxpe2Ze3czPRLStIfqkIxsoBeHQmbKkw7CyWBAB9cwAh/YlCJErE+8+ix0G5F+FNH7v6tSi+DQ=="],
+    "@decernhq/cloud": ["@decernhq/cloud@0.3.4", "https://npm.pkg.github.com/download/@decernhq/cloud/0.3.4/d13dcc4a8acea973a06a8996ec8d77247cb634c1", {}, "sha512-r2DMsMeApYrt7GND7RDoSuLrBRL2bqS93+sdQzYaNCwdHOd+UJpUy6PPit7Kvz3yVVs0IQsCcsQeBdeLUzAnrw=="],
 
     "@emnapi/core": ["@emnapi/core@1.8.1", "", { "dependencies": { "@emnapi/wasi-threads": "1.1.0", "tslib": "^2.4.0" } }, "sha512-AvT9QFpxK0Zd8J0jopedNm+w/2fIzvtPKPjqyw9jwvBaReTTqPBk9Hixaz7KbjimP+QNz605/XnjFcDAL2pqBg=="],
 
@@ -565,7 +565,7 @@
 
     "debug": ["debug@4.4.3", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA=="],
 
-    "decern-gate": ["decern-gate@0.3.5", "", { "bin": { "decern-gate": "dist/bin.js" } }, "sha512-LfajtyzWl84Ga6OkJj/8b1Rx84GVH1WtsihOr/DE2JmKz3H18JUxklKRT3GxOu1EtjdAkI8oVWM0+gjWJ1Ld0g=="],
+    "decern-gate": ["decern-gate@0.3.6", "", { "bin": { "decern-gate": "dist/bin.js" } }, "sha512-AYIOb3WBMJL4acOHlSl8JQodm6RJsZdQaBM1iaOQwfAkwQCr3nUkwOKZKzU8MBujfDGU4gVh851KYU7YMJNT+w=="],
 
     "decimal.js": ["decimal.js@10.6.0", "", {}, "sha512-YpgQiITW3JXGntzdUmyUR1V812Hn8T1YVXhCu+wO3OpS4eU9l4YdD3qjyiKdV6mvV29zapkMeD390UVEf2lkUg=="],
 
