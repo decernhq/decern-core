@@ -7,9 +7,6 @@ import { getWorkspacesForCurrentUser, getOrCreateDefaultWorkspace } from "@/lib/
 import { WORKSPACE_COOKIE_NAME, WORKSPACE_COOKIE_OPTIONS } from "@/lib/workspace-cookie";
 import { checkCanCreateWorkspace } from "@/lib/plan-limits";
 import { generateCiToken, hashCiToken } from "@/lib/ci-token";
-import { getEffectivePlanId } from "@/lib/billing";
-
-const ENTERPRISE_PLANS = ["enterprise"] as const;
 
 /**
  * Create the default workspace (if missing), set the cookie and revalidate.
@@ -47,8 +44,8 @@ export async function setWorkspaceCookieAction(workspaceId: string): Promise<{ e
   const cookieStore = await cookies();
   cookieStore.set(WORKSPACE_COOKIE_NAME, workspaceId, WORKSPACE_COOKIE_OPTIONS);
   revalidatePath("/dashboard", "layout");
-  revalidatePath("/dashboard/projects");
-  revalidatePath("/dashboard/decisions");
+  revalidatePath("/dashboard/adrs");
+  revalidatePath("/dashboard/signals");
   revalidatePath("/dashboard/workspace");
   return {};
 }
@@ -80,8 +77,8 @@ export async function createWorkspaceAction(
   cookieStore.set(WORKSPACE_COOKIE_NAME, data.id, WORKSPACE_COOKIE_OPTIONS);
   revalidatePath("/dashboard", "layout");
   revalidatePath("/dashboard/workspace");
-  revalidatePath("/dashboard/projects");
-  revalidatePath("/dashboard/decisions");
+  revalidatePath("/dashboard/adrs");
+  revalidatePath("/dashboard/signals");
   return { success: true };
 }
 
@@ -204,12 +201,7 @@ export type UpdateWorkspacePoliciesResult = { error?: string; success?: boolean 
 export async function updateWorkspacePoliciesAction(
   workspaceId: string,
   data: {
-    high_impact: boolean;
-    require_linked_pr: boolean;
-    require_approved: boolean;
-    judge_tolerance_percent: number | null;
-    judge_mode?: "blocking" | "advisory" | "deterministic_only";
-    evidence_retention_days?: number;
+    evidence_retention_days: number;
   }
 ): Promise<UpdateWorkspacePoliciesResult> {
   const supabase = await createClient();
@@ -225,34 +217,13 @@ export async function updateWorkspacePoliciesAction(
     return { error: "Only the owner can update policies" };
   }
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("plan_id")
-    .eq("user_id", user.id)
-    .single();
-  const planId = getEffectivePlanId(subscription?.plan_id);
-  const canConfigureRequirePolicies = (ENTERPRISE_PLANS as readonly string[]).includes(planId);
-
-  const tolerance =
-    data.judge_tolerance_percent != null && data.judge_tolerance_percent >= 0 && data.judge_tolerance_percent <= 100
-      ? data.judge_tolerance_percent
-      : null;
-
   const retentionDays =
-    data.evidence_retention_days != null && data.evidence_retention_days >= 30
-      ? data.evidence_retention_days
-      : 730;
+    data.evidence_retention_days >= 30 ? data.evidence_retention_days : 730;
 
   const { error } = await supabase.from("workspace_policies").upsert(
     {
       workspace_id: workspaceId,
-      high_impact: data.high_impact,
-      // Enterprise only: Free cannot persist require policy toggles.
-      require_linked_pr: canConfigureRequirePolicies ? data.require_linked_pr : false,
-      require_approved: canConfigureRequirePolicies ? data.require_approved : true,
-      judge_tolerance_percent: tolerance,
-      judge_mode: data.judge_mode ?? "blocking",
-      evidence_retention_days: canConfigureRequirePolicies ? retentionDays : 730,
+      evidence_retention_days: retentionDays,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "workspace_id" }

@@ -54,6 +54,31 @@ export async function deleteFile(
   // noop in self-hosted mode
 }
 
+export async function getRef(
+  _token: string,
+  _repoFullName: string,
+  _ref: string,
+): Promise<string> {
+  return "";
+}
+
+export async function createBranch(
+  _token: string,
+  _repoFullName: string,
+  _branchName: string,
+  _fromSha: string,
+): Promise<void> {
+  // noop in self-hosted mode
+}
+
+export async function createPullRequest(
+  _token: string,
+  _repoFullName: string,
+  _opts: { title: string; body: string; head: string; base: string },
+): Promise<{ number: number; html_url: string }> {
+  throw new Error("GitHub integration is not available in self-hosted mode");
+}
+
 export async function ensureAdrFolder(
   _token: string,
   _repoFullName: string,

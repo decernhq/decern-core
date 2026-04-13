@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { parseAdrMarkdown } from "@decern/protocol/adr";
 import { AdrDetailDrawer, type DrawerAdr } from "@/components/dashboard/adr-detail-drawer";
+import { AdrSyncButton } from "@/components/dashboard/adr-sync-button";
 
 type AdrRow = {
   id: string;
@@ -151,9 +152,21 @@ export default async function AdrsPage({
                   </svg>
                   <p className="truncate font-mono text-sm font-medium text-app-text">{repo}</p>
                 </div>
-                <span className="flex-shrink-0 rounded-full border border-app-border bg-app-card px-2.5 py-0.5 text-xs font-medium text-app-text-muted">
-                  {rows.length}
-                </span>
+                <div className="flex flex-shrink-0 items-center gap-2">
+                  <AdrSyncButton
+                    workspaceId={workspaceId}
+                    repositoryIdentifier={repo}
+                    labels={{
+                      sync: t("syncButton"),
+                      syncing: t("syncing"),
+                      synced: t("synced"),
+                      cliHint: t("syncCliHint"),
+                    }}
+                  />
+                  <span className="rounded-full border border-app-border bg-app-card px-2.5 py-0.5 text-xs font-medium text-app-text-muted">
+                    {rows.length}
+                  </span>
+                </div>
               </div>
 
               {/* Desktop table */}
@@ -247,6 +260,7 @@ export default async function AdrsPage({
 
       <AdrDetailDrawer
         adrs={drawerAdrs}
+        workspaceId={workspaceId}
         labels={{
           close: t("drawerClose"),
           repository: t("drawerRepository"),
@@ -260,6 +274,26 @@ export default async function AdrsPage({
           consequences: t("drawerConsequences"),
           rawBody: t("drawerRawBody"),
           bodyMissing: t("drawerBodyMissing"),
+        }}
+        lifecycleLabels={{
+          approve: t("actionApprove"),
+          reject: t("actionReject"),
+          supersede: t("actionSupersede"),
+          promoteBlocking: t("actionPromoteBlocking"),
+          demoteWarning: t("actionDemoteWarning"),
+          loading: t("actionLoading"),
+          prCreated: t("actionPrCreated"),
+          preview: t("actionPreview"),
+          copy: t("actionCopy"),
+          copied: t("actionCopied"),
+          createPr: t("actionCreatePr"),
+          creatingPr: t("actionCreatingPr"),
+          close: t("actionClose"),
+          bodyRequired: t("actionBodyRequired"),
+          githubOnly: t("actionGithubOnly"),
+          supersededByLabel: t("actionSupersededByLabel"),
+          supersededByPlaceholder: t("actionSupersededByPlaceholder"),
+          supersededByRequired: t("actionSupersededByRequired"),
         }}
       />
     </div>

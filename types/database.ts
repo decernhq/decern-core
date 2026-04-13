@@ -142,35 +142,18 @@ export interface Database {
       workspace_policies: {
         Row: {
           workspace_id: string;
-          require_linked_pr: boolean;
-          require_approved: boolean;
-          high_impact: boolean;
-          judge_tolerance_percent: number | null;
-          judge_mode: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days: number;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           workspace_id: string;
-          require_linked_pr?: boolean;
-          require_approved?: boolean;
-          high_impact?: boolean;
-          judge_tolerance_percent?: number | null;
-          judge_mode?: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days?: number;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
-          workspace_id?: string;
-          require_linked_pr?: boolean;
-          require_approved?: boolean;
-          high_impact?: boolean;
-          judge_tolerance_percent?: number | null;
-          judge_mode?: "blocking" | "advisory" | "deterministic_only";
           evidence_retention_days?: number;
-          created_at?: string;
           updated_at?: string;
         };
       };

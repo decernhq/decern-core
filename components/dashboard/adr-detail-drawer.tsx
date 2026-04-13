@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useCallback } from "react";
+import { AdrLifecycleActions } from "./adr-lifecycle-actions";
 
 export type DrawerAdr = {
   id: string;
@@ -22,11 +23,35 @@ export type DrawerAdr = {
   raw_body: string | null;
 };
 
+export type LifecycleLabels = {
+  approve: string;
+  reject: string;
+  supersede: string;
+  promoteBlocking: string;
+  demoteWarning: string;
+  loading: string;
+  prCreated: string;
+  preview: string;
+  copy: string;
+  copied: string;
+  createPr: string;
+  creatingPr: string;
+  close: string;
+  bodyRequired: string;
+  githubOnly: string;
+  supersededByLabel: string;
+  supersededByPlaceholder: string;
+  supersededByRequired: string;
+};
+
 export function AdrDetailDrawer({
   adrs,
+  workspaceId,
   labels,
+  lifecycleLabels,
 }: {
   adrs: DrawerAdr[];
+  workspaceId: string;
   labels: {
     close: string;
     repository: string;
@@ -41,6 +66,7 @@ export function AdrDetailDrawer({
     rawBody: string;
     bodyMissing: string;
   };
+  lifecycleLabels: LifecycleLabels;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -145,6 +171,22 @@ export function AdrDetailDrawer({
               {labels.bodyMissing}
             </div>
           )}
+
+          {/* Lifecycle actions */}
+          <div className="mt-8 border-t border-app-border pt-5">
+            <AdrLifecycleActions
+              workspaceId={workspaceId}
+              repositoryIdentifier={selected.repository_identifier}
+              adrId={selected.id}
+              currentStatus={selected.status}
+              currentEnforcement={selected.enforcement}
+              rawBody={selected.raw_body}
+              siblingAdrs={adrs
+                .filter((a) => a.repository_identifier === selected.repository_identifier && a.id !== selected.id && a.status === "approved")
+                .map((a) => ({ id: a.id, title: a.title }))}
+              labels={lifecycleLabels}
+            />
+          </div>
 
           {selected.raw_body && (
             <details className="mt-8">

@@ -20,8 +20,6 @@ import { WorkspacePoliciesForm } from "@/components/dashboard/workspace-policies
 import { IS_CLOUD } from "@/lib/cloud";
 import Link from "next/link";
 
-const ENTERPRISE_PLANS = ["enterprise"];
-
 export default async function WorkspacePage() {
   const supabase = await createClient();
   const t = await getTranslations("workspace");
@@ -54,7 +52,7 @@ export default async function WorkspacePage() {
     getProfileById(workspace.owner_id),
     supabase
       .from("workspace_policies")
-      .select("high_impact, require_linked_pr, require_approved, judge_tolerance_percent, judge_mode, evidence_retention_days")
+      .select("evidence_retention_days")
       .eq("workspace_id", workspace.id)
       .maybeSingle(),
     supabase
@@ -68,16 +66,9 @@ export default async function WorkspacePage() {
   const isOwner = user.id === workspace.owner_id;
   const ownerPlanId = getEffectivePlanId(ownerSubscription.data?.plan_id);
   const canCreateOwnWorkspace = canCreateOwnWorkspaceResult.allowed;
-  /** Enterprise can set all policies (validate + judge). */
-  const showPolicies =
-    isOwner && ENTERPRISE_PLANS.includes(ownerPlanId);
+  const showPolicies = isOwner;
   const policiesInitial = {
-    high_impact: policiesRow?.data?.high_impact ?? true,
-    require_linked_pr: policiesRow?.data?.require_linked_pr ?? false,
-    require_approved: policiesRow?.data?.require_approved ?? true,
-    judge_tolerance_percent: policiesRow?.data?.judge_tolerance_percent ?? null,
-    judge_mode: (policiesRow?.data?.judge_mode as "blocking" | "advisory" | "deterministic_only") ?? "blocking",
-    evidence_retention_days: (policiesRow?.data as Record<string, unknown>)?.evidence_retention_days as number ?? 730,
+    evidence_retention_days: policiesRow?.data?.evidence_retention_days ?? 730,
   };
 
   return (
@@ -126,7 +117,7 @@ export default async function WorkspacePage() {
           <h2 className="text-lg font-semibold text-gray-900">{t("policiesSectionTitle")}</h2>
           <p className="mt-1 text-sm text-gray-500">{t("policiesSectionSubtitle")}</p>
           <div className="mt-4">
-            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} planId={ownerPlanId} />
+            <WorkspacePoliciesForm workspaceId={workspace.id} initial={policiesInitial} />
           </div>
         </div>
       )}
