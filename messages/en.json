@@ -241,7 +241,7 @@
     "adrs": "ADRs",
     "openSignals": "Open signals",
     "evidenceRecords": "Evidence records",
-    "projects": "Projects",
+    "gateRuns": "Gate runs",
     "viewAdrs": "View ADRs",
     "viewGateRuns": "View gate runs",
     "viewSignals": "View signals",
@@ -304,7 +304,11 @@
     "syncButton": "Sync",
     "syncing": "Syncing...",
     "synced": "Synced",
-    "syncCliHint": "Use `decern adr sync` CLI for non-GitHub repos"
+    "syncCliHint": "Use `decern adr sync` CLI for non-GitHub repos",
+    "search": "Search ADRs by ID or title...",
+    "searchNoResults": "No ADRs match your search.",
+    "filterBlocking": "blocking",
+    "filterProposed": "proposed"
   },
   "signals": {
     "title": "Signals",
@@ -539,7 +543,9 @@
     "preparing": "Preparing your workspace",
     "retry": "Retry",
     "loadingWorkspace": "Loading workspace…",
-    "policiesSectionTitle": "Decision Gate policies",
+    "signingKeyMissing": "Evidence signing key not configured",
+    "signingKeyMissingHint": "DECERN_EVIDENCE_SIGNING_KEY is not set. Evidence records are signed with an ephemeral key that changes on server restart. Signatures will not be verifiable for audit purposes. Generate a persistent key: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+    "policiesSectionTitle": "Policies",
     "policiesSectionSubtitle": "Decision Gate policies for CI. Query params on the gate override these when provided.",
     "highImpact": "High Impact Changes",
     "highImpactHint": "When on, the gate blocks CI if a high-impact change (e.g. migrations, infra, CI configs) is not backed by a valid decision. When off, high-impact changes are reported but never block the pipeline (observation mode).",

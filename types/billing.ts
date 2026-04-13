@@ -1,16 +1,21 @@
 /**
- * Billing types for plan limits.
- * Only two plans: Free and Enterprise (Self-Hosted).
+ * Billing types for v2.
+ * Two plans: Free and Enterprise.
+ *
+ * Limits enforced:
+ * - workspaces_limit: how many workspaces the user can own
+ * - users_per_workspace_limit: max members per workspace
+ *
+ * Feature gates (not counter-based):
+ * - Draft ADR generation from signals: Enterprise only (isPaidWorkspace check)
+ * - CI blocking mode: available to all (enforcement is per-ADR in the repo)
  */
 
 export type PlanId = "free" | "enterprise";
 
 export interface PlanLimits {
   workspaces_limit: number;
-  projects_limit: number;
   users_per_workspace_limit: number;
-  decisions_limit: number;
-  ai_generations_per_month: number;
 }
 
 export interface Plan {
@@ -27,58 +32,41 @@ export const PLANS: Record<PlanId, Plan> = {
   free: {
     id: "free",
     name: "Free",
-    description: "To get started",
+    description: "Get started",
     price: 0,
     priceId: null,
     features: [
-      "1 workspace",
-      "Unlimited projects",
-      "Unlimited decisions",
-      "AI decision generation (fair use)",
-      "LLM as a Judge (advisory, BYO only)",
-      "CI Observation (no blocking)",
+      "1 workspace, up to 3 developers",
+      "Unlimited ADRs, unlimited gate runs",
+      "CI gate with BYO LLM (blocking + warning)",
+      "Signal detection (Case C)",
+      "Dashboard: ADRs, signals, gate runs",
+      "Evidence chain + export",
     ],
     limits: {
       workspaces_limit: 1,
-      projects_limit: -1,
-      users_per_workspace_limit: 5,
-      decisions_limit: -1,
-      ai_generations_per_month: 10,
+      users_per_workspace_limit: 3,
     },
   },
   enterprise: {
     id: "enterprise",
-    name: "Enterprise / Self-Hosted",
+    name: "Enterprise",
     description: "Full control",
     price: 0,
     priceId: null,
     features: [
-      "Unlimited workspaces, projects, decisions",
-      "Blocking mode + advanced policies",
-      "Roles & permissions",
-      "SSO (SAML, OIDC)",
+      "Unlimited workspaces and developers",
+      "Everything in Free",
+      "Draft ADR generation from signals (cloud LLM)",
+      "Create PR from dashboard (GitHub)",
       "Self-hosted deployment (VPC, air-gapped)",
-      "BYO LLM enforced",
+      "SSO (SAML, OIDC)",
       "Dedicated support with SLA",
+      "Security review assistance (SOC 2, ISO 42001)",
     ],
     limits: {
       workspaces_limit: -1,
-      projects_limit: -1,
       users_per_workspace_limit: -1,
-      decisions_limit: -1,
-      ai_generations_per_month: -1,
     },
   },
 };
-
-export interface Subscription {
-  id: string;
-  userId: string;
-  stripeCustomerId: string;
-  stripeSubscriptionId: string | null;
-  planId: PlanId;
-  status: "active" | "canceled" | "past_due" | "trialing";
-  currentPeriodEnd: string | null;
-  createdAt: string;
-  updatedAt: string;
-}

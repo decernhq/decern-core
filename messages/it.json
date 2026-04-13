@@ -241,7 +241,7 @@
     "adrs": "ADR",
     "openSignals": "Segnali aperti",
     "evidenceRecords": "Evidence record",
-    "projects": "Progetti",
+    "gateRuns": "Gate runs",
     "viewAdrs": "Vedi ADR",
     "viewGateRuns": "Vedi gate runs",
     "viewSignals": "Vedi segnali",
@@ -304,7 +304,11 @@
     "syncButton": "Sync",
     "syncing": "Sync in corso...",
     "synced": "Sincronizzato",
-    "syncCliHint": "Usa `decern adr sync` CLI per repo non-GitHub"
+    "syncCliHint": "Usa `decern adr sync` CLI per repo non-GitHub",
+    "search": "Cerca ADR per ID o titolo...",
+    "searchNoResults": "Nessuna ADR corrisponde alla ricerca.",
+    "filterBlocking": "blocking",
+    "filterProposed": "proposed"
   },
   "signals": {
     "title": "Segnali",
@@ -539,7 +543,9 @@
     "preparing": "Preparando il tuo workspace",
     "retry": "Riprova",
     "loadingWorkspace": "Caricamento workspace…",
-    "policiesSectionTitle": "Policy Decision Gate",
+    "signingKeyMissing": "Chiave di firma evidence non configurata",
+    "signingKeyMissingHint": "DECERN_EVIDENCE_SIGNING_KEY non è impostata. I record di evidenza vengono firmati con una chiave effimera che cambia al riavvio del server. Le firme non saranno verificabili per l'audit. Genera una chiave persistente: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+    "policiesSectionTitle": "Policy",
     "policiesSectionSubtitle": "Policy del Decision Gate per la CI. I parametri in query sul gate hanno priorità se forniti.",
     "highImpact": "High Impact Changes",
     "highImpactHint": "Se attivo, il gate blocca la CI quando una modifica ad alto impatto (es. migrazioni, infra, config CI) non è supportata da una decisione valida. Se disattivato, le modifiche ad alto impatto vengono segnalate ma non bloccano mai la pipeline (modalità osservazione).",
