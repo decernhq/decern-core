@@ -35,7 +35,7 @@ const noPublish = noGit || process.argv.includes("--no-publish");
  */
 const targets = [
   { name: "protocol", dir: "protocol", coreKey: "@decern/protocol", publishMode: "login" },
-  { name: "cloud",    dir: "cloud",    coreKey: "@decernhq/cloud",  publishMode: "token" },
+  { name: "cloud",    dir: "cloud",    coreKey: "@decernhq/cloud",  publishMode: "token", registry: "npm.pkg.github.com" },
   { name: "gate",     dir: "gate",     coreKey: "decern-gate",      publishMode: "login" },
 ];
 
@@ -115,7 +115,7 @@ function readHiddenInput(promptText) {
  *   - "token": prompts the user to paste an NPM token inline (hidden input),
  *              writes a temporary .npmrc, publishes, then restores the original .npmrc.
  */
-async function publishSubrepo(dir, name, publishMode) {
+async function publishSubrepo(dir, name, publishMode, registry) {
   if (publishMode === "login") {
     console.log();
     console.log(`${name}: running \`npm login\` (complete the interactive flow)...`);
@@ -137,7 +137,8 @@ async function publishSubrepo(dir, name, publishMode) {
     const hadNpmrc = existsSync(npmrcPath);
     const originalNpmrc = hadNpmrc ? readFileSync(npmrcPath, "utf8") : "";
     const prefix = originalNpmrc === "" || originalNpmrc.endsWith("\n") ? "" : "\n";
-    const authLine = `//registry.npmjs.org/:_authToken=${token.trim()}\n`;
+    const reg = registry || "registry.npmjs.org";
+    const authLine = `//${reg}/:_authToken=${token.trim()}\n`;
 
     try {
       writeFileSync(npmrcPath, originalNpmrc + prefix + authLine, { mode: 0o600 });
@@ -264,7 +265,7 @@ for (const t of targets) {
 
   if (!noPublish) {
     try {
-      await publishSubrepo(subRepoDir, t.dir, t.publishMode);
+      await publishSubrepo(subRepoDir, t.dir, t.publishMode, t.registry);
     } catch (err) {
       console.error(`error: ${t.dir} publish failed: ${err.message}`);
       process.exit(1);
